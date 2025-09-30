@@ -132,7 +132,7 @@ const UserDashboard: React.FC = () => {
     const total = Number(task.totalTime) + Number(task.runningDuration || 0);
     const estimated = Number(task.estimatedTime || 0);
     const overTime = total - estimated > 0 ? total - estimated : 0;
-
+    const saveTime = estimated - total > 0 ? estimated - total:0;
     return (
       <div
         key={task.id}
@@ -162,6 +162,11 @@ const UserDashboard: React.FC = () => {
               <span className="text-danger">Over Time: {formatDuration(overTime)}</span>
             </div>
           )}
+          {saveTime>0 &&
+             <div className="mt-1">
+              <span className="text-success">Saved Time: {formatDuration(saveTime)}</span>
+            </div>
+          }
         </div>
 
         <button
