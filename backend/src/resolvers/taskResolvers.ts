@@ -24,6 +24,7 @@ tasks: async ({ projectId }: { projectId: string }) => {
       return {
         id: (task as any)._id.toString(),
         projectId: task.projectId,
+        estimatedTime:task.estimatedTime,
         title: task.title,
         totalTime: totalCompleted + runningDuration,
         isRunning: !!runningTimer,
@@ -50,19 +51,18 @@ tasks: async ({ projectId }: { projectId: string }) => {
     };
   },
 
-  createTask: async ({ projectId, title }: { projectId: string; title: string }) => {
-  const task = new Task({ projectId, title, totalDuration: 0, isRunning: false });
+  createTask: async ({ projectId, title,estimatedTime }: { projectId: string; title: string,estimatedTime?:number}) => {
+  const task = new Task({ projectId, title, totalDuration: 0, isRunning: false,estimatedTime });
   return await task.save();
 },
 
-
-  updateTask: async ({ id, title }: { id: string; title: string }) => {
-    const task = await Task.findById(id);
-    if (!task) throw new Error("Task not found");
-    if (title) task.title = title;
-    return await task.save();
-  },
-
+ updateTask: async ({ id, title, estimatedTime }: { id: string; title?: string; estimatedTime?: number }) => {
+  const task = await Task.findById(id);
+  if (!task) throw new Error("Task not found");
+  if (title) task.title = title;
+  if (estimatedTime !== undefined) task.estimatedTime = estimatedTime;
+  return await task.save();
+},
   deleteTask: async ({ id }: { id: string }) => {
     await Task.findByIdAndDelete(id);
     await Timer.deleteMany({ taskId: id });

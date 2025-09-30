@@ -203,8 +203,6 @@ useEffect(() => {
       }
 
     const refreshedTasks = await getTasksByProject(projectId);
-    console.log("-------------->",refreshedTasks);
-    
     setTasks((prev) => ({
     ...prev,
     [projectId]: refreshedTasks.map((t: Task) => ({

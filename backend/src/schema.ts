@@ -19,6 +19,7 @@ export const schema=buildSchema(`
   totalTime: Int        # total duration in seconds
   isRunning: Boolean    # whether a timer is running
   runningTimer: Timer   # currently running timer
+  estimatedTime: Int
 }
    
 
@@ -42,8 +43,8 @@ export const schema=buildSchema(`
      updateProject(id: ID!, name: String, description: String): Project
      deleteProject(id: ID!): Boolean
 
-     createTask(projectId: ID!, title: String!): Task
-     updateTask(id: ID!, title: String): Task
+     createTask(projectId: ID!, title: String!,estimatedTime: Int): Task
+     updateTask(id: ID!, title: String,estimatedTime: Int): Task
      deleteTask(id: ID!): Boolean
  
      startTimer(taskId: ID!): Timer
