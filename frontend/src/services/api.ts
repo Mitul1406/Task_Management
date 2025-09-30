@@ -21,6 +21,7 @@ const GET_TASKS = gql`
       updatedAt
       totalTime        
       isRunning
+      estimatedTime
       runningTimer {   
         id
         startTime
@@ -48,14 +49,16 @@ const DELETE_PROJECT = gql`
 `;
 
 const CREATE_TASK = gql`
-  mutation createTask($projectId: ID!, $title: String!) {
-    createTask(projectId: $projectId, title: $title) {
+  mutation createTask($projectId: ID!, $title: String!, $estimatedTime: Int) {
+    createTask(projectId: $projectId, title: $title, estimatedTime: $estimatedTime) {
       id
       title
       projectId
+      estimatedTime
     }
   }
 `;
+
 
 const START_TIMER = gql`
   mutation startTimer($taskId: ID!) {
@@ -79,6 +82,18 @@ const STOP_TIMER = gql`
       duration
       startTime
       endTime
+    }
+  }
+`;
+const UPDATE_TASK = gql`
+  mutation updateTask($id: ID!, $title: String, $estimatedTime: Int) {
+    updateTask(id: $id, title: $title, estimatedTime: $estimatedTime) {
+      id
+      title
+      totalTime
+      isRunning
+      estimatedTime
+      projectId
     }
   }
 `;
@@ -141,7 +156,21 @@ export const deleteTask = async (id: string) => {
   return (res as any).data.deleteTask; 
 };
 
-export const loginUser = async (email:string,password:string)=>{
+export const createTaskAdmin = async (projectId: string, title: string, estimatedTime?: number) => {
+  const res = await client.mutate({
+    mutation: CREATE_TASK,
+    variables: { projectId, title, estimatedTime },
+  });
+  return (res as any).data.createTask;
+};
+
+export const updateTaskAdmin = async (id: string, title?: string, estimatedTime?: number) => {
+  const res = await client.mutate({
+    mutation: UPDATE_TASK,
+    variables: { id, title, estimatedTime },
+  });
+  return (res as any).data.updateTask;
+};
 
   
 }
