@@ -141,3 +141,7 @@ export const deleteTask = async (id: string) => {
   return (res as any).data.deleteTask; 
 };
 
+export const loginUser = async (email:string,password:string)=>{
+
+  
+}
