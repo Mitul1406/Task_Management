@@ -9,12 +9,14 @@ export interface ITask extends Document {
   createdAt: Date;
   updatedAt: Date;
   totalDuration?: number;
+  estimatedTime: number,
 }
 
 const taskSchema = new Schema(
   {
     projectId: { type: Schema.Types.ObjectId, ref: "Project", required: true },
     title: { type: String, required: true },
+    estimatedTime: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
