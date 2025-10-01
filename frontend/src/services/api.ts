@@ -1,6 +1,15 @@
 import client from "../lib/apolloClient";
 import { gql } from "@apollo/client";
+import {jwtDecode} from "jwt-decode";
 
+interface JwtPayload {
+  id: string;
+  role: string;
+  username: string;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
 // GraphQL Queries & Mutations
 const GET_PROJECTS = gql`
   query {
@@ -11,24 +20,58 @@ const GET_PROJECTS = gql`
     }
   }
 `;
-
-const GET_TASKS = gql`
-  query tasks($projectId: ID!) {
-    tasks(projectId: $projectId) {
+const USER_TASK=gql`query tasksForUser($userId: ID!) {
+  tasksForUser(userId: $userId) {
+    id
+    name
+    description
+    tasks {
       id
       title
-      createdAt
-      updatedAt
-      totalTime        
-      isRunning
       estimatedTime
-      runningTimer {   
+      totalTime
+      isRunning
+      runningTimer {
         id
         startTime
         endTime
         duration
       }
+      assignedUser {
+        id
+        username
+        email
+        role
+      }
     }
+  }
+}
+`
+const GET_TASKS = gql`
+  query tasks($projectId: ID!) {
+    tasks(projectId: $projectId) {
+    id
+    title
+    createdAt
+    updatedAt
+    totalTime
+    isRunning
+    estimatedTime
+    overtime
+    savedTime
+    runningTimer {
+      id
+      startTime
+      endTime
+      duration
+    }
+    assignedUser {
+      id
+      username
+      email
+      role
+    }
+  }
   }
 `;
 
@@ -49,12 +92,13 @@ const DELETE_PROJECT = gql`
 `;
 
 const CREATE_TASK = gql`
-  mutation createTask($projectId: ID!, $title: String!, $estimatedTime: Int) {
-    createTask(projectId: $projectId, title: $title, estimatedTime: $estimatedTime) {
+  mutation createTask($projectId: ID!, $title: String!, $estimatedTime: Int, $assignedUserId: ID) {
+    createTask(projectId: $projectId, title: $title, estimatedTime: $estimatedTime, assignedUserId: $assignedUserId) {
       id
       title
       projectId
       estimatedTime
+      assignedUser { id username }
     }
   }
 `;
@@ -78,26 +122,50 @@ const DELETE_TASK = gql`
 const STOP_TIMER = gql`
   mutation stopTimer($taskId: ID!) {
     stopTimer(taskId: $taskId) {
-      id
-      duration
-      startTime
-      endTime
+    totalDuration
+    overtime
+    savedTime
     }
   }
 `;
 const UPDATE_TASK = gql`
-  mutation updateTask($id: ID!, $title: String, $estimatedTime: Int) {
-    updateTask(id: $id, title: $title, estimatedTime: $estimatedTime) {
+  mutation updateTask($id: ID!, $title: String, $estimatedTime: Int, $assignedUserId: ID) {
+    updateTask(id: $id, title: $title, estimatedTime: $estimatedTime, assignedUserId: $assignedUserId) {
       id
       title
       totalTime
       isRunning
       estimatedTime
+      savedTime
+      overtime
       projectId
+      assignedUser { id username }
     }
   }
 `;
-
+ 
+const REGISTRATION =gql`
+mutation register($username: String!, $email: String!, $password: String!, $role: String) {
+    register(username: $username, email: $email, password: $password, role: $role) {
+      id
+      username
+      email
+      role
+      token
+    }
+  }
+`;
+const LOGIN =gql`
+mutation login($email: String!, $password: String!) {
+    login(email: $email, password: $password) {
+      id
+      username
+      email
+      role
+      token
+    }
+  }
+`;
 // API Functions
 export const getProjects = async () => {
   const res = await client.query({ query: GET_PROJECTS,fetchPolicy: "network-only", });
@@ -156,19 +224,68 @@ export const deleteTask = async (id: string) => {
   return (res as any).data.deleteTask; 
 };
 
-export const createTaskAdmin = async (projectId: string, title: string, estimatedTime?: number) => {
+export const createTaskAdmin = async (
+  projectId: string,
+  title: string,
+  estimatedTime?: number,
+  assignedUserId?: string
+) => {
   const res = await client.mutate({
     mutation: CREATE_TASK,
-    variables: { projectId, title, estimatedTime },
+    variables: { projectId, title, estimatedTime, assignedUserId },
   });
   return (res as any).data.createTask;
 };
 
-export const updateTaskAdmin = async (id: string, title?: string, estimatedTime?: number) => {
+export const updateTaskAdmin = async (
+  id: string,
+  title?: string,
+  estimatedTime?: number,
+  assignedUserId?: string
+) => {
   const res = await client.mutate({
     mutation: UPDATE_TASK,
-    variables: { id, title, estimatedTime },
+    variables: { id, title, estimatedTime, assignedUserId },
   });
   return (res as any).data.updateTask;
+};
+
+  
+ export const login=async (email?:string,password?:string)=>{
+     const res =await client.mutate({
+      mutation:LOGIN,
+      variables:{email,password},
+     })    
+     return (res as any).data.login
+ }
+
+  export const register=async (email?:string,password?:string,username?:string)=>{
+     const res =await client.mutate({
+      mutation:REGISTRATION,
+      variables:{email,password,username},
+     })
+
+     return (res as any).data.register
+ }
+
+ export const getUsers = async () => {
+  const res = await client.query({ query: gql`query { users { id username email role } }` });
+  return (res as any).data.users;
+};
+
+export const getUserTasks = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) return [];
+
+  const parsed = jwtDecode<JwtPayload>(token)
+  const userId = parsed.id; 
+
+  const res = await client.query({
+    query: USER_TASK,
+    variables: { userId },
+    fetchPolicy: "no-cache", 
+  });
+
+  return (res as any).data.tasksForUser;
 };
 

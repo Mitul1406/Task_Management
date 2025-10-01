@@ -9,18 +9,21 @@ export const schema=buildSchema(`
         tasks:[Task]
     }
     type Task {
-  id: ID!
-  projectId: ID!
-  title: String!
-  timers: [Timer]
-  createdAt: String
-  updatedAt: String
+    id: ID!
+    projectId: ID!
+    title: String!
+    estimatedTime: Int
+    totalTime: Int
+    isRunning: Boolean
+    runningTimer: Timer
+    assignedUserId: ID
+    assignedUser: User
+    createdAt: String
+    updatedAt: String
+    overtime:Int
+    savedTime:Int
 
-  totalTime: Int        # total duration in seconds
-  isRunning: Boolean    # whether a timer is running
-  runningTimer: Timer   # currently running timer
-  estimatedTime: Int
-}
+  }
    
 
     type Timer{
@@ -30,12 +33,26 @@ export const schema=buildSchema(`
     endTime: String
     duration: Int
     }
-
+    
+    type User {
+    id: ID!
+    username: String!
+    email: String!
+    role: String!
+    token: String
+    }
+    type StopTimerResponse {
+  totalDuration: Int!
+  overtime: Int!
+  savedTime: Int!
+}
     type Query{
     projects:[Project]
     project(id:ID!):Project
     tasks(projectId: ID!): [Task]
     task(id:ID!):Task
+    users: [User!]!
+    tasksForUser(userId: ID!): [Project!]!
     }
 
     type Mutation{
@@ -43,12 +60,15 @@ export const schema=buildSchema(`
      updateProject(id: ID!, name: String, description: String): Project
      deleteProject(id: ID!): Boolean
 
-     createTask(projectId: ID!, title: String!,estimatedTime: Int): Task
-     updateTask(id: ID!, title: String,estimatedTime: Int): Task
+     createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID): Task
+     updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID): Task
      deleteTask(id: ID!): Boolean
  
      startTimer(taskId: ID!): Timer
-     stopTimer(taskId: ID!): Timer
+     stopTimer(taskId: ID!): StopTimerResponse!
+
+     register(username: String!, email: String!, password: String!, role: String): User
+     login(email: String!, password: String!): User
     }
     `
 )
