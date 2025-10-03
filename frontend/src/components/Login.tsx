@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../services/api"; 
 import {jwtDecode} from "jwt-decode";
+import { toast } from "react-toastify";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -59,6 +60,7 @@ const Login: React.FC = () => {
       if (!user) throw new Error("Login failed");
       if (user.token) {
       localStorage.setItem("token", user.token);
+      toast.success(user.message)
       navigateTo(user.role)
     }
     } catch (err: any) {

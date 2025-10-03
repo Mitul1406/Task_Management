@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../services/api"; 
+import { toast } from "react-toastify";
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -19,15 +20,16 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await register(form.email, form.password, form.username);
-      navigate("/login"); // redirect to login after successful registration
+      const res=await register(form.email, form.password, form.username);
+      toast.success(res.message)
+      navigate("/login"); 
     } catch (err: any) {
       setError(err.message || "Registration failed");
     }
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 text-center">
       <h2>Register</h2>
       {error && <p className="text-danger">{error}</p>}
       <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }} className="mx-auto text-center">

@@ -28,6 +28,7 @@ export const authResolver = {
     username: newUser.username,
     email: newUser.email,
     role: newUser.role,
+    message:"Registered successfully, please login..."
   };
     },
 
@@ -48,7 +49,7 @@ export const authResolver = {
 
     const token = jwt.sign(payload, secret, { expiresIn: "7d" });
 
-    return { ...payload, token };
+    return { ...payload, token,message:"Login SuccessFully...." };
   } catch (err) {
     console.error("Login error:", err);
     throw new Error((err as any).message || "Something went wrong");

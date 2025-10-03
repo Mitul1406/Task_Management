@@ -152,6 +152,7 @@ mutation register($username: String!, $email: String!, $password: String!, $role
       email
       role
       token
+      message
     }
   }
 `;
@@ -163,6 +164,7 @@ mutation login($email: String!, $password: String!) {
       email
       role
       token
+      message
     }
   }
 `;

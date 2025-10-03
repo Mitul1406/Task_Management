@@ -13,6 +13,7 @@ import {
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
 interface Task {
   id: string;
   title: string;
@@ -184,6 +185,7 @@ const AdminDashboard: React.FC = () => {
       className="btn btn-danger"
       onClick={() => {
         localStorage.removeItem("token"); 
+        toast.success("Logout successfully...")       
         navigate("/login");  
       }}
     >

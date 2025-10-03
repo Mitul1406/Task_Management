@@ -40,6 +40,7 @@ export const schema=buildSchema(`
     email: String!
     role: String!
     token: String
+    message: String
     }
     type StopTimerResponse {
   totalDuration: Int!

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { getUserTasks, startTimer, stopTimer } from "../services/api";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 interface Task {
   id: string;
@@ -139,6 +140,7 @@ const UserDashboard: React.FC = () => {
       className="btn btn-danger"
       onClick={() => {
         localStorage.removeItem("token"); 
+        toast.success("Logout successfully...")
         navigate("/login");  
       }}
     >
