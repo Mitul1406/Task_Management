@@ -6,6 +6,7 @@ export const schema=buildSchema(`
         id:ID!,
         name:String!,
         description:String,
+        createdAt:String,
         tasks:[Task]
     }
     type Task {
@@ -22,7 +23,8 @@ export const schema=buildSchema(`
     updatedAt: String
     overtime:Int
     savedTime:Int
-
+    startDate:String
+    endDate: String
   }
    
 
@@ -61,8 +63,8 @@ export const schema=buildSchema(`
      updateProject(id: ID!, name: String, description: String): Project
      deleteProject(id: ID!): Boolean
 
-     createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID): Task
-     updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID): Task
+     createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
+     updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      deleteTask(id: ID!): Boolean
  
      startTimer(taskId: ID!): Timer

@@ -17,6 +17,7 @@ const GET_PROJECTS = gql`
       id
       name
       description
+      createdAt
     }
   }
 `;
@@ -31,6 +32,8 @@ const USER_TASK=gql`query tasksForUser($userId: ID!) {
       estimatedTime
       totalTime
       isRunning
+      startDate
+      endDate
       runningTimer {
         id
         startTime
@@ -59,6 +62,8 @@ const GET_TASKS = gql`
     estimatedTime
     overtime
     savedTime
+    startDate
+    endDate
     runningTimer {
       id
       startTime
@@ -92,13 +97,15 @@ const DELETE_PROJECT = gql`
 `;
 
 const CREATE_TASK = gql`
-  mutation createTask($projectId: ID!, $title: String!, $estimatedTime: Int, $assignedUserId: ID) {
-    createTask(projectId: $projectId, title: $title, estimatedTime: $estimatedTime, assignedUserId: $assignedUserId) {
+  mutation createTask($projectId: ID!, $title: String!, $estimatedTime: Int, $assignedUserId: ID,$startDate: String,$endDate:String) {
+    createTask(projectId: $projectId, title: $title, estimatedTime: $estimatedTime, assignedUserId: $assignedUserId,startDate:$startDate,endDate:$endDate) {
       id
       title
       projectId
       estimatedTime
       assignedUser { id username }
+      startDate
+      endDate
     }
   }
 `;
@@ -129,8 +136,10 @@ const STOP_TIMER = gql`
   }
 `;
 const UPDATE_TASK = gql`
-  mutation updateTask($id: ID!, $title: String, $estimatedTime: Int, $assignedUserId: ID) {
-    updateTask(id: $id, title: $title, estimatedTime: $estimatedTime, assignedUserId: $assignedUserId) {
+  mutation updateTask($id: ID!, $title: String, $estimatedTime: Int, $assignedUserId: ID,$startDate: String,
+    $endDate: String) {
+    updateTask(id: $id, title: $title, estimatedTime: $estimatedTime, assignedUserId: $assignedUserId,startDate: $startDate,
+      endDate: $endDate) {
       id
       title
       totalTime
@@ -140,6 +149,8 @@ const UPDATE_TASK = gql`
       overtime
       projectId
       assignedUser { id username }
+      startDate
+      endDate
     }
   }
 `;
@@ -205,12 +216,12 @@ export const createTask = async (projectId: string, title: string) => {
     mutation: CREATE_TASK,
     variables: { projectId, title },
   });
-  return (res as any).data.createTask; // returns task document
+  return (res as any).data.createTask; 
 };
 
 export const startTimer = async (taskId: string) => {
   const res = await client.mutate({ mutation: START_TIMER, variables: { taskId } });
-  return (res as any).data.startTimer; // returns timer document
+  return (res as any).data.startTimer;
 };
 
 export const stopTimer = async (taskId: string) => {
@@ -230,11 +241,14 @@ export const createTaskAdmin = async (
   projectId: string,
   title: string,
   estimatedTime?: number,
-  assignedUserId?: string
+  assignedUserId?: string,
+  startDate?: string,
+  endDate?: string
 ) => {
   const res = await client.mutate({
     mutation: CREATE_TASK,
-    variables: { projectId, title, estimatedTime, assignedUserId },
+    variables: { projectId, title, estimatedTime, assignedUserId,startDate,
+      endDate },
   });
   return (res as any).data.createTask;
 };
@@ -243,11 +257,13 @@ export const updateTaskAdmin = async (
   id: string,
   title?: string,
   estimatedTime?: number,
-  assignedUserId?: string
+  assignedUserId?: string,
+  startDate?: string,
+  endDate?: string
 ) => {
   const res = await client.mutate({
     mutation: UPDATE_TASK,
-    variables: { id, title, estimatedTime, assignedUserId },
+    variables: { id, title, estimatedTime, assignedUserId,startDate,endDate },
   });
   return (res as any).data.updateTask;
 };

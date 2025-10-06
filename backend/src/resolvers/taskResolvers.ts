@@ -3,7 +3,11 @@ import { Task } from "../models/Task.js";
 import { Timer } from "../models/Timer.js";
 import { User } from "../models/User.js";
 import { Project } from "../models/Project.js";
-
+const formatDate = (val: any) => {
+  if (!val) return "";
+  const d = new Date(val);
+  return d.toISOString().split("T")[0]; // YYYY-MM-DD
+};
 export const taskResolver = {
 tasks : async ({
   projectId,
@@ -47,6 +51,8 @@ tasks : async ({
         runningTimer: runningTimer || undefined,
         overtime: (task as any).overtime || 0,
         savedTime: (task as any).savedTime || 0,
+        startDate:formatDate((task as any).startDate) || "",
+        endDate:formatDate((task as any).endDate) || "",
         assignedUser: (task as any).assignedUser
           ? {
               id: (task as any).assignedUser._id.toString(),
@@ -78,13 +84,15 @@ tasks : async ({
     };
   },
 
-  createTask: async ({ projectId, title,estimatedTime, assignedUserId }: any) => {
+  createTask: async ({ projectId, title,estimatedTime, assignedUserId,startDate,endDate }: any) => {
   const newTask = new Task({
     projectId: new mongoose.Types.ObjectId(projectId),
     title,
     estimatedTime: estimatedTime || 0,
     assignedUserId: assignedUserId ? new mongoose.Types.ObjectId(assignedUserId) : undefined,
-    savedTime:estimatedTime
+    savedTime:estimatedTime,
+    startDate,
+    endDate
   });
 
   await newTask.save();
@@ -98,10 +106,12 @@ tasks : async ({
 
 
 
-  updateTask: async ({ id, title, estimatedTime, assignedUserId }: any) => {
+  updateTask: async ({ id, title, estimatedTime, assignedUserId,startDate,endDate }: any) => {
     const task = await Task.findById(id);
     if (!task) throw new Error("Task not found");
     if (title) task.title = title;
+    if (startDate) (task as any).startDate = new Date(startDate);
+    if (endDate) (task as any).endDate = new Date(endDate);
     if (estimatedTime !== undefined) task.estimatedTime = estimatedTime;
     if (assignedUserId) task.assignedUserId = assignedUserId;
     const timers = await Timer.find({ taskId: id });
@@ -119,11 +129,15 @@ tasks : async ({
     (task as any).savedTime = 0;
     (task as any).overtime = 0;
   }
-
-  // Store totalTime on task too (optional, for quick access)
   (task as any).totalTime = totalDuration;
-    await task.save();
-    return task;
+
+  await task.save();
+  const populatedTask = await Task.findById(task._id)
+    .populate("assignedUser", "username _id") 
+    .exec();
+
+  return populatedTask;
+  
   },
   deleteTask: async ({ id }: { id: string }) => {
     await Task.findByIdAndDelete(id);
@@ -167,6 +181,8 @@ tasksForUser: async ({ userId }: { userId: string }) => {
     projectMap[projectId].tasks.push({
       id: (task as any)._id.toString(),
       title: task.title,
+      startDate:(task as any).startDate,
+      endDate:(task as any).endDate,
       estimatedTime: task.estimatedTime,
       totalTime: totalCompleted + runningDuration,
       isRunning: !!runningTimer,
