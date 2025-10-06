@@ -41,7 +41,14 @@ const UserDashboard: React.FC = () => {
         }
       }, []);
     
-
+  const formatDate = (val: any) => {
+  if (!val) return "";
+  // handle case where val is already ISO string like "2025-10-03"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  const n = Number(val);
+  if (isNaN(n)) return "";
+  return new Date(n).toISOString().split("T")[0];
+};
   useEffect(() => {    
     fetchUserTasks();
   }, []);
@@ -175,7 +182,22 @@ const UserDashboard: React.FC = () => {
                     className="d-flex justify-content-between align-items-center mb-2 p-2 border rounded"
                   >
                     <div>
-                      <strong>{task.title}</strong>
+                      <div
+    style={{
+      whiteSpace: "normal",
+      wordBreak: "break-word",
+      flex: "1 1 auto", 
+      minWidth: 0, 
+    }}
+  >
+    <strong>{task.title}</strong>
+  </div>
+                      <div className="mt-1">
+                        <span>Task Date: {formatDate((task as any).startDate)}</span>
+                      </div>
+                      <div className="mt-1">
+                        <span>Task complition Date: {formatDate((task as any).endDate)}</span>
+                      </div>
                       <div className="mt-1">
                         <span>Estimated: {formatDuration(estimated)}</span>
                       </div>
