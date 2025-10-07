@@ -297,8 +297,8 @@ export default function TimeSheet() {
           <tr>
             <th style={{ width: "20%", border: "1px solid #dee2e6" }}>Date</th>
             <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Status</th>
-            <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Total Time</th>
-            <th style={{ width: "55%", border: "1px solid #dee2e6" }}>Tasks Worked</th>
+            <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Total Worked Time</th>
+            <th style={{ width: "50%", border: "1px solid #dee2e6" }}>Tasks Worked</th>
           </tr>
         </thead>
         <tbody>

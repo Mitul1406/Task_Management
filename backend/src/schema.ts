@@ -65,10 +65,46 @@ type DayWiseUserTime {
 }
 
 type DayWiseEntry {
-  date: String!  # YYYY-MM-DD
-  users: [DayWiseUserTime!]!
+  date: String!          
+  time: Int!             
+  status: String!         
+  tasks: [DayWiseUserTask!]!  
+  users: [DayWiseUserTime!]!  
 }
 
+
+    # user day wise
+    type TaskSummary {
+  id: ID!
+  title: String!
+  time: Int!          # seconds worked on this task
+  estimatedTime: Int
+  savedTime: Int
+  overtime: Int
+  startDate: String
+  endDate: String
+}
+
+# Each project containing tasks for the user
+type ProjectWithTasks {
+  id: ID!
+  name: String!
+  description: String
+  tasks: [TaskSummary!]!
+}
+    type UserDayWise {
+  projects: [ProjectWithTasks!]!
+  dayWise: [DayWiseEntry!]!
+}
+
+# User type for day-wise query only
+type UserDayWiseInfo {
+  id: ID!
+  username: String!
+  email: String!
+  role: String!
+}
+    
     type Query{
     projects:[Project]
     project(id:ID!):Project
@@ -82,6 +118,13 @@ type DayWiseEntry {
     startDate: String!
     endDate: String!
   ): [DayWiseEntry!]!
+
+  userDayWise(
+    userId: ID!
+    projectIds: [ID!]
+    startDate: String!
+    endDate: String!
+  ): UserDayWise!
     }
 
     type Mutation{
