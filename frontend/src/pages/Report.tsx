@@ -94,7 +94,7 @@ return (
   <>
   <div className="mt-4 position-relative">
       <div className="d-flex justify-content-end mb-3">
-    <button className="btn btn-primary" onClick={handleDownloadPDF} style={{position:"absolute",top:"25px"}}>
+    <button className="btn btn-primary" onClick={handleDownloadPDF} style={{position:"absolute",top:"25px",right:"55px"}}>
       📄 Download PDF
     </button>
   </div>
@@ -176,18 +176,32 @@ return (
               <span className="text-success">Saved: {formatDuration(saved)}</span>
             </p>
 
-           <table className="table table-sm table-bordered align-middle">
-  <thead className="table-light">
+<table
+  className="table table-sm align-middle"
+  style={{
+    width: "100%",
+    borderCollapse: "collapse",
+    tableLayout: "fixed",
+    border: "1px solid #dee2e6",
+  }}
+>
+  <thead
+    className="table-light"
+    style={{
+      borderBottom: "2px solid #dee2e6",
+    }}
+  >
     <tr>
-      <th style={{ width: "20%" }}>Task</th>
-      <th style={{ width: "10%" }}>Estimated</th>
-      <th style={{ width: "10%" }}>Used</th>
-      <th style={{ width: "10%" }}>Overtime</th>
-      <th style={{ width: "10%" }}>Saved</th>
-      <th style={{ width: "12%" }}>Start</th>
-      <th style={{ width: "12%" }}>End</th>
+      <th style={{ width: "20%", border: "1px solid #dee2e6" }}>Task</th>
+      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Estimated</th>
+      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Used</th>
+      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Overtime</th>
+      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Saved</th>
+      <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Start</th>
+      <th style={{ width: "12%", border: "1px solid #dee2e6" }}>End</th>
     </tr>
   </thead>
+
   <tbody>
     {tasks.map((t: Task) => (
       <tr key={t.id}>
@@ -197,20 +211,30 @@ return (
             minWidth: "120px",
             whiteSpace: "normal",
             wordBreak: "break-word",
+            border: "1px solid #dee2e6",
           }}
         >
           {t.title}
         </td>
-        <td>{formatDuration(t.estimatedTime || 0)}</td>
-        <td>{formatDuration(t.totalTime || 0)}</td>
-        <td className="text-danger">{formatDuration((t as any).overtime || 0)}</td>
-        <td className="text-success">{formatDuration((t as any).savedTime || 0)}</td>
-        <td>{t.startDate || "-"}</td>
-        <td>{t.endDate || "-"}</td>
+        <td style={{ border: "1px solid #dee2e6" }}>
+          {formatDuration(t.estimatedTime || 0)}
+        </td>
+        <td style={{ border: "1px solid #dee2e6" }}>
+          {formatDuration(t.totalTime || 0)}
+        </td>
+        <td style={{ border: "1px solid #dee2e6" }} className="text-danger">
+          {formatDuration((t as any).overtime || 0)}
+        </td>
+        <td style={{ border: "1px solid #dee2e6" }} className="text-success">
+          {formatDuration((t as any).savedTime || 0)}
+        </td>
+        <td style={{ border: "1px solid #dee2e6" }}>{t.startDate || "-"}</td>
+        <td style={{ border: "1px solid #dee2e6" }}>{t.endDate || "-"}</td>
       </tr>
     ))}
   </tbody>
 </table>
+
 
           </div>
         );

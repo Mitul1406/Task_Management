@@ -1,5 +1,6 @@
 import {Project} from "../models/Project.js"
 import {Task} from "../models/Task.js"
+import { Timer } from "../models/Timer.js"
 
 export const projectResolver ={
     projects:async()=>{
@@ -19,9 +20,17 @@ export const projectResolver ={
         if(description) project.description =description
         return await project.save()
     },
-    deleteProject:async({id}:{id:string})=>{
-        await Project.findByIdAndDelete(id)
-        await Task.deleteMany({projectId:id})
-        return true
-    }
+    deleteProject: async ({ id }: { id: string }) => {
+     const tasks = await Task.find({ projectId: id }).select("_id").lean();
+     const taskIds = tasks.map((t) => t._id);
+
+       if (taskIds.length > 0) {
+       await Timer.deleteMany({ taskId: { $in: taskIds } });
+     }
+     await Task.deleteMany({ projectId: id });
+     await Project.findByIdAndDelete(id);
+   
+     return true;
+}
+
 } 

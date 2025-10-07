@@ -1,14 +1,16 @@
 import { Timer } from "../models/Timer.js";
 import { Task } from "../models/Task.js";
 
+
 export const timerResolver = {
-  startTimer: async ({ taskId }: { taskId: string }) => {
+  startTimer: async ({ taskId }: { taskId: string }) => {    
     const runningTimer = await Timer.findOne({ taskId, endTime: null });
     if (runningTimer) throw new Error("Timer already running for this task");
 
     const timer = new Timer({ taskId, startTime: new Date() });
     await timer.save();
-
+    console.log(timer);
+    
     return timer;
   },
 
@@ -45,4 +47,6 @@ export const timerResolver = {
   return { totalDuration, overtime: (task as any).overtime, savedTime: (task as any).savedTime };
 
   },
+
+
 };

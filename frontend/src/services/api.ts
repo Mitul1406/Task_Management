@@ -10,6 +10,22 @@ interface JwtPayload {
   iat?: number;
   exp?: number;
 }
+export interface TaskReport {
+  id: string;
+  title: string;
+  duration: number;      
+  estimatedTime: number;
+  overtime: number;
+  savedTime: number;
+}
+export interface DailyTaskReport {
+  date: string;
+  used: number;      
+  est: number;       
+  overtime: number;  
+  saved: number;     
+  tasks: TaskReport[];
+}
 // GraphQL Queries & Mutations
 const GET_PROJECTS = gql`
   query {
@@ -179,6 +195,27 @@ mutation login($email: String!, $password: String!) {
     }
   }
 `;
+const GET_DAY_WISE_DATA = gql`
+  query GetDayWiseData($projectId: ID!, $userIds: [String!]!, $startDate: String!, $endDate: String!) {
+    dayWiseData(projectId: $projectId, userIds: $userIds, startDate: $startDate, endDate: $endDate) {
+      date
+      users {
+        userId
+        time
+        status
+        
+        tasks
+      {
+       title
+       time
+       estimatedTime
+        savedTime
+        overtime
+      }
+      }
+    }
+  }
+`;
 // API Functions
 export const getProjects = async () => {
   const res = await client.query({ query: GET_PROJECTS,fetchPolicy: "network-only", });
@@ -307,3 +344,22 @@ export const getUserTasks = async () => {
   return (res as any).data.tasksForUser;
 };
 
+export const getDayWiseData = async ({
+  projectId,
+  userIds,
+  startDate,
+  endDate,
+}: {
+  projectId: string;
+  userIds: string[];
+  startDate: string;
+  endDate: string;
+}) => {
+  const res = await client.query({
+    query: GET_DAY_WISE_DATA,
+    variables: { projectId, userIds, startDate, endDate },
+    fetchPolicy: "network-only",
+  });
+
+  return (res as any).data.dayWiseData;
+};
