@@ -11,6 +11,7 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Report from "./pages/Report";
+import TimeSheet from "./pages/TimeSheet";
 
 function App() {
   return (
@@ -37,7 +38,15 @@ function App() {
           />
           <Route
              path="/project-report/:projectId"
-             element={<Report />}
+             element={
+              <ProtectedRoute allowedRoles="admin">           
+             <Report />
+             </ProtectedRoute>
+             }
+          />
+          <Route
+             path="/timesheet-report/:projectId"
+             element={<TimeSheet />}
           />
 
           <Route path="/login" element={<Login />} />

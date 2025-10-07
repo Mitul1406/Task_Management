@@ -49,6 +49,26 @@ export const schema=buildSchema(`
   overtime: Int!
   savedTime: Int!
 }
+  type DayWiseUserTask {
+  taskId: ID!
+  title: String!
+  time: Int!  # seconds worked on this task that day
+  estimatedTime: Int # estimated time for this task
+  savedTime: Int     # saved time for this task
+  overtime: Int
+}
+type DayWiseUserTime {
+  userId: ID!
+  time: Int 
+  status: String! 
+  tasks: [DayWiseUserTask!]!
+}
+
+type DayWiseEntry {
+  date: String!  # YYYY-MM-DD
+  users: [DayWiseUserTime!]!
+}
+
     type Query{
     projects:[Project]
     project(id:ID!):Project
@@ -56,6 +76,12 @@ export const schema=buildSchema(`
     task(id:ID!):Task
     users: [User!]!
     tasksForUser(userId: ID!): [Project!]!
+    dayWiseData(
+    projectId: ID!
+    userIds: [String!]!
+    startDate: String!
+    endDate: String!
+  ): [DayWiseEntry!]!
     }
 
     type Mutation{

@@ -104,8 +104,6 @@ tasks : async ({
   return populatedTask;
 },
 
-
-
   updateTask: async ({ id, title, estimatedTime, assignedUserId,startDate,endDate }: any) => {
     const task = await Task.findById(id);
     if (!task) throw new Error("Task not found");
@@ -199,6 +197,135 @@ tasksForUser: async ({ userId }: { userId: string }) => {
   }
 
   return Object.values(projectMap);
+},
+
+dayWiseData: async ({
+  projectId,
+  userIds,
+  startDate,
+  endDate,
+}: {
+  projectId: string;
+  userIds: string[];
+  startDate: string | Date;
+  endDate: string | Date;
+}) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Generate all dates in range (UTC-safe)
+  const dates: Date[] = [];
+  const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+  const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
+
+  while (current <= endUTC) {
+    dates.push(new Date(current));
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  // Fetch tasks for this project and users
+  const tasks = await Task.find({
+    projectId: new mongoose.Types.ObjectId(projectId),
+    assignedUserId: { $in: userIds.map((id) => new mongoose.Types.ObjectId(id)) },
+  }).lean();
+
+  const taskIds = tasks.map((t) => t._id.toString());
+
+  // Create a map of task info
+  const taskInfoMap: Record<
+    string,
+    {
+      userId: string;
+      estimatedTime: number;
+      title: string;
+      startDate?: Date | undefined;
+      endDate?: Date | undefined;
+    }
+  > = {};
+  tasks.forEach((t) => {
+    if (t.assignedUserId) {
+      taskInfoMap[(t as any)._id.toString()] = {
+        userId: t.assignedUserId.toString(),
+        estimatedTime: t.estimatedTime || 0,
+        title: t.title,
+        startDate: (t as any).startDate ? new Date((t as any).startDate) : undefined,
+        endDate: (t as any).endDate ? new Date((t as any).endDate) : undefined,
+      };
+    }
+  });
+
+  // Fetch timers
+  const timers = await Timer.find({
+    taskId: { $in: taskIds },
+  }).lean();
+
+  // Precompute worked time per task grouped by date
+  const workedByTaskByDate: Record<string, Record<string, number>> = {};
+  timers.forEach((t: any) => {
+    const taskId = t.taskId.toString();
+    const d = new Date(t.startTime);
+    const dayKey = d.toISOString().split("T")[0];
+    workedByTaskByDate[taskId] = workedByTaskByDate[taskId] || {};
+    workedByTaskByDate[taskId][(dayKey as any)] = (workedByTaskByDate[taskId][(dayKey as any)] || 0) + (t.duration || 0);
+  });
+
+  // Build day-wise data
+  const dayWiseData = dates.map((date) => {
+    const dayKey = date.toISOString().split("T")[0];
+
+    return {
+      date: dayKey,
+      users: userIds.map((userId) => {
+        const userTasks = tasks.filter((task) => task.assignedUserId?.toString() === userId);
+
+        const taskTimers = userTasks
+  .map((task) => {
+    const taskId = task._id.toString();
+    const taskInfo = taskInfoMap[taskId];
+    if (!taskInfo) return null;
+
+    const estimated = taskInfo.estimatedTime || 0;
+    const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
+
+    if (workedToday === 0) return null;
+
+    // Total worked before today
+    const totalWorkedBefore = Object.entries(workedByTaskByDate[taskId] || {})
+      .filter(([d]) => d < (dayKey as any))
+      .reduce((sum, [, val]) => sum + val, 0);
+
+    // Remaining estimated for today
+    const remainingEstimated = Math.max(estimated - totalWorkedBefore, 0);
+
+    const overtime = Math.max(workedToday - remainingEstimated, 0);
+    const savedTime = Math.max(estimated - (totalWorkedBefore + workedToday), 0);
+
+    return {
+      taskId,
+      title: task.title,
+      time: workedToday,
+      estimatedTime: estimated,
+      savedTime,
+      overtime,
+    };
+  })
+  .filter(Boolean);
+
+
+
+        const totalTime = taskTimers.reduce((sum, t) => sum + (t?.time || 0), 0);
+
+        return {
+          userId,
+          time: totalTime,
+          status: totalTime > 0 ? "Worked" : "Not Worked",
+          tasks: taskTimers,
+        };
+      }),
+    };
+  });
+
+  return dayWiseData;
 }
 
 

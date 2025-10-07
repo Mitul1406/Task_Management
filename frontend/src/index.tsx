@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { ApolloProvider } from "@apollo/client/react";
 import App from "./App";
 import client from "./lib/apolloClient";
+import './index.css'
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const root = ReactDOM.createRoot(

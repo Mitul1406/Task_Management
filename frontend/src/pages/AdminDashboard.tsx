@@ -405,6 +405,14 @@ This will also delete all its tasks.`
   <div className="d-flex align-items-center">
     {project.tasks && project.tasks.length > 0 && (
       <button
+        className="btn btn-sm btn-success me-2"
+        onClick={() => window.open(`/timesheet-report/${project.id}`, "_blank")}
+      >
+        View Timesheet
+      </button>
+    )}
+    {project.tasks && project.tasks.length > 0 && (
+      <button
         className="btn btn-sm btn-warning me-2"
         onClick={() => window.open(`/project-report/${project.id}`, "_blank")}
       >
@@ -419,7 +427,7 @@ This will also delete all its tasks.`
       {expandedProject === project.id ? "Collapse" : "View Tasks"}
     </button>
 
-    <button className="btn btn-sm btn-danger">Delete</button>
+    <button className="btn btn-sm btn-danger" onClick={()=>handleDeleteProject(project.id)}>Delete</button>
   </div>
 </div>
 
@@ -463,7 +471,7 @@ This will also delete all its tasks.`
     <input
       type="date"
       className="form-control"
-      disabled={(newTaskHours[project.id] || 0) < 9}
+      // disabled={(newTaskHours[project.id] || 0) < 9}
       value={newTaskEndDate[project.id] || newTaskStartDate[project.id] || todayDate()}
       min={newTaskStartDate[project.id] || todayDate()}
       onChange={e => setNewTaskEndDate(prev => ({ ...prev, [project.id]: e.target.value }))}
