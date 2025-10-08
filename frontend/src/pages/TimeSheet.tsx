@@ -31,10 +31,13 @@ interface DayWiseUser {
 }
 
 const formatDuration = (seconds: number) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return `${h}h ${m}m ${s}s`;
+  const h = Math.floor(seconds / 3600).toString()
+    .padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString()
+    .padStart(2, '0');
+  const s = (seconds % 60).toString()
+    .padStart(2, '0');
+  return `${h}h${m}m${s}s`;
 };
 
 // After importing everything and existing code...
@@ -295,10 +298,10 @@ export default function TimeSheet() {
       >
         <thead className="table-light" style={{ borderBottom: "2px solid #dee2e6" }}>
           <tr>
-            <th style={{ width: "20%", border: "1px solid #dee2e6" }}>Date</th>
-            <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Status</th>
-            <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Total Worked Time</th>
-            <th style={{ width: "50%", border: "1px solid #dee2e6" }}>Tasks Worked</th>
+            <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Date</th>
+            <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Status</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Total Worked Time</th>
+            <th style={{ width: "60%", border: "1px solid #dee2e6" }}>Tasks Worked</th>
           </tr>
         </thead>
         <tbody>

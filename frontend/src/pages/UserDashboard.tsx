@@ -266,6 +266,13 @@
                       <button
                         className={`btn btn-sm ${task.isRunning ? "btn-danger" : "btn-success"}`}
                         onClick={() => handleStartStopTimer(task, project.id)}
+                        disabled={(() => {
+    if (!(task as any).endDate) return false;
+    const endDate = new Date(parseInt((task as any).endDate, 10)); 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+    return endDate < today;
+  })()}
                       >
                         {task.isRunning ? "Stop" : "Start"}
                       </button>
