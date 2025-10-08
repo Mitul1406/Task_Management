@@ -1,11 +1,12 @@
   "use client";
   import React, { useState, useEffect, useRef } from "react";
-  import { getUserTasks, startTimer, stopTimer } from "../services/api";
+  import { getUserTasks, startTimer, stopTimer, updateTaskStatus } from "../services/api";
   import { jwtDecode } from "jwt-decode";
   import { useNavigate } from "react-router-dom";
   import { toast } from "react-toastify";
 
   interface Task {
+    status: string;
     id: string;
     title: string;
     estimatedTime: number;
@@ -20,7 +21,12 @@
     description?: string;
     tasks: Task[];
   }
-
+const statusMap: Record<string, { label: string; bgColor: string }> = {
+  pending: { label: "Pending", bgColor: "#064393ff" },       
+  in_progress: { label: "In Progress", bgColor: "#4b0867ff" }, 
+  code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
+  done: { label: "Done", bgColor: "#2bc22bff" },    
+};
   const UserDashboard: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [expandedProject, setExpandedProject] = useState<string | null>(null);
@@ -101,34 +107,37 @@
       await stopTimer(task.id);
       clearInterval(intervalsRef.current[task.id]);
       delete intervalsRef.current[task.id];
-
       // Refetch all tasks for this user (or project)
       const refreshedProjects = await getUserTasks();
-
+      const updatedTask = await updateTaskStatus(task.id, "code_review");
+      
       // Update state with fresh totalTime and running info
       setProjects(
         refreshedProjects.map((project: Project) =>
           project.id === projectId
             ? {
                 ...project,
-                tasks: project.tasks.map((t) => ({
+                tasks: project.tasks.map((t) => (
+                  t.id === task.id ?{
                   ...t,
                   runningDuration: t.isRunning ? 0 : undefined,
-                })),
+                  status:updatedTask.status,
+                }:t)),
               }
             : project
         )
       );
     } else {
         await startTimer(task.id);
-
+      const updatedTask = await updateTaskStatus(task.id, "in_progress");
+        
         setProjects((prev) =>
           prev.map((project) =>
             project.id === projectId
               ? {
                   ...project,
                   tasks: project.tasks.map((t) =>
-                    t.id === task.id ? { ...t, isRunning: true, runningDuration: 0 } : t
+                    t.id === task.id ? { ...t, isRunning: true, runningDuration: 0,status:updatedTask.status } : t
                   ),
                 }
               : project
@@ -229,6 +238,23 @@
     >
       <strong>{task.title}</strong>
     </div>
+ <div className="mt-1">
+  Task Status:
+  <span
+    style={{
+      padding: "2px 4px",
+      borderRadius: "4px",
+      color: "#fff",
+      backgroundColor: statusMap[(task as any).status]?.bgColor || "#6c757d",
+      display: "inline-block",
+      minWidth: "90px",
+      textAlign: "center",
+    }}
+  >
+    {statusMap[(task as any).status]?.label || (task as any).status}
+  </span>
+</div>
+
                         <div className="mt-1">
                           <span>Task Date: {formatDate((task as any).startDate)}</span>
                         </div>
@@ -271,7 +297,7 @@
     const endDate = new Date(parseInt((task as any).endDate, 10)); 
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
-    return endDate < today;
+    return endDate < today || task.status === "done";
   })()}
                       >
                         {task.isRunning ? "Stop" : "Start"}

@@ -25,6 +25,7 @@ export const schema=buildSchema(`
     savedTime:Int
     startDate:String
     endDate: String
+    status:String
   }
    
 
@@ -56,6 +57,7 @@ export const schema=buildSchema(`
   estimatedTime: Int # estimated time for this task
   savedTime: Int     # saved time for this task
   overtime: Int
+  status:String
 }
 type DayWiseUserTime {
   userId: ID!
@@ -74,7 +76,7 @@ type DayWiseEntry {
 
 
     # user day wise
-    type TaskSummary {
+  type TaskSummary {
   id: ID!
   title: String!
   time: Int!          # seconds worked on this task
@@ -83,6 +85,7 @@ type DayWiseEntry {
   overtime: Int
   startDate: String
   endDate: String
+  status:String
 }
 
 # Each project containing tasks for the user
@@ -92,7 +95,7 @@ type ProjectWithTasks {
   description: String
   tasks: [TaskSummary!]!
 }
-    type UserDayWise {
+type UserDayWise {
   projects: [ProjectWithTasks!]!
   dayWise: [DayWiseEntry!]!
 }
@@ -112,6 +115,7 @@ type UserDayWiseInfo {
     task(id:ID!):Task
     users: [User!]!
     tasksForUser(userId: ID!): [Project!]!
+
     dayWiseData(
     projectId: ID!
     userIds: [String!]!
@@ -135,6 +139,7 @@ type UserDayWiseInfo {
      createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      deleteTask(id: ID!): Boolean
+     updateTaskStatus(taskId: ID!, status: String!): Task
  
      startTimer(taskId: ID!): Timer
      stopTimer(taskId: ID!): StopTimerResponse!

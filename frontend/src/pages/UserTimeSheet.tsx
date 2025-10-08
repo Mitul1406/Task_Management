@@ -48,6 +48,7 @@ interface ProjectTotals {
   totalEstimated: number;
   totalSaved: number;
   totalOvertime: number;
+  
 }
 interface TaskTotals {
   taskId: string;
@@ -62,7 +63,17 @@ interface OverallTotals {
   totalEstimated: number;
   totalSaved: number;
   totalOvertime: number;
+  hours:number;
 }
+
+const statusMap: Record<string, { label: string; bgColor: string }> = {
+  pending: { label: "Pending", bgColor: "#064393ff" },       
+  in_progress: { label: "In Progress", bgColor: "#4b0867ff" }, 
+  code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
+  done: { label: "Done", bgColor: "#2bc22bff" },    
+};
+
+
 const UserTimeSheet: React.FC = () => {
   const { id: userId } = useParams<{ id: string }>();
   const [data, setData] = useState<UserDayWiseResponse | null>(null);
@@ -95,8 +106,7 @@ const UserTimeSheet: React.FC = () => {
         const end = new Date().toISOString().split('T')[0];
 
         const finalRes = await getUserDayWise(userId, start, end);
-
-        // Remove duplicate tasks per project
+        
         finalRes?.projects.forEach((proj) => {
           const seen = new Set();
           proj.tasks = proj.tasks.filter((t) => {
@@ -174,8 +184,9 @@ const calculateOverallTotals = (data: UserDayWiseResponse): OverallTotals => {
       }
     });
   });
+  const hours = (data.dayWise.length * 8)*3600;
 
-  return { totalTime, totalEstimated, totalSaved, totalOvertime };
+  return { totalTime, totalEstimated, totalSaved, totalOvertime,hours };
 };
 
 const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] => {
@@ -191,7 +202,8 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
         totalEstimated: t.estimatedTime, // unique
         totalSaved: 0,
         totalOvertime: 0,
-      };
+        status:(t as any).status,
+      }as any;
     });
 
     // Sum daily data for tasks
@@ -268,15 +280,18 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
         Date Range: <strong>{startDate}</strong> to{' '}
         <strong>{new Date().toISOString().split('T')[0]}</strong>
       </p>
-      {/* <div className="row mb-4">
+      <div className="row mb-4">
   <div className="col-md-6 mb-3">
     <div className="card p-3 shadow-sm h-100">
       <h5 className="mb-3">Overall Totals</h5>
       <p>
-        <strong>Total Estimated:</strong> {formatTime(overallTotals?.totalEstimated || 0)}
+        <strong>Total Hours:</strong> {formatTime(overallTotals?.hours || 0)}
       </p>
       <p>
-        <strong>Total Used:</strong> {formatTime(overallTotals?.totalTime || 0)}
+        <strong>Total Worked Hours:</strong> {formatTime(overallTotals?.totalTime || 0)}
+      </p>
+      <p>
+        <strong>Total Estimated:</strong> {formatTime(overallTotals?.totalEstimated || 0)}
       </p>
       <p className="text-danger">
         <strong>Total Overtime:</strong> {formatTime(overallTotals?.totalOvertime || 0)}
@@ -286,7 +301,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
       </p>
     </div>
   </div>
-</div> */}
+</div>
 
 {projectTotals.map((proj) => (
   <div key={proj.projectId} className="card p-3 shadow-sm mb-4">
@@ -309,7 +324,8 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
 >
   <thead>
     <tr>
-      <th style={{ border: '1px solid #000', padding: '6px', width: '35%' }}>Task</th>
+      <th style={{ border: '1px solid #000', padding: '6px', width: '30%' }}>Task</th>
+      <th style={{ border: '1px solid #000', padding: '6px', width: '12 %' }}>Task Status</th>
       <th style={{ border: '1px solid #000', padding: '6px', width: '15%' }}>Time</th>
       <th style={{ border: '1px solid #000', padding: '6px', width: '15%' }}>Estimated</th>
       <th style={{ border: '1px solid #000', padding: '6px', width: '15%' }}>Saved</th>
@@ -328,6 +344,21 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
           }}
         >
           {task.title}
+        </td>
+        <td style={{ border: '1px solid black', padding: '4px' }}>
+        <span
+    style={{
+      padding: "2px 4px",
+      borderRadius: "4px",
+      color: "#fff",
+      backgroundColor: statusMap[(task as any).status]?.bgColor || "#6c757d",
+      display: "inline-block",
+      minWidth: "90px",
+      textAlign: "center",
+    }}
+  >
+    {(statusMap[(task as any).status]?.label || (task as any).status) || ("-")}
+  </span>          
         </td>
         <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>
           {formatTime(task.totalTime)}
@@ -370,17 +401,17 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   </thead>
   <tbody>
     {data.dayWise.map((day) => {
-  // Collect all tasks from all projects for this day
+  
   const allTasks = data.projects.flatMap((proj) => {
     const projTasks = day.tasks.filter((t) =>
       proj.tasks.some((pt) => pt.id === t.taskId)
     );
     return projTasks.map((t) => ({
       ...t,
-      projectName: proj.name, // attach project name
+      projectName: proj.name, 
     }));
   });
-
+  
   return (
     <tr key={day.date}>
       <td style={{ border: '1px solid black', padding: '4px', verticalAlign: 'top' }}>
@@ -421,6 +452,9 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
                   Task
                 </th>
                 <th style={{ border: '1px solid black', padding: '4px', width: '15%' }}>
+                  Task Status
+                </th>
+                <th style={{ border: '1px solid black', padding: '4px', width: '15%' }}>
                   Time
                 </th>
                 <th style={{ border: '1px solid black', padding: '4px', width: '15%' }}>
@@ -450,6 +484,22 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
                   <td style={{ border: '1px solid black', padding: '4px' }}>
                     {t.title}
                   </td>
+                   <td style={{ border: '1px solid black', padding: '4px' }}>
+
+                    <span
+    style={{
+      padding: "2px 4px",
+      borderRadius: "4px",
+      color: "#fff",
+      backgroundColor: statusMap[(t as any).status]?.bgColor || "#6c757d",
+      display: "inline-block",
+      minWidth: "90px",
+      textAlign: "center",
+    }}
+  >
+    {(statusMap[(t as any).status]?.label || (t as any).status) || ("-")}
+  </span>
+                   </td>
                   <td style={{ border: '1px solid black', padding: '4px' }}>
                     {formatTime(t.time)}
                   </td>

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { getTasksByProject, getProjects } from "../services/api"; 
 import html2pdf from "html2pdf.js";
 interface Task {
+  status: string;
   id: string;
   title: string;
   estimatedTime: number;
@@ -18,7 +19,12 @@ interface Project {
   description?: string;
 }
 
-
+const statusMap: Record<string, { label: string; bgColor: string }> = {
+  pending: { label: "Pending", bgColor: "#064393ff" },       
+  in_progress: { label: "In Progress", bgColor: "#4b0867ff" }, 
+  code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
+  done: { label: "Done", bgColor: "#2bc22bff" },    
+};
 const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600).toString()
     .padStart(2, '0');
@@ -196,6 +202,7 @@ return (
   >
     <tr>
       <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Task</th>
+      <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Task Status</th>
       <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Estimated</th>
       <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Used</th>
       <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Overtime</th>
@@ -219,6 +226,21 @@ return (
         >
           {t.title}
         </td>
+        <td>
+  <span
+    style={{
+      padding: "4px 8px",
+      borderRadius: "4px",
+      color: "#fff",
+      backgroundColor: statusMap[t.status]?.bgColor || "#6c757d", 
+      textAlign: "center",
+      display: "inline-block",
+    }}
+  >
+    {statusMap[t.status]?.label || t.status}
+  </span>
+</td>
+
         <td style={{ border: "1px solid #dee2e6" }}>
           {formatDuration(t.estimatedTime || 0)}
         </td>

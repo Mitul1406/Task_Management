@@ -29,7 +29,12 @@ interface DayWiseUser {
   savedTime: number;
   overtime: number;
 }
-
+const statusMap: Record<string, { label: string; bgColor: string }> = {
+  pending: { label: "Pending", bgColor: "#064393ff" },       
+  in_progress: { label: "In Progress", bgColor: "#4b0867ff" }, 
+  code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
+  done: { label: "Done", bgColor: "#2bc22bff" },    
+};
 const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600).toString()
     .padStart(2, '0');
@@ -320,7 +325,8 @@ export default function TimeSheet() {
                     >
                       <thead>
                         <tr>
-                          <th style={{ width: "40%" }}>Task</th>
+                          <th style={{ width: "35%" }}>Task</th>
+                          <th style={{ width: "15%" }}>Task Status</th>
                           <th style={{ width: "15%" }}>Time</th>
                           <th style={{ width: "15%" }}>Estimated</th>
                           <th style={{ width: "15%" }}>Saved</th>
@@ -331,6 +337,19 @@ export default function TimeSheet() {
                         {day.tasks.map((task: any, i: number) => (
                           <tr key={i}>
                             <td>{task.title}</td>
+                            <td><span
+    style={{
+      padding: "2px 4px",
+      borderRadius: "4px",
+      color: "#fff",
+      backgroundColor: statusMap[(task as any).status]?.bgColor || "#6c757d",
+      display: "inline-block",
+      minWidth: "90px",
+      textAlign: "center",
+    }}
+  >
+    {statusMap[(task as any).status]?.label || (task as any).status}
+  </span></td>
                             <td>{formatDuration(task.time)}</td>
                             <td>{formatDuration(task.estimatedTime)}</td>
                             <td className="text-success">{formatDuration(task.savedTime)}</td>

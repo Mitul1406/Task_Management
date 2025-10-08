@@ -9,7 +9,7 @@ const formatDate = (val: any) => {
   return d.toISOString().split("T")[0]; // YYYY-MM-DD
 };
 export const taskResolver = {
-tasks : async ({
+tasks: async ({
   projectId,
   userId,
 }: {
@@ -35,10 +35,20 @@ tasks : async ({
 
       const runningTimer = timers.find((t) => !t.endTime);
       let runningDuration = 0;
+      let runningTimerData = null;
+
       if (runningTimer) {
         runningDuration = Math.floor(
           (new Date().getTime() - new Date(runningTimer.startTime).getTime()) / 1000
         );
+        // Map runningTimer to match GraphQL Timer type
+        runningTimerData = {
+          id: runningTimer._id.toString(),          // required
+          taskId: runningTimer.taskId.toString(),   // required
+          startTime: runningTimer.startTime.toISOString(), // required
+          endTime: runningTimer.endTime ? runningTimer.endTime.toISOString() : null,
+          duration: runningTimer.duration || 0,
+        };
       }
 
       return {
@@ -46,13 +56,14 @@ tasks : async ({
         projectId: task.projectId.toString(),
         title: task.title,
         estimatedTime: task.estimatedTime,
+        status: task.status,
         totalTime: totalCompleted + runningDuration,
         isRunning: !!runningTimer,
-        runningTimer: runningTimer || undefined,
+        runningTimer: runningTimerData,
         overtime: (task as any).overtime || 0,
         savedTime: (task as any).savedTime || 0,
-        startDate:formatDate((task as any).startDate) || "",
-        endDate:formatDate((task as any).endDate) || "",
+        startDate: formatDate((task as any).startDate) || "",
+        endDate: formatDate((task as any).endDate) || "",
         assignedUser: (task as any).assignedUser
           ? {
               id: (task as any).assignedUser._id.toString(),
@@ -67,7 +78,6 @@ tasks : async ({
 
   return tasksWithDetails;
 },
-
 
   task: async ({ id }: { id: string }) => {
     const task = await Task.findById(id);
@@ -181,6 +191,7 @@ tasksForUser: async ({ userId }: { userId: string }) => {
       title: task.title,
       startDate:(task as any).startDate,
       endDate:(task as any).endDate,
+      status:task.status,
       estimatedTime: task.estimatedTime,
       totalTime: totalCompleted + runningDuration,
       isRunning: !!runningTimer,
@@ -283,7 +294,7 @@ dayWiseData: async ({
     const taskId = task._id.toString();
     const taskInfo = taskInfoMap[taskId];
     if (!taskInfo) return null;
-
+    const status = task.status
     const estimated = taskInfo.estimatedTime || 0;
     const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
 
@@ -307,6 +318,7 @@ dayWiseData: async ({
       estimatedTime: estimated,
       savedTime,
       overtime,
+      status,
     };
   })
   .filter(Boolean);
@@ -407,47 +419,49 @@ userDayWise: async ({
 
     // Compute tasks for today
     const taskTimers = tasks
-      .map((task) => {
-        const taskId = task._id.toString();
-        const taskInfo = taskInfoMap[taskId];
-        if (!taskInfo) return null;
+  .map((task) => {
+    const taskId = task._id.toString();
+    const taskInfo = taskInfoMap[taskId];
+    if (!taskInfo) return null;
 
-        const estimated = taskInfo.estimatedTime || 0;
-        const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
-        if (workedToday === 0) return null;
+    const estimated = taskInfo.estimatedTime || 0;
+    const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
+    if (workedToday === 0) return null;
 
-        const totalWorkedBefore = Object.entries(workedByTaskByDate[taskId] || {})
-          .filter(([d]) => d < (dayKey as any))
-          .reduce((sum, [, val]) => sum + val, 0);
+    const totalWorkedBefore = Object.entries(workedByTaskByDate[taskId] || {})
+      .filter(([d]) => d < (dayKey as any))
+      .reduce((sum, [, val]) => sum + val, 0);
 
-        const remainingEstimated = Math.max(estimated - totalWorkedBefore, 0);
-        const overtime = Math.max(workedToday - remainingEstimated, 0);
-        const savedTime = Math.max(estimated - (totalWorkedBefore + workedToday), 0);
+    const remainingEstimated = Math.max(estimated - totalWorkedBefore, 0);
+    const overtime = Math.max(workedToday - remainingEstimated, 0);
+    const savedTime = Math.max(estimated - (totalWorkedBefore + workedToday), 0);
 
-        // Push to project map
-        if (projectMap[taskInfo.projectId]) {
-          projectMap[taskInfo.projectId].tasks.push({
-            id: taskId,
-            title: task.title,
-            time: workedToday,
-            estimatedTime: estimated,
-            savedTime,
-            overtime,
-            startDate: taskInfo.startDate,
-            endDate: taskInfo.endDate,
-          });
-        }
+    if (projectMap[taskInfo.projectId]) {
+      projectMap[taskInfo.projectId].tasks.push({
+        id: taskId,
+        title: task.title,
+        time: workedToday,
+        estimatedTime: estimated,
+        savedTime,
+        overtime,
+        startDate: taskInfo.startDate,
+        endDate: taskInfo.endDate,
+        status: task.status,
+      });
+    }
 
-        return {
-          taskId,
-          title: task.title,
-          time: workedToday,
-          estimatedTime: estimated,
-          savedTime,
-          overtime,
-        };
-      })
-      .filter(Boolean);
+    return {
+      taskId,
+      title: task.title,
+      time: workedToday,
+      estimatedTime: estimated,
+      savedTime,
+      overtime,
+      status: task.status,
+    };
+  })
+  .filter(Boolean);
+
 
     const totalTime = taskTimers.reduce((sum, t) => sum + (t?.time || 0), 0);
 
@@ -463,6 +477,28 @@ userDayWise: async ({
     projects: Object.values(projectMap),
     dayWise: dayWiseData,
   };
+},
+updateTaskStatus: async ({ taskId, status }: { taskId: string; status: string }) => {
+  console.log("TaskId:", taskId, "Status:", status);
+
+  const allowedStatuses = ["pending", "in_progress", "code_review", "done"];
+  if (!allowedStatuses.includes(status)) {
+    throw new Error("Invalid status value");
+  }
+
+  const updatedTask = await Task.findByIdAndUpdate(
+    taskId,
+    { status },
+    { new: true, upsert: false }
+  )
+    .populate("assignedUser", "username _id") 
+    .exec();
+
+  if (!updatedTask) {
+    throw new Error("Task not found");
+  }
+
+  return updatedTask;
 }
 
 

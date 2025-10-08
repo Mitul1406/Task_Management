@@ -10,11 +10,13 @@ import {
   deleteTask,
   getUsers,
   getTasksByProject,
+  updateTaskStatus,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 interface Task {
+  status: string;
   endDate: string | number | Date;
   startDate: any;
   id: string;
@@ -39,6 +41,12 @@ interface User {
   email: string;
   role: string;
 }
+const statusMap: Record<string, { label: string; bgColor: string }> = {
+  pending: { label: "Pending", bgColor: "#064393ff" },       
+  in_progress: { label: "In Progress", bgColor: "#4b0867ff" }, 
+  code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
+  done: { label: "Done", bgColor: "#2bc22bff" },    
+};
 
 const AdminDashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -88,6 +96,24 @@ const AdminDashboard: React.FC = () => {
   const [newTaskEndDate, setNewTaskEndDate] = useState<{ [key: string]: string }>({});
   const todayDate = () => new Date().toISOString().split("T")[0];
   const navigate = useNavigate();
+ const handleStatusChange = async (taskId: string, newStatus: string) => {
+  try {
+    const updatedTask = await updateTaskStatus(taskId, newStatus); 
+
+    setProjects((prevProjects) =>
+      prevProjects.map((project) => ({
+        ...project,
+        tasks: project.tasks?.map((task) =>
+          task.id === taskId ? { ...task, status: updatedTask.status } : task
+        ),
+      }))
+    );
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to update status");
+  }
+};
+
 
 const formatDate = (val: any) => {
   if (!val) return "";
@@ -583,6 +609,7 @@ This will also delete all its tasks.`
         <th style={{ width: "10%" }}>Start Date</th>
         <th style={{ width: "10%" }}>End Date</th>
         <th style={{ width: "14%" }}>Assigned User</th>
+        <th style={{ width: "14%" }}>Status</th>
         <th style={{ width: "10%" }}>Actions</th>
       </tr>
     </thead>
@@ -795,6 +822,41 @@ This will also delete all its tasks.`
                 task.assignedUser?.username || "Unassigned"
               )}
             </td>
+<td>
+  {isEditing ? (
+    <select
+      value={task.status}
+      onChange={(e) => handleStatusChange(task.id, e.target.value)}
+      style={{
+        padding: "4px 8px",
+        borderRadius: "4px",
+        border: "1px solid #ccc",
+        backgroundColor: "#fff",
+        color: "#000",
+      }}
+    >
+      {Object.entries(statusMap).map(([key, { label }]) => (
+        <option key={key} value={key}>
+          {label}
+        </option>
+      ))}
+    </select>
+  ) : (
+    <span
+      style={{
+        padding: "4px 8px",
+        borderRadius: "4px",
+        color: "#fff",
+        backgroundColor: statusMap[task.status]?.bgColor || "#6c757d",
+        textAlign: "center",
+        display: "inline-block",
+      }}
+    >
+      {statusMap[task.status]?.label || task.status}
+    </span>
+  )}
+</td>
+
 
             {/* Actions */}
             <td style={{ verticalAlign: "middle" }}>

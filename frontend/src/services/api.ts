@@ -89,6 +89,7 @@ const USER_TASK=gql`query tasksForUser($userId: ID!) {
       isRunning
       startDate
       endDate
+      status
       runningTimer {
         id
         startTime
@@ -119,6 +120,7 @@ const GET_TASKS = gql`
     savedTime
     startDate
     endDate
+    status
     runningTimer {
       id
       startTime
@@ -150,7 +152,20 @@ const DELETE_PROJECT = gql`
     deleteProject(id: $id)
   }
 `;
-
+const UPDATE_TASK_STATUS=gql`
+mutation UpdateTaskStatus($taskId: ID!, $status: String!) {
+  updateTaskStatus(taskId: $taskId, status: $status) {
+    id
+    title
+    status
+    assignedUser {
+      id
+      username
+    }
+    updatedAt
+  }
+}
+`
 const CREATE_TASK = gql`
   mutation createTask($projectId: ID!, $title: String!, $estimatedTime: Int, $assignedUserId: ID,$startDate: String,$endDate:String) {
     createTask(projectId: $projectId, title: $title, estimatedTime: $estimatedTime, assignedUserId: $assignedUserId,startDate:$startDate,endDate:$endDate) {
@@ -161,6 +176,7 @@ const CREATE_TASK = gql`
       assignedUser { id username }
       startDate
       endDate
+      status
     }
   }
 `;
@@ -250,6 +266,7 @@ const GET_DAY_WISE_DATA = gql`
        estimatedTime
         savedTime
         overtime
+        status
       }
       }
     }
@@ -272,6 +289,7 @@ const GET_USER_DAY_WISE = gql`
           overtime
           startDate
           endDate
+          status
         }
       }
       dayWise {
@@ -285,6 +303,7 @@ const GET_USER_DAY_WISE = gql`
           estimatedTime
           savedTime
           overtime
+          status
         }
       }
     }
@@ -455,4 +474,12 @@ export const getUserDayWise = async (
     console.error('Error fetching user day-wise data:', error);
     return null;
   }
+};
+
+export const updateTaskStatus = async (taskId: string, status: string) => {
+  const res = await client.mutate({
+    mutation: UPDATE_TASK_STATUS,
+    variables: { taskId, status },
+  });
+  return (res as any).data.updateTaskStatus;
 };
