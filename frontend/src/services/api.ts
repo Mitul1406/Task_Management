@@ -26,6 +26,45 @@ export interface DailyTaskReport {
   saved: number;     
   tasks: TaskReport[];
 }
+
+interface Task {
+  id: string;
+  title: string;
+  time: number;
+  estimatedTime: number;
+  savedTime: number;
+  overtime: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  tasks: Task[];
+}
+
+interface DayWiseTask {
+  taskId: string;
+  title: string;
+  time: number;
+  estimatedTime: number;
+  savedTime: number;
+  overtime: number;
+}
+
+interface DayWise {
+  date: string;
+  time: number;
+  status: string;
+  tasks: DayWiseTask[];
+}
+
+interface UserDayWiseResponse {
+  projects: Project[];
+  dayWise: DayWise[];
+}
 // GraphQL Queries & Mutations
 const GET_PROJECTS = gql`
   query {
@@ -216,6 +255,41 @@ const GET_DAY_WISE_DATA = gql`
     }
   }
 `;
+
+const GET_USER_DAY_WISE = gql`
+  query GetUserDayWise($userId: ID!, $startDate: String!, $endDate: String!) {
+    userDayWise(userId: $userId, startDate: $startDate, endDate: $endDate) {
+      projects {
+        id
+        name
+        description
+        tasks {
+          id
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+          startDate
+          endDate
+        }
+      }
+      dayWise {
+        date
+        time
+        status
+        tasks {
+          taskId
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+        }
+      }
+    }
+  }
+`;
 // API Functions
 export const getProjects = async () => {
   const res = await client.query({ query: GET_PROJECTS,fetchPolicy: "network-only", });
@@ -362,4 +436,23 @@ export const getDayWiseData = async ({
   });
 
   return (res as any).data.dayWiseData;
+};
+
+export const getUserDayWise = async (
+  userId: string,
+  startDate: string,
+  endDate: string
+): Promise<UserDayWiseResponse | null> => {
+  try {
+    const { data } = await client.query({
+      query: GET_USER_DAY_WISE,
+      variables: { userId, startDate, endDate },
+      fetchPolicy: 'no-cache',
+    });
+
+    return (data as any).userDayWise;
+  } catch (error) {
+    console.error('Error fetching user day-wise data:', error);
+    return null;
+  }
 };

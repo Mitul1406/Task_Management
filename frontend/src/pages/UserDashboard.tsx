@@ -26,6 +26,7 @@
     const [expandedProject, setExpandedProject] = useState<string | null>(null);
     const intervalsRef = useRef<{ [taskId: string]: NodeJS.Timer }>({});
     const [username, setUsername] = useState<string>("");
+    const [id, setId] = useState<string>("");
     const navigate=useNavigate()
     interface User {
     id: string;
@@ -36,7 +37,8 @@
     useEffect(() => {
           const token = localStorage.getItem("token");
           if (token) {
-            const parsed = jwtDecode<User>(token)
+            const parsed = jwtDecode<User>(token)            
+            setId(parsed.id || "")
             setUsername(parsed.username || "");
           }
         }, []);
@@ -164,19 +166,28 @@
 
     return (
       <div className="container mt-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-      <h2>Welcome: {username}</h2>
-      <button
-        className="btn btn-danger"
-        onClick={() => {
-          localStorage.removeItem("token"); 
-          toast.success("Logout successfully...")
-          navigate("/login");  
-        }}
-      >
-        Logout
-      </button>
-    </div>
+    <div className="d-flex justify-content-between align-items-center mb-3">
+  <h2>Welcome: {username}</h2>
+  <div className="d-flex ms-auto">
+    <button
+      className="btn btn-sm btn-success me-2"
+      onClick={() => window.open(`/user-timesheet-report/${id}`, "_blank")}
+    >
+      View Timesheet
+    </button>
+    <button
+      className="btn btn-danger"
+      onClick={() => {
+        localStorage.removeItem("token"); 
+        toast.success("Logout successfully...");
+        navigate("/login");  
+      }}
+    >
+      Logout
+    </button>
+  </div>
+</div>
+
         <h1 className="text-center">Task Tracker</h1>
         {projects.map((project) => (
           <div key={project.id} className="card mb-3">
@@ -185,9 +196,12 @@
                 <strong>{project.name}</strong>
                 {project.description && <p className="mb-0">{project.description}</p>}
               </div>
+              <div className="d-flex align-items-center">
+              
               <button className="btn btn-sm btn-info" onClick={() => toggleExpandProject(project.id)}>
                 {expandedProject === project.id ? "Collapse" : "View Tasks"}
               </button>
+              </div>
             </div>
 
             {expandedProject === project.id && (
@@ -252,6 +266,13 @@
                       <button
                         className={`btn btn-sm ${task.isRunning ? "btn-danger" : "btn-success"}`}
                         onClick={() => handleStartStopTimer(task, project.id)}
+                        disabled={(() => {
+    if (!(task as any).endDate) return false;
+    const endDate = new Date(parseInt((task as any).endDate, 10)); 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+    return endDate < today;
+  })()}
                       >
                         {task.isRunning ? "Stop" : "Start"}
                       </button>
