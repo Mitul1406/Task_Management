@@ -11,6 +11,7 @@ import {
   getUsers,
   getTasksByProject,
   updateTaskStatus,
+  changePassword,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -52,7 +53,6 @@ const AdminDashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
-  // Form states
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [newTaskTitle, setNewTaskTitle] = useState<{ [key: string]: string }>(
@@ -91,9 +91,14 @@ const AdminDashboard: React.FC = () => {
     {}
   );
   const projectRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [id, setId] = useState<string>("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [newTaskStartDate, setNewTaskStartDate] = useState<{ [key: string]: string }>({});
   const [newTaskEndDate, setNewTaskEndDate] = useState<{ [key: string]: string }>({});
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+    const [oldPassword, setOldPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [newPassword, setNewPassword] = useState("");
   const todayDate = () => new Date().toISOString().split("T")[0];
   const navigate = useNavigate();
  const handleStatusChange = async (taskId: string, newStatus: string) => {
@@ -114,7 +119,14 @@ const AdminDashboard: React.FC = () => {
   }
 };
 
-
+useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const parsed = jwtDecode<User>(token);
+      setId(parsed.id || "");
+      setUsername(parsed.username || "");
+    }
+  }, []);
 const formatDate = (val: any) => {
   if (!val) return "";
   // handle case where val is already ISO string like "2025-10-03"
@@ -128,13 +140,6 @@ const formatDate = (val: any) => {
   useEffect(() => {
     fetchProjects();
     fetchUsers();
-  }, []);
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const parsed = jwtDecode<User>(token);
-      setUsername(parsed.username || "");
-    }
   }, []);
 
   const fetchUsers = async () => {
@@ -317,7 +322,28 @@ const handleUpdateTask = async (taskId: string, projectId: string) => {
       )
     );
   };
+ const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await changePassword(id, oldPassword, newPassword);
+      toast.success("Password changed successfully");
+      setOldPassword("");
+      setNewPassword("");
+      setShowPasswordForm(false);
+    } catch (err: any) {
+      console.error("Change password error:", err);
+      const errorMessage =
+      err?.networkError?.result?.errors?.[0]?.message ||
+      err?.graphQLErrors?.[0]?.message ||
+      err?.message ||
+      "Failed to change password";
 
+    toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleDeleteProject = async (id: string) => {
     const project = projects.find((p) => p.id === id);
     const confirmDelete = window.confirm(
@@ -332,22 +358,97 @@ This will also delete all its tasks.`
 
     if (expandedProject === id) setExpandedProject(null);
   };
-  const formatDuration = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
+   const formatDuration = (seconds: number) => {
+  if (!seconds || seconds <= 0) return "-";
 
-    return [
-      h.toString().padStart(2, "0"),
-      m.toString().padStart(2, "0"),
-      s.toString().padStart(2, "0"),
-    ].join(":");
-  };
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  const parts: string[] = [];
+
+  if (h > 0) parts.push(`${h.toString().padStart(2, "0")}h`);
+  if (m > 0) parts.push(`${m.toString().padStart(2, "0")}m`);
+  if (s > 0) parts.push(`${s.toString().padStart(2, "0")}s`);
+
+  return parts.length > 0 ? parts.join(" ") : "-";
+};
 
   return (
     <div className="container mt-4">
+      {showPasswordForm && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+          style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
+        >
+          <div className="bg-white p-4 rounded shadow" style={{ width: "320px" }}>
+            <h5 className="text-center mb-3">Change Password</h5>
+            <form onSubmit={handlePasswordChange}>
+              <div className="mb-3">
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="Old Password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="d-flex justify-content-between">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setShowPasswordForm(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  disabled={loading}
+                >
+                  {loading ? "Updating..." : "Update"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Welcome Admin: {username}</h2>
+        <div className="d-flex ms-auto">
+          <button
+            className="btn btn-sm btn-success me-2"
+            onClick={() =>
+              window.open(`/alluser-timesheet-report`, "_blank")
+            }
+          >
+            View All User Timesheet
+          </button>
+          <button
+          className="btn btn-sm btn-warning me-2"
+          onClick={() => setShowPasswordForm(true)}
+        >
+          Change Password
+        </button>
+        <button
+          className="btn btn-primary me-2"
+          onClick={() => {
+           window.open(`/userView`, "_blank")
+          }}
+        >
+          Users
+        </button>
         <button
           className="btn btn-danger"
           onClick={() => {
@@ -358,6 +459,7 @@ This will also delete all its tasks.`
         >
           Logout
         </button>
+        </div>
       </div>
 
       <h1 className="text-center">Task Tracker</h1>
@@ -599,18 +701,18 @@ This will also delete all its tasks.`
   >
     <thead className="table-light">
       <tr>
-        <th style={{ width: "18%" }}>Task Name</th>
+        <th style={{ width: "15%" }}>Task Name</th>
         <th style={{ width: "6%" }}>HH</th>
         <th style={{ width: "6%" }}>MM</th>
         <th style={{ width: "6%" }}>SS</th>
-        <th style={{ width: "10%" }}>Time Consume</th>
-        <th style={{ width: "10%" }}>Saved Time</th>
-        <th style={{ width: "10%" }}>Overtime</th>
-        <th style={{ width: "10%" }}>Start Date</th>
-        <th style={{ width: "10%" }}>End Date</th>
-        <th style={{ width: "14%" }}>Assigned User</th>
+        <th style={{ width: "12%" }}>Time Consume</th>
+        <th style={{ width: "12%" }}>Saved Time</th>
+        <th style={{ width: "12%" }}>Overtime</th>
+        <th style={{ width: "12%" }}>Start Date</th>
+        <th style={{ width: "12%" }}>End Date</th>
+        <th style={{ width: "10%" }}>Assigned User</th>
         <th style={{ width: "14%" }}>Status</th>
-        <th style={{ width: "10%" }}>Actions</th>
+        <th style={{ width: "12%" }}>Actions</th>
       </tr>
     </thead>
 
@@ -654,11 +756,11 @@ This will also delete all its tasks.`
             </td>
 
             {/* HH */}
-            <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
               {isEditing ? (
                 <input
                   type="number"
-                  className="form-control"
+                  className="form-control form-control-sm"
                   value={edit.hours}
                   onChange={(e) =>
                     setTaskEdits((prev) => ({
@@ -676,11 +778,11 @@ This will also delete all its tasks.`
             </td>
 
             {/* MM */}
-            <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
               {isEditing ? (
                 <input
                   type="number"
-                  className="form-control"
+                  className="form-control form-control-sm"
                   value={edit.minutes}
                   onChange={(e) =>
                     setTaskEdits((prev) => ({
@@ -698,11 +800,11 @@ This will also delete all its tasks.`
             </td>
 
             {/* SS */}
-            <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
               {isEditing ? (
                 <input
                   type="number"
-                  className="form-control"
+                  className="form-control form-control-sm"
                   value={edit.seconds}
                   onChange={(e) =>
                     setTaskEdits((prev) => ({
@@ -720,21 +822,21 @@ This will also delete all its tasks.`
             </td>
 
             {/* Time Consume */}
-            <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
               <span className="badge bg-info">
                 {formatDuration((task as any).totalTime || 0)}
               </span>
             </td>
 
             {/* Saved Time */}
-            <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
               <span className="badge bg-success">
                 {formatDuration((task as any).savedTime || 0)}
               </span>
             </td>
 
             {/* Overtime */}
-            <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
               <span className="badge bg-warning text-dark">
                 {formatDuration((task as any).overtime || 0)}
               </span>
@@ -827,13 +929,7 @@ This will also delete all its tasks.`
     <select
       value={task.status}
       onChange={(e) => handleStatusChange(task.id, e.target.value)}
-      style={{
-        padding: "4px 8px",
-        borderRadius: "4px",
-        border: "1px solid #ccc",
-        backgroundColor: "#fff",
-        color: "#000",
-      }}
+      className="form-select"
     >
       {Object.entries(statusMap).map(([key, { label }]) => (
         <option key={key} value={key}>

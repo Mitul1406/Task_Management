@@ -25,16 +25,21 @@ const statusMap: Record<string, { label: string; bgColor: string }> = {
   code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
   done: { label: "Done", bgColor: "#2bc22bff" },    
 };
-const formatDuration = (seconds: number) => {
-  const h = Math.floor(seconds / 3600).toString()
-    .padStart(2, '0');
-  const m = Math.floor((seconds % 3600) / 60).toString()
-    .padStart(2, '0');
-  const s = (seconds % 60).toString()
-    .padStart(2, '0');
-  return `${h}h${m}m${s}s`;
-};
+ const formatDuration = (seconds: number) => {
+  if (!seconds || seconds <= 0) return "-";
 
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  const parts: string[] = [];
+
+  if (h > 0) parts.push(`${h.toString().padStart(2, "0")}h`);
+  if (m > 0) parts.push(`${m.toString().padStart(2, "0")}m`);
+  if (s > 0) parts.push(`${s.toString().padStart(2, "0")}s`);
+
+  return parts.length > 0 ? parts.join(" ") : "-";
+};    
 export default function Report() {
   const { projectId } = useParams();
   const [project, setProject] = useState<Project | null>(null);

@@ -309,7 +309,140 @@ const GET_USER_DAY_WISE = gql`
     }
   }
 `;
+
+const ALL_TIMESHEET=gql`
+query GetUserDayWiseAdmin($startDate: String!, $endDate: String!) {
+  userDayWiseAdmin(startDate: $startDate, endDate: $endDate) {
+    users {
+      id
+      username
+      email
+      projects {
+        id
+        name
+        description
+        tasks {
+          id
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+          startDate
+          endDate
+          status
+        }
+      }
+      dayWise {
+        date
+        time
+        status
+        tasks {
+          taskId
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+          status
+        }
+      }
+    }
+  }
+}
+`
+
+const GET_USERS = gql`
+  query {
+    users {
+      id
+      username
+      email
+      role
+    }
+  }
+`;
+export const CREATE_USER = gql`
+  mutation createUser($username: String!, $email: String!, $password: String!, $role: String) {
+    createUser(username: $username, email: $email, password: $password, role: $role) {
+      id
+      username
+      email
+      role
+    }
+  }
+`;
+export const UPDATE_USER = gql`
+  mutation updateUser($id: ID!, $username: String, $email: String, $role: String) {
+    updateUser(id: $id, username: $username, email: $email, role: $role) {
+      id
+      username
+      email
+      role
+    }
+  }
+`;
+export const DELETE_USER = gql`
+  mutation deleteUser($id: ID!) {
+    deleteUser(id: $id) {
+      message
+    }
+  }
+`;
+const CHANGE_PASSWORD = gql`
+  mutation changePassword($id: ID!, $oldPassword: String!, $newPassword: String!) {
+    changePassword(id: $id, oldPassword: $oldPassword, newPassword: $newPassword) {
+      message
+    }
+  }
+`;
 // API Functions
+export const changePassword = async (id: string, oldPassword: string, newPassword: string) => {
+  const res = await client.mutate({
+    mutation: CHANGE_PASSWORD,
+    variables: { id, oldPassword, newPassword },
+  });
+
+  return (res as any).data.changePassword;
+};
+export const deleteUser = async (id: string) => {
+  const res = await client.mutate({
+    mutation: DELETE_USER,
+    variables: { id },
+  });
+  return (res as any).data.deleteUser;
+};
+export const updateUser = async (userData: {
+  id: string;
+  username?: string;
+  email?: string;
+  role?: string;
+}) => {
+  const res = await client.mutate({
+    mutation: UPDATE_USER,
+    variables: {...userData},
+  });
+  return (res as any).data.updateUser;
+};
+export const createUser = async (userData: {
+  username: string;
+  email: string;
+  password: string;
+  role?: string;
+}) => {
+  const res = await client.mutate({
+    mutation: CREATE_USER,
+    variables: userData,
+  });
+  return (res as any).data.createUser;
+};
+export const getUsers = async () => {
+  const res = await client.query({
+    query: GET_USERS,
+    fetchPolicy: "network-only",
+  });
+  return (res as any).data.users;
+};
 export const getProjects = async () => {
   const res = await client.query({ query: GET_PROJECTS,fetchPolicy: "network-only", });
   return (res as any).data.projects;
@@ -416,11 +549,6 @@ export const updateTaskAdmin = async (
      return (res as any).data.register
  }
 
- export const getUsers = async () => {
-  const res = await client.query({ query: gql`query { users { id username email role } }` });
-  return (res as any).data.users;
-};
-
 export const getUserTasks = async () => {
   const token = localStorage.getItem("token");
   if (!token) return [];
@@ -483,3 +611,108 @@ export const updateTaskStatus = async (taskId: string, status: string) => {
   });
   return (res as any).data.updateTaskStatus;
 };
+
+// export const getAllTimesheet = async (startDate: string, endDate: string) => {
+//   const res = await client.query({
+//     query: ALL_TIMESHEET,
+//     variables: { startDate, endDate },
+//     fetchPolicy: "network-only",
+//   });
+
+//   const users = (res as any)?.data?.userDayWiseAdmin?.users || [];
+//   console.log("Raw API Response:", JSON.stringify(users, null, 2));
+
+//   const safeUsers = (users as any).map((u: any, userIndex: number) => {
+//     // --- Clone projects ---
+//     const clonedProjects = (u.projects || []).map((p: any, projIndex: number) => {
+//       const cloned = JSON.parse(JSON.stringify(p));
+//       cloned._uniqueKey = `${u.id || userIndex}-${p.id || projIndex}`;
+//       cloned.tasks = (cloned.tasks || []).map((t: any) => ({
+//         ...t,
+//         startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+//         endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+//       }));
+//       return cloned;
+//     });
+
+//     // --- Clone dayWise and its tasks (no sharing between users) ---
+//     const clonedDayWise = (u.dayWise || []).map((d: any, dIndex: number) => ({
+//       ...d,
+//       tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
+//         ...t,
+//         // normalize numeric timestamps if present
+//         startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+//         endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+//         // force unique key per user, per day
+//         _uniqueKey: `${u.id || userIndex}-day${dIndex}-task${tIndex}`,
+//       })),
+//     }));
+
+//     return {
+//       ...u,
+//       projects: clonedProjects,
+//       dayWise: clonedDayWise,
+//     };
+//   });
+
+//   console.log("Processed safeUsers:", JSON.stringify(safeUsers, null, 2));
+//   return safeUsers;
+// }
+
+
+export const getAllTimesheet = async (startDate: string, endDate: string) => {
+  const res = await client.query({
+    query: ALL_TIMESHEET,
+    variables: { startDate, endDate },
+    fetchPolicy: "network-only",
+  });
+
+  const users = (res as any)?.data?.userDayWiseAdmin?.users || [];
+  console.log("Raw API Response:", JSON.stringify(users, null, 2));
+
+  const safeUsers = (users as any).map((u: any, userIndex: number) => {
+    const clonedProjects = (u.projects || []).map((p: any, projIndex: number) => {
+      const cloned = structuredClone ? structuredClone(p) : JSON.parse(JSON.stringify(p));
+      cloned._uniqueKey = `${u.id}-${p.id}-${projIndex}`;
+      cloned.tasks = (cloned.tasks || []).map((t: any, tIndex: number) => ({
+        ...structuredClone ? structuredClone(t) : JSON.parse(JSON.stringify(t)),
+        startDate: normalizeDate(t.startDate),
+        endDate: normalizeDate(t.endDate),
+        _uniqueKey: `${u.id}-${p.id}-task-${t.id || tIndex}`,
+      }));
+      return cloned;
+    });
+
+    const clonedDayWise = (u.dayWise || []).map((d: any, dIndex: number) => ({
+      ...structuredClone ? structuredClone(d) : JSON.parse(JSON.stringify(d)),
+      tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
+        ...structuredClone ? structuredClone(t) : JSON.parse(JSON.stringify(t)),
+        startDate: normalizeDate(t.startDate),
+        endDate: normalizeDate(t.endDate),
+        _uniqueKey: `${u.id}-day${dIndex}-task${t.taskId || tIndex}`,
+      })),
+    }));
+
+    return {
+      ...structuredClone ? structuredClone(u) : JSON.parse(JSON.stringify(u)),
+      id: u.id,
+      _uniqueKey: `${u.id}-${userIndex}`,
+      projects: clonedProjects,
+      dayWise: clonedDayWise,
+    };
+  });
+
+  console.log("Processed safeUsers:", JSON.stringify(safeUsers, null, 2));
+  return safeUsers;
+};
+
+function normalizeDate(val: any): string | null {
+  if (!val) return null;
+  try {
+    if (typeof val === "number" || !isNaN(Number(val))) return new Date(Number(val)).toISOString();
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  } catch (e) {}
+  return null;
+}
+

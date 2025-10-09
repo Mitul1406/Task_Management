@@ -35,14 +35,20 @@ const statusMap: Record<string, { label: string; bgColor: string }> = {
   code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
   done: { label: "Done", bgColor: "#2bc22bff" },    
 };
-const formatDuration = (seconds: number) => {
-  const h = Math.floor(seconds / 3600).toString()
-    .padStart(2, '0');
-  const m = Math.floor((seconds % 3600) / 60).toString()
-    .padStart(2, '0');
-  const s = (seconds % 60).toString()
-    .padStart(2, '0');
-  return `${h}h${m}m${s}s`;
+ const formatDuration = (seconds: number) => {
+  if (!seconds || seconds <= 0) return "-";
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  const parts: string[] = [];
+
+  if (h > 0) parts.push(`${h.toString().padStart(2, "0")}h`);
+  if (m > 0) parts.push(`${m.toString().padStart(2, "0")}m`);
+  if (s > 0) parts.push(`${s.toString().padStart(2, "0")}s`);
+
+  return parts.length > 0 ? parts.join(" ") : "-";
 };
 
 // After importing everything and existing code...
@@ -320,40 +326,40 @@ export default function TimeSheet() {
                 <td style={{ border: "1px solid #dee2e6" }}>
                   {isWorked && day.tasks?.length > 0 ? (
                     <table
-                      className="table table-bordered table-sm mb-0"
-                      style={{ width: "100%", fontSize: "0.8rem" }}
+                      className="table table-sm mb-0"
+                      style={{ width: "100%", fontSize: "0.8rem",border:"1px solid #dee2e6"}}
                     >
                       <thead>
                         <tr>
-                          <th style={{ width: "35%" }}>Task</th>
-                          <th style={{ width: "15%" }}>Task Status</th>
-                          <th style={{ width: "15%" }}>Time</th>
-                          <th style={{ width: "15%" }}>Estimated</th>
-                          <th style={{ width: "15%" }}>Saved</th>
-                          <th style={{ width: "15%" }}>Overtime</th>
+                          <th style={{ width: "35%" ,borderRight:"1px solid #dee2e6"}}>Task</th>
+                          <th style={{ width: "15%" ,borderRight:"1px solid #dee2e6"}}>Task Status</th>
+                          <th style={{ width: "15%" ,borderRight:"1px solid #dee2e6"}}>Time</th>
+                          <th style={{ width: "15%" ,borderRight:"1px solid #dee2e6"}}>Estimated</th>
+                          <th style={{ width: "15%" ,borderRight:"1px solid #dee2e6"}}>Saved</th>
+                          <th style={{ width: "15%" ,borderRight:"1px solid #dee2e6"}}>Overtime</th>
                         </tr>
                       </thead>
                       <tbody>
                         {day.tasks.map((task: any, i: number) => (
                           <tr key={i}>
-                            <td>{task.title}</td>
-                            <td><span
+                            <td style={{borderRight:"1px solid #dee2e6"}}>{task.title}</td>
+                            <td style={{borderRight:"1px solid #dee2e6"}}><span
     style={{
       padding: "2px 4px",
       borderRadius: "4px",
       color: "#fff",
       backgroundColor: statusMap[(task as any).status]?.bgColor || "#6c757d",
       display: "inline-block",
-      minWidth: "90px",
+      // minWidth: "90px",
       textAlign: "center",
     }}
   >
     {statusMap[(task as any).status]?.label || (task as any).status}
   </span></td>
-                            <td>{formatDuration(task.time)}</td>
-                            <td>{formatDuration(task.estimatedTime)}</td>
-                            <td className="text-success">{formatDuration(task.savedTime)}</td>
-                            <td className="text-danger">{formatDuration(task.overtime)}</td>
+                            <td style={{borderRight:"1px solid #dee2e6"}}>{formatDuration(task.time)}</td>
+                            <td style={{borderRight:"1px solid #dee2e6"}}>{formatDuration(task.estimatedTime)}</td>
+                            <td style={{borderRight:"1px solid #dee2e6"}} className="text-success">{formatDuration(task.savedTime)}</td>
+                            <td style={{borderRight:"1px solid #dee2e6"}} className="text-danger">{formatDuration(task.overtime)}</td>
                           </tr>
                         ))}
                       </tbody>

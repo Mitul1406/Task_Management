@@ -14,6 +14,7 @@ interface JwtPayload {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  
   const navigate = useNavigate();
   const [authorized, setAuthorized] = React.useState(false);
 
@@ -26,7 +27,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     }
 
     try {
-      const decoded = jwtDecode<JwtPayload>(token);
+      const decoded = jwtDecode<JwtPayload>(token);      
       const now = Date.now() / 1000;
 
       if (decoded.exp && decoded.exp < now) {
@@ -35,7 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         navigate("/login", { replace: true });
         return;
       }
-
+            
       if (allowedRoles !== decoded.role) {
         toast.error("You are not authorized to access this page.");
         navigate("/login", { replace: true });

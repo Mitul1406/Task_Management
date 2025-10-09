@@ -44,7 +44,12 @@ export const schema=buildSchema(`
     role: String!
     token: String
     message: String
+    password: String
     }
+
+      type DeleteResponse {
+    message: String!
+  }
     type StopTimerResponse {
   totalDuration: Int!
   overtime: Int!
@@ -107,7 +112,19 @@ type UserDayWiseInfo {
   email: String!
   role: String!
 }
-    
+    #admin all data
+    type AdminUserDayWise {
+  id: ID!
+  username: String!
+  email: String!
+  projects: [ProjectWithTasks!]!
+  dayWise: [DayWiseEntry!]!
+}
+
+# Admin query response
+type UserDayWiseAdminResponse {
+  users: [AdminUserDayWise!]!
+}
     type Query{
     projects:[Project]
     project(id:ID!):Project
@@ -115,6 +132,8 @@ type UserDayWiseInfo {
     task(id:ID!):Task
     users: [User!]!
     tasksForUser(userId: ID!): [Project!]!
+
+    user(id: ID!): User
 
     dayWiseData(
     projectId: ID!
@@ -129,12 +148,19 @@ type UserDayWiseInfo {
     startDate: String!
     endDate: String!
   ): UserDayWise!
+
+  userDayWiseAdmin(startDate: String!, endDate: String!): UserDayWiseAdminResponse!
     }
 
     type Mutation{
      createProject(name: String!, description: String): Project
      updateProject(id: ID!, name: String, description: String): Project
      deleteProject(id: ID!): Boolean
+
+     createUser(username: String!, email: String!, password: String!, role: String): User!
+     updateUser(id: ID!, username: String, email: String, role: String): User!
+     deleteUser(id: ID!): DeleteResponse!
+     changePassword(id: ID!, oldPassword: String!, newPassword: String!): DeleteResponse!
 
      createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
