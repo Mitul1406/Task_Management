@@ -15,6 +15,7 @@ import TimeSheet from "./pages/TimeSheet";
 import UserTimeSheet from "./pages/UserTimeSheet";
 import AllUserTimeSheet from "./pages/AllUserTimeSheet";
 import User from "./pages/User";
+import ExampleTimeAdmin from "./pages/ExampleTimeAdmin";
 
 function App() {
   return (
@@ -67,7 +68,8 @@ function App() {
              path="/alluser-timesheet-report"
              element={
              <ProtectedRoute allowedRoles="admin">
-             <AllUserTimeSheet />
+             {/* <AllUserTimeSheet /> */}
+             <ExampleTimeAdmin/>
              </ProtectedRoute>
              }
           />

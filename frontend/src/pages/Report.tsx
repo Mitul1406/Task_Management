@@ -108,7 +108,7 @@ return (
   <>
   <div className="mt-4 position-relative">
       <div className="d-flex justify-content-end mb-3">
-    <button className="btn btn-primary" onClick={handleDownloadPDF} style={{position:"absolute",top:"25px",right:"55px"}}>
+    <button className="btn btn-primary" onClick={handleDownloadPDF} style={{position:"absolute",top:"25px",right:"150px"}}>
       📄 Download PDF
     </button>
   </div>

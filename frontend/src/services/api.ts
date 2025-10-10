@@ -612,6 +612,52 @@ export const updateTaskStatus = async (taskId: string, status: string) => {
   return (res as any).data.updateTaskStatus;
 };
 
+export const getAllTimesheet = async (startDate: string, endDate: string) => {
+  const res = await client.query({
+    query: ALL_TIMESHEET,
+    variables: { startDate, endDate },
+    fetchPolicy: "network-only",
+  });
+
+  const users = (res as any)?.data?.userDayWiseAdmin?.users || [];
+
+  const safeUsers = (users as any).map((u: any, userIndex: number) => {
+    // --- Clone projects ---
+    const clonedProjects = (u.projects || []).map((p: any, projIndex: number) => {
+      const cloned = JSON.parse(JSON.stringify(p));
+      cloned._uniqueKey = `${u.id || userIndex}-${p.id || projIndex}`;
+      cloned.tasks = (cloned.tasks || []).map((t: any) => ({
+        ...t,
+        startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+        endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+      }));
+      return cloned;
+    });
+
+    // --- Clone dayWise and its tasks (no sharing between users) ---
+    const clonedDayWise = (u.dayWise || []).map((d: any, dIndex: number) => ({
+      ...d,
+      tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
+        ...t,
+        // normalize numeric timestamps if present
+        startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+        endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+        // force unique key per user, per day
+        _uniqueKey: `${u.id || userIndex}-day${dIndex}-task${tIndex}`,
+      })),
+    }));
+
+    return {
+      ...u,
+      projects: clonedProjects,
+      dayWise: clonedDayWise,
+    };
+  });
+
+  return safeUsers;
+}
+
+
 // export const getAllTimesheet = async (startDate: string, endDate: string) => {
 //   const res = await client.query({
 //     query: ALL_TIMESHEET,
@@ -623,33 +669,32 @@ export const updateTaskStatus = async (taskId: string, status: string) => {
 //   console.log("Raw API Response:", JSON.stringify(users, null, 2));
 
 //   const safeUsers = (users as any).map((u: any, userIndex: number) => {
-//     // --- Clone projects ---
 //     const clonedProjects = (u.projects || []).map((p: any, projIndex: number) => {
-//       const cloned = JSON.parse(JSON.stringify(p));
-//       cloned._uniqueKey = `${u.id || userIndex}-${p.id || projIndex}`;
-//       cloned.tasks = (cloned.tasks || []).map((t: any) => ({
-//         ...t,
-//         startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
-//         endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+//       const cloned = structuredClone ? structuredClone(p) : JSON.parse(JSON.stringify(p));
+//       cloned._uniqueKey = `${u.id}-${p.id}-${projIndex}`;
+//       cloned.tasks = (cloned.tasks || []).map((t: any, tIndex: number) => ({
+//         ...structuredClone ? structuredClone(t) : JSON.parse(JSON.stringify(t)),
+//         startDate: normalizeDate(t.startDate),
+//         endDate: normalizeDate(t.endDate),
+//         _uniqueKey: `${u.id}-${p.id}-task-${t.id || tIndex}`,
 //       }));
 //       return cloned;
 //     });
 
-//     // --- Clone dayWise and its tasks (no sharing between users) ---
 //     const clonedDayWise = (u.dayWise || []).map((d: any, dIndex: number) => ({
-//       ...d,
+//       ...structuredClone ? structuredClone(d) : JSON.parse(JSON.stringify(d)),
 //       tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
-//         ...t,
-//         // normalize numeric timestamps if present
-//         startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
-//         endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
-//         // force unique key per user, per day
-//         _uniqueKey: `${u.id || userIndex}-day${dIndex}-task${tIndex}`,
+//         ...structuredClone ? structuredClone(t) : JSON.parse(JSON.stringify(t)),
+//         startDate: normalizeDate(t.startDate),
+//         endDate: normalizeDate(t.endDate),
+//         _uniqueKey: `${u.id}-day${dIndex}-task${t.taskId || tIndex}`,
 //       })),
 //     }));
 
 //     return {
-//       ...u,
+//       ...structuredClone ? structuredClone(u) : JSON.parse(JSON.stringify(u)),
+//       id: u.id,
+//       _uniqueKey: `${u.id}-${userIndex}`,
 //       projects: clonedProjects,
 //       dayWise: clonedDayWise,
 //     };
@@ -657,62 +702,15 @@ export const updateTaskStatus = async (taskId: string, status: string) => {
 
 //   console.log("Processed safeUsers:", JSON.stringify(safeUsers, null, 2));
 //   return safeUsers;
+// };
+
+// function normalizeDate(val: any): string | null {
+//   if (!val) return null;
+//   try {
+//     if (typeof val === "number" || !isNaN(Number(val))) return new Date(Number(val)).toISOString();
+//     const d = new Date(val);
+//     if (!isNaN(d.getTime())) return d.toISOString();
+//   } catch (e) {}
+//   return null;
 // }
-
-
-export const getAllTimesheet = async (startDate: string, endDate: string) => {
-  const res = await client.query({
-    query: ALL_TIMESHEET,
-    variables: { startDate, endDate },
-    fetchPolicy: "network-only",
-  });
-
-  const users = (res as any)?.data?.userDayWiseAdmin?.users || [];
-  console.log("Raw API Response:", JSON.stringify(users, null, 2));
-
-  const safeUsers = (users as any).map((u: any, userIndex: number) => {
-    const clonedProjects = (u.projects || []).map((p: any, projIndex: number) => {
-      const cloned = structuredClone ? structuredClone(p) : JSON.parse(JSON.stringify(p));
-      cloned._uniqueKey = `${u.id}-${p.id}-${projIndex}`;
-      cloned.tasks = (cloned.tasks || []).map((t: any, tIndex: number) => ({
-        ...structuredClone ? structuredClone(t) : JSON.parse(JSON.stringify(t)),
-        startDate: normalizeDate(t.startDate),
-        endDate: normalizeDate(t.endDate),
-        _uniqueKey: `${u.id}-${p.id}-task-${t.id || tIndex}`,
-      }));
-      return cloned;
-    });
-
-    const clonedDayWise = (u.dayWise || []).map((d: any, dIndex: number) => ({
-      ...structuredClone ? structuredClone(d) : JSON.parse(JSON.stringify(d)),
-      tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
-        ...structuredClone ? structuredClone(t) : JSON.parse(JSON.stringify(t)),
-        startDate: normalizeDate(t.startDate),
-        endDate: normalizeDate(t.endDate),
-        _uniqueKey: `${u.id}-day${dIndex}-task${t.taskId || tIndex}`,
-      })),
-    }));
-
-    return {
-      ...structuredClone ? structuredClone(u) : JSON.parse(JSON.stringify(u)),
-      id: u.id,
-      _uniqueKey: `${u.id}-${userIndex}`,
-      projects: clonedProjects,
-      dayWise: clonedDayWise,
-    };
-  });
-
-  console.log("Processed safeUsers:", JSON.stringify(safeUsers, null, 2));
-  return safeUsers;
-};
-
-function normalizeDate(val: any): string | null {
-  if (!val) return null;
-  try {
-    if (typeof val === "number" || !isNaN(Number(val))) return new Date(Number(val)).toISOString();
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) return d.toISOString();
-  } catch (e) {}
-  return null;
-}
 

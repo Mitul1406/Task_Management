@@ -182,7 +182,6 @@ const formatDate = (val: any) => {
 
   const handleAddTask = async (projectId: string) => {
     const title = newTaskTitle[projectId] || "";
-
     const hours = newTaskHours[projectId] || 0;
     const minutes = newTaskMinutes[projectId] || 0;
     const seconds = newTaskSeconds[projectId] || 0;
@@ -217,11 +216,19 @@ const formatDate = (val: any) => {
       endDate
     );
 
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId ? { ...p, tasks: [...(p.tasks || []), task] } : p
-      )
-    );
+    const newTask = {
+  ...task,
+  savedTime: task.estimatedTime || 0, 
+};
+
+setProjects((prev) =>
+  prev.map((p) =>
+    p.id === projectId
+      ? { ...p, tasks: [...(p.tasks || []), newTask] }
+      : p
+  )
+);
+
 
     setTaskEdits((prev) => ({
       ...prev,

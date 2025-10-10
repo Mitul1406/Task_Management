@@ -173,24 +173,55 @@ const AllUserTimeSheet: React.FC = () => {
           </div>
         )}
 
-  {users.map((user, userIndex) => {
+{users.map((user, userIndex) => {
   const userId = user?.id || user?._id || `user-${userIndex}`;
   const projects = user.projects || [];
   const dayWise = user.dayWise || [];
-  // console.log("-------->",user);
-  
-  const totalWorked = dayWise.reduce((sum: any, d: { time: any; }) => sum + (d.time || 0), 0);
-  const totalEstimated = projects
-    .flatMap((p: { tasks: any; }) => p.tasks || [])
-    .reduce((sum: any, t: { estimatedTime: any; }) => sum + (t.estimatedTime || 0), 0);
-  const totalSaved = projects
-    .flatMap((p: { tasks: any; }) => p.tasks || [])
-    .reduce((sum: any, t: { savedTime: any; }) => sum + (t.savedTime || 0), 0);
-  const totalOvertime = projects
-    .flatMap((p: { tasks: any; }) => p.tasks || [])
-    .reduce((sum: any, t: { overtime: any; }) => sum + (t.overtime || 0), 0);
+
+  // === Helper to ensure unique tasks per user ===
+  const uniqueTasksMap = new Map();
+  projects.forEach((p: any) => {
+    (p.tasks || []).forEach((t: any) => {
+      if (!uniqueTasksMap.has(t.id)) {
+        uniqueTasksMap.set(t.id, t);
+      }
+    });
+  });
+
+  // === Collect latest savedTime per task ===
+  const lastTaskMap = new Map();
+  dayWise.forEach((d:any) => {
+    (d.tasks || []).forEach((t: any) => {
+      const prev = lastTaskMap.get(t.taskId);
+      if (!prev || new Date(d.date) > new Date(prev.date)) {
+        lastTaskMap.set(t.taskId, { ...t, date: d.date });
+      }
+    });
+  });
+
+  // === Calculations ===
+  const totalWorked = dayWise.reduce((sum: number, d: any) => sum + (d.time || 0), 0);
+const totalEstimated = projects
+  .flatMap((p: any) =>
+    (p.tasks || []).filter((t: any) => t.userId === userId)
+  )
+  .reduce((sum: any, t: any) => sum + (t.estimatedTime || 0), 0);
+
+const totalSaved = projects
+  .flatMap((p: any) =>
+    (p.tasks || []).filter((t: any) => t.userId === userId)
+  )
+  .reduce((sum: any, t: any) => sum + (t.savedTime || 0), 0);
+
+const totalOvertime = projects
+  .flatMap((p: any) =>
+    (p.tasks || []).filter((t: any) => t.userId === userId)
+  )
+  .reduce((sum: any, t: any) => sum + (t.overtime || 0), 0);
+
+
   const totalDays = dayWise.length;
-  const totalExpectedHours = totalDays * 8 * 3600;
+  const totalExpectedHours = totalDays * 8 * 3600; // 8 hours/day in seconds
 
   return (
     <div
@@ -205,7 +236,6 @@ const AllUserTimeSheet: React.FC = () => {
       </div>
 
       <div className="card-body">
-        {/* ✅ Show “No data available for this user” if both empty */}
         {projects.length === 0 && dayWise.length === 0 ? (
           <div className="text-center text-muted py-3">
             No data available for this user
@@ -214,10 +244,10 @@ const AllUserTimeSheet: React.FC = () => {
           <>
             {/* === Overall Summary === */}
             <div className="mb-4">
-              <div className="card p-3 shadow-sm h-100">
+              <div className="card p-3 shadow-sm h-100 border border-dark">
                 <h5 className="mb-3">Overall Summary</h5>
                 <p>
-                  <strong>Total Hours:</strong>{" "}
+                  <strong>Total Hours (Expected):</strong>{" "}
                   {formatTime(totalExpectedHours)}
                 </p>
                 <p>
@@ -238,105 +268,119 @@ const AllUserTimeSheet: React.FC = () => {
                 </p>
               </div>
             </div>
-  
+
             {/* === Project Cards === */}
-{/* <div className="row">
-  {projects && projects.length > 0 ? (
-  projects.map((proj: any, projIndex: number) => {
-    const clonedProj = structuredClone ? structuredClone(proj) : JSON.parse(JSON.stringify(proj));
+             <div className="row">
+              {projects && projects.length > 0 ? (
+                projects.map((proj: any, projIndex: number) => {
+                  const projId = proj?.id || proj?._id || `proj-${projIndex}`;
+                  const projTasks = Array.isArray(proj.tasks)
+                    ? proj.tasks
+                    : [];
+                  const uniqueKey = `${userId}-${projId}-${projIndex}`;
 
-    const projOwner = clonedProj?.userId || clonedProj?.user?.id;
-    if (projOwner && projOwner !== userId) return null;
+                  return (
+                    <div className="col-lg-6 mb-4" key={uniqueKey}>
+                      <div className="card border border-dark h-100">
+                        <div className="card-header bg-light border-bottom border-dark">
+                          <strong>{proj.name || "Untitled Project"}</strong>
+                          <div className="text-muted small">
+                            {proj.description || "No description"}
+                          </div>
+                        </div>
 
-    const projId = clonedProj?.id || clonedProj?._id || `proj-${projIndex}`;
-    const projTasks = Array.isArray(clonedProj.tasks) ? clonedProj.tasks : [];
-
-    const uniqueKey = `${userId}-${projId}-${projIndex}`;
-
-      return (
-        <div className="col-lg-6 mb-4" key={uniqueKey}>
-          <div className="card border border-dark h-100">
-            <div className="card-header bg-light border-bottom border-dark">
-              <strong>{clonedProj.name || "Untitled Project"}</strong>
-              <div className="text-muted small">
-                {clonedProj.description || "No description"}
-              </div>
-            </div>
-
-            <div className="card-body p-0">
-              <table
-                className="table table-sm mb-0"
-                style={{
-                  border: "1px solid #000",
-                  width: "100%",
-                  tableLayout: "fixed",
-                  borderCollapse: "collapse",
-                  fontSize: "13px",
-                }}
-              >
-                <thead style={{ backgroundColor: "#f1f1f1" }}>
-                  <tr>
-                    <th style={{ border: "1px solid #000", width: "15%" }}>Task</th>
-                    <th style={{ border: "1px solid #000", width: "12%" }}>Status</th>
-                    <th style={{ border: "1px solid #000", width: "12%" }}>Time</th>
-                    <th style={{ border: "1px solid #000", width: "12%" }}>Estimated</th>
-                    <th style={{ border: "1px solid #000", width: "12%" }}>Saved</th>
-                    <th style={{ border: "1px solid #000", width: "12%" }}>Overtime</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {projTasks && projTasks.length > 0 ? (
-                    projTasks.map((t: any, tIndex: number) => (
-                      <tr
-                        key={`${userId}-${projId}-${t?.id || t?._id || tIndex}`}
-                      >
-                        <td style={{ border: "1px solid #000" }}>{t.title || "Untitled Task"}</td>
-                        <td style={{ border: "1px solid #000" }}>
-                          <span
-                            className="badge"
+                        <div className="card-body p-0">
+                          <table
+                            className="table table-sm mb-0"
                             style={{
-                              backgroundColor:
-                                statusMap[t.status]?.bgColor || "#6c757d",
-                              color: "#fff",
-                              fontSize: "11px",
+                              border: "1px solid #000",
+                              width: "100%",
+                              tableLayout: "fixed",
+                              borderCollapse: "collapse",
+                              fontSize: "13px",
                             }}
                           >
-                            {statusMap[t.status]?.label || t.status}
-                          </span>
-                        </td>
-                        <td style={{ border: "1px solid #000" }}>{formatTime(t.time)}</td>
-                        <td style={{ border: "1px solid #000" }}>{formatTime(t.estimatedTime)}</td>
-                        <td style={{ border: "1px solid #000", color: "green" }}>
-                          {formatTime(t.savedTime)}
-                        </td>
-                        <td style={{ border: "1px solid #000", color: "red" }}>
-                          {formatTime(t.overtime)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="text-center text-muted"
-                        style={{ border: "1px solid #000" }}
-                      >
-                        No tasks found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                            <thead style={{ backgroundColor: "#f1f1f1" }}>
+                              <tr>
+                                <th style={{ border: "1px solid #000", width: "25%" }}>Task</th>
+                                <th style={{ border: "1px solid #000", width: "12%" }}>Status</th>
+                                <th style={{ border: "1px solid #000", width: "12%" }}>Time</th>
+                                <th style={{ border: "1px solid #000", width: "12%" }}>Estimated</th>
+                                <th style={{ border: "1px solid #000", width: "12%" }}>Saved</th>
+                                <th style={{ border: "1px solid #000", width: "12%" }}>Overtime</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              {projTasks && projTasks.length > 0 ? (
+                                projTasks.map((t: any, tIndex: number) => (
+                                  <tr key={`${userId}-${projId}-${t?.id || tIndex}`}>
+                                    <td style={{ border: "1px solid #000" }}>
+                                      {t.title || "Untitled Task"}
+                                    </td>
+                                    <td style={{ border: "1px solid #000" }}>
+                                      <span
+                                        className="badge"
+                                        style={{
+                                          backgroundColor:
+                                            statusMap[t.status]?.bgColor ||
+                                            "#6c757d",
+                                          color: "#fff",
+                                          fontSize: "11px",
+                                        }}
+                                      >
+                                        {statusMap[t.status]?.label ||
+                                          t.status}
+                                      </span>
+                                    </td>
+                                    <td style={{ border: "1px solid #000" }}>
+                                      {formatTime(t.time)}
+                                    </td>
+                                    <td style={{ border: "1px solid #000" }}>
+                                      {formatTime(t.estimatedTime)}
+                                    </td>
+                                    <td
+                                      style={{
+                                        border: "1px solid #000",
+                                        color: "green",
+                                      }}
+                                    >
+                                      {formatTime(t.savedTime)}
+                                    </td>
+                                    <td
+                                      style={{
+                                        border: "1px solid #000",
+                                        color: "red",
+                                      }}
+                                    >
+                                      {formatTime(t.overtime)}
+                                    </td>
+                                  </tr>
+                                ))
+                              ) : (
+                                <tr>
+                                  <td
+                                    colSpan={6}
+                                    className="text-center text-muted"
+                                    style={{ border: "1px solid #000" }}
+                                  >
+                                    No tasks found
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-12 text-center text-muted">
+                  Not worked in any project.
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      );
-    })
-  ) : (
-    <div className="col-12 text-center text-muted">Not worked in any project.</div>
-  )}
-</div> */}
 
             {/* === Date-wise Breakdown === */}
             <div className="card mt-3 border border-dark">
@@ -358,9 +402,9 @@ const AllUserTimeSheet: React.FC = () => {
                   </thead>
                   <tbody>
                     {dayWise.length > 0 ? (
-                      dayWise.map((day: { tasks: any[]; date: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, dIndex: any) =>
+                      dayWise.map((day: any, dIndex: number) =>
                         day.tasks?.length > 0 ? (
-                          day.tasks.map((t: { id: any; title: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; status: string | number; time: number; }, tIndex: number) => (
+                          day.tasks.map((t: any, tIndex: number) => (
                             <tr
                               key={`${userId}-${day.date}-${t?.id || tIndex}`}
                             >
@@ -381,18 +425,16 @@ const AllUserTimeSheet: React.FC = () => {
                               </td>
                               <td style={{ border: "1px solid #000" }}>
                                 <span
-                                        className="badge"
-                                        style={{
-                                          backgroundColor:
-                                            statusMap[t.status]?.bgColor ||
-                                            "#6c757d",
-                                          color: "#fff",
-                                          fontSize: "11px",
-                                        }}
-                                      >
-                                        {statusMap[t.status]?.label ||
-                                          t.status}
-                                      </span>
+                                  className="badge"
+                                  style={{
+                                    backgroundColor:
+                                      statusMap[t.status]?.bgColor || "#6c757d",
+                                    color: "#fff",
+                                    fontSize: "11px",
+                                  }}
+                                >
+                                  {statusMap[t.status]?.label || t.status}
+                                </span>
                               </td>
                               <td style={{ border: "1px solid #000" }}>
                                 {formatTime(t.time)}
