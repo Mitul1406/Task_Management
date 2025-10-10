@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Tracker - Verify Your Account</title>
+  <style>
+    /* Reset and base styles */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: Arial, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+    }
+    a {
+      text-decoration: none;
+    }
+
+    /* Responsive container */
+    .email-container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Header */
+    .email-header h1 {
+      color: #2563eb;
+      margin: 0;
+      font-size: 28px;
+    }
+    .email-header p {
+      color: #555;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    /* OTP box */
+    .otp-box {
+      display: inline-block;
+      background-color: #2563eb;
+      color: #ffffff;
+      font-size: 28px;
+      letter-spacing: 6px;
+      font-weight: bold;
+      padding: 16px 40px;
+      border-radius: 8px;
+      margin: 30px 0;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      background-color: #2563eb;
+      color: #fff;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    /* Footer */
+    .footer {
+      font-size: 13px;
+      color: #999;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    /* Responsive adjustments */
+    @media only screen and (max-width: 480px) {
+      .email-container {
+        padding: 20px;
+      }
+      .otp-box {
+        font-size: 24px;
+        padding: 12px 30px;
+      }
+      .email-header h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <table width="100%">
+    <tr>
+      <td>
+        <div class="email-container">
+          <!-- Header -->
+          <div class="email-header" style="text-align: center;">
+            <h1>Task Tracker</h1>
+            <p>Stay organized. Stay productive.</p>
+          </div>
+
+          <!-- Body -->
+          <h2 style="text-align: center; color: #2563eb;">OTP Verification</h2>
+          <p>Hello {{user}},</p>
+          <p>
+            Thank you for using <strong>Task Tracker</strong>! To complete your registration or login,
+            please verify your account using the One-Time Password (OTP) below.
+          </p>
+
+          <!-- OTP -->
+          <div style="text-align: center;">
+            <div class="otp-box">{{OTP}}</div>
+          </div>
+
+          <p style="text-align: center; color: #555;">
+            This OTP will expire in <strong>15 minutes</strong>. Please do not share it with anyone.
+          </p>
+
+          <!-- Optional Button (Future CTA) -->
+          <!-- <div style="text-align: center;">
+            <a href="#" class="btn">Verify Now</a>
+          </div> -->
+
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+          <!-- Footer -->
+          <p class="footer">
+            If you didn’t request this, please ignore this email.<br />
+            &copy; {{YEAR}} Task Tracker. All rights reserved.
+          </p>
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

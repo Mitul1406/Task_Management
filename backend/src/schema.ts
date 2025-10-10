@@ -45,6 +45,7 @@ export const schema=buildSchema(`
     token: String
     message: String
     password: String
+    success:Boolean
     }
 
       type DeleteResponse {
@@ -92,7 +93,12 @@ type DayWiseEntry {
   endDate: String
   status:String
 }
-
+type VerifyOtpResponse {
+  success: Boolean!
+  message: String!
+  token: String
+  user: User
+}
 # Each project containing tasks for the user
 type ProjectWithTasks {
   id: ID!
@@ -172,6 +178,8 @@ type UserDayWiseAdminResponse {
 
      register(username: String!, email: String!, password: String!, role: String): User
      login(email: String!, password: String!): User
+     verifyOtp(email: String!, otp: String!): VerifyOtpResponse!
+     resendOTP(email: String!):VerifyOtpResponse!
     }
     `
 )

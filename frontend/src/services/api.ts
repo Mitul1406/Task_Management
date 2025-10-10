@@ -229,11 +229,7 @@ const UPDATE_TASK = gql`
 const REGISTRATION =gql`
 mutation register($username: String!, $email: String!, $password: String!, $role: String) {
     register(username: $username, email: $email, password: $password, role: $role) {
-      id
-      username
-      email
-      role
-      token
+      success
       message
     }
   }
@@ -241,11 +237,7 @@ mutation register($username: String!, $email: String!, $password: String!, $role
 const LOGIN =gql`
 mutation login($email: String!, $password: String!) {
     login(email: $email, password: $password) {
-      id
-      username
-      email
-      role
-      token
+      success
       message
     }
   }
@@ -396,7 +388,48 @@ const CHANGE_PASSWORD = gql`
     }
   }
 `;
+const VERIFY_OTP = gql`
+  mutation VerifyOtp($email: String!, $otp: String!) {
+    verifyOtp(email: $email, otp: $otp) {
+      success
+      message
+      token
+      user {
+        id
+        username
+        email
+        role
+      }
+    }
+  }
+`;
+
+const RESEND_OTP = gql`
+  mutation ResendOtp($email: String!) {
+    resendOTP(email: $email) {
+      success
+      message
+    }
+  }
+`;
 // API Functions
+export const verifyOtp = async (email: string, otp: string) => {
+  const res = await client.mutate({
+    mutation: VERIFY_OTP,
+    variables: { email, otp },
+  });
+
+  return (res as any).data.verifyOtp;
+};
+
+export const resendOtp = async (email: string) => {
+  const res = await client.mutate({
+    mutation: RESEND_OTP,
+    variables: { email },
+  });
+
+  return (res as any).data.resendOTP;
+};
 export const changePassword = async (id: string, oldPassword: string, newPassword: string) => {
   const res = await client.mutate({
     mutation: CHANGE_PASSWORD,

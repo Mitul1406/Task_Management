@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../services/api"; 
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 
 interface JwtPayload {
@@ -16,7 +16,7 @@ interface JwtPayload {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -35,11 +35,14 @@ const Login: React.FC = () => {
         const decoded = jwtDecode<JwtPayload>(token);
         const now = Date.now() / 1000;
         if (decoded.exp && decoded.exp < now) {
+          console.log(`[Login] Token expired: ${token}`);
           localStorage.removeItem("token");
           return;
         }
+        console.log(`[Login] Token valid, redirecting to ${decoded.role} dashboard`);
         navigateTo(decoded.role);
-      } catch {
+      } catch (err) {
+        console.error("[Login] Invalid token", err);
         localStorage.removeItem("token");
       }
     }
@@ -47,17 +50,41 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setLoading(true);
+
+    console.log(`[Login] Attempting login for email: ${form.email} at ${new Date().toISOString()}`);
+    
     try {
       const user = await login(form.email, form.password);
+      console.log("[Login] API Response:", user);
+
       if (!user) throw new Error("Login failed");
+
+      if (!user.isVerified) {
+        toast.info("OTP sent to your email");
+        console.log(`[Login] OTP required for email: ${form.email}`);
+        
+        // Save email for OTP page
+        localStorage.setItem("otpEmail", form.email);
+
+        navigate("/otp-verification", { state: { email: form.email } });
+        return;
+      }
+
       if (user.token) {
         localStorage.setItem("token", user.token);
+        localStorage.removeItem("otpEmail");
         toast.success(user.message);
+
+        console.log(`[Login] Login successful for ${form.email}. Navigating to ${user.role}`);
         navigateTo(user.role);
       }
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      console.error(`[Login] Error for email ${form.email}:`, err);
+      toast.error(err.message || "Login failed"); // <-- show error as toast
+    } finally {
+      setLoading(false);
+      console.log(`[Login] Login attempt finished for ${form.email} at ${new Date().toISOString()}`);
     }
   };
 
@@ -65,12 +92,9 @@ const Login: React.FC = () => {
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
       <div className="card shadow-lg p-4" style={{ maxWidth: "400px", width: "100%" }}>
         <h2 className="text-center mb-4">Welcome Back</h2>
-        {error && <div className="alert alert-danger">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email Address
-            </label>
+            <label htmlFor="email" className="form-label">Email Address</label>
             <input
               type="email"
               id="email"
@@ -84,9 +108,7 @@ const Login: React.FC = () => {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
+            <label htmlFor="password" className="form-label">Password</label>
             <input
               type="password"
               id="password"
@@ -99,8 +121,12 @@ const Login: React.FC = () => {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary w-100 py-2">
-            Login
+          <button
+            type="submit"
+            className="btn btn-primary w-100 py-2"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 

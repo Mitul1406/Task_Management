@@ -10,7 +10,7 @@ const Register: React.FC = () => {
     email: "",
     password: "",
   });
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -18,13 +18,29 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setLoading(true);
+
     try {
+      console.log(`[Register] Attempting registration for email: ${form.email} at ${new Date().toISOString()}`);
       const res = await register(form.email, form.password, form.username);
-      toast.success(res.message);
-      navigate("/login"); 
+      console.log("[Register] API Response:", res);
+
+      if (!res) throw new Error("Registration failed");
+
+      toast.success(res.message || "OTP sent to your email");
+
+      // Save email for OTP page
+      localStorage.setItem("otpEmail", form.email);
+
+      console.log(`[Register] Navigating to OTP verification for email: ${form.email}`);
+      navigate("/otp-verification", { state: { email: form.email } });
+
     } catch (err: any) {
-      setError(err.message || "Registration failed");
+      console.error(`[Register] Error for email ${form.email}:`, err);
+      toast.error(err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+      console.log(`[Register] Registration attempt finished for ${form.email} at ${new Date().toISOString()}`);
     }
   };
 
@@ -32,12 +48,10 @@ const Register: React.FC = () => {
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
       <div className="card shadow-lg p-4" style={{ maxWidth: "400px", width: "100%" }}>
         <h2 className="text-center mb-4">Create Account</h2>
-        {error && <div className="alert alert-danger">{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label htmlFor="username" className="form-label">
-              Username
-            </label>
+            <label htmlFor="username" className="form-label">Username</label>
             <input
               type="text"
               id="username"
@@ -51,9 +65,7 @@ const Register: React.FC = () => {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email Address
-            </label>
+            <label htmlFor="email" className="form-label">Email Address</label>
             <input
               type="email"
               id="email"
@@ -67,9 +79,7 @@ const Register: React.FC = () => {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
+            <label htmlFor="password" className="form-label">Password</label>
             <input
               type="password"
               id="password"
@@ -82,8 +92,12 @@ const Register: React.FC = () => {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary w-100 py-2">
-            Register
+          <button
+            type="submit"
+            className="btn btn-primary w-100 py-2"
+            disabled={loading}
+          >
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 

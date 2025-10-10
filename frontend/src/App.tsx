@@ -15,7 +15,8 @@ import TimeSheet from "./pages/TimeSheet";
 import UserTimeSheet from "./pages/UserTimeSheet";
 import AllUserTimeSheet from "./pages/AllUserTimeSheet";
 import User from "./pages/User";
-import ExampleTimeAdmin from "./pages/ExampleTimeAdmin";
+// import ExampleTimeAdmin from "./pages/ExampleTimeAdmin";
+import OtpVerification from "./components/otp_verification";
 
 function App() {
   return (
@@ -84,6 +85,8 @@ function App() {
 
           <Route path="/login" element={<Login />} />
           <Route path="/registration" element={<Register />} />
+         <Route path="/otp-verification" element={<OtpVerification />} />
+
 
           <Route
             path="*"
