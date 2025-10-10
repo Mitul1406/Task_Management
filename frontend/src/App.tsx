@@ -13,6 +13,9 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Report from "./pages/Report";
 import TimeSheet from "./pages/TimeSheet";
 import UserTimeSheet from "./pages/UserTimeSheet";
+import AllUserTimeSheet from "./pages/AllUserTimeSheet";
+import User from "./pages/User";
+import ExampleTimeAdmin from "./pages/ExampleTimeAdmin";
 
 function App() {
   return (
@@ -46,10 +49,27 @@ function App() {
              }
           />
           <Route
+             path="/userView"
+             element={
+             <ProtectedRoute allowedRoles="admin">
+             <User />
+             </ProtectedRoute>
+             }
+          />
+          <Route
              path="/timesheet-report/:projectId"
              element={
              <ProtectedRoute allowedRoles="admin">
              <TimeSheet />
+             </ProtectedRoute>
+             }
+          />
+          <Route
+             path="/alluser-timesheet-report"
+             element={
+             <ProtectedRoute allowedRoles="admin">
+             <AllUserTimeSheet />
+             {/* <ExampleTimeAdmin/> */}
              </ProtectedRoute>
              }
           />

@@ -25,6 +25,7 @@ export const schema=buildSchema(`
     savedTime:Int
     startDate:String
     endDate: String
+    status:String
   }
    
 
@@ -43,7 +44,12 @@ export const schema=buildSchema(`
     role: String!
     token: String
     message: String
+    password: String
     }
+
+      type DeleteResponse {
+    message: String!
+  }
     type StopTimerResponse {
   totalDuration: Int!
   overtime: Int!
@@ -56,6 +62,7 @@ export const schema=buildSchema(`
   estimatedTime: Int # estimated time for this task
   savedTime: Int     # saved time for this task
   overtime: Int
+  status:String
 }
 type DayWiseUserTime {
   userId: ID!
@@ -74,7 +81,7 @@ type DayWiseEntry {
 
 
     # user day wise
-    type TaskSummary {
+  type TaskSummary {
   id: ID!
   title: String!
   time: Int!          # seconds worked on this task
@@ -83,6 +90,7 @@ type DayWiseEntry {
   overtime: Int
   startDate: String
   endDate: String
+  status:String
 }
 
 # Each project containing tasks for the user
@@ -92,7 +100,7 @@ type ProjectWithTasks {
   description: String
   tasks: [TaskSummary!]!
 }
-    type UserDayWise {
+type UserDayWise {
   projects: [ProjectWithTasks!]!
   dayWise: [DayWiseEntry!]!
 }
@@ -104,7 +112,19 @@ type UserDayWiseInfo {
   email: String!
   role: String!
 }
-    
+    #admin all data
+    type AdminUserDayWise {
+  id: ID!
+  username: String!
+  email: String!
+  projects: [ProjectWithTasks!]!
+  dayWise: [DayWiseEntry!]!
+}
+
+# Admin query response
+type UserDayWiseAdminResponse {
+  users: [AdminUserDayWise!]!
+}
     type Query{
     projects:[Project]
     project(id:ID!):Project
@@ -112,6 +132,9 @@ type UserDayWiseInfo {
     task(id:ID!):Task
     users: [User!]!
     tasksForUser(userId: ID!): [Project!]!
+
+    user(id: ID!): User
+
     dayWiseData(
     projectId: ID!
     userIds: [String!]!
@@ -125,6 +148,8 @@ type UserDayWiseInfo {
     startDate: String!
     endDate: String!
   ): UserDayWise!
+
+  userDayWiseAdmin(startDate: String!, endDate: String!): UserDayWiseAdminResponse!
     }
 
     type Mutation{
@@ -132,9 +157,15 @@ type UserDayWiseInfo {
      updateProject(id: ID!, name: String, description: String): Project
      deleteProject(id: ID!): Boolean
 
+     createUser(username: String!, email: String!, password: String!, role: String): User!
+     updateUser(id: ID!, username: String, email: String, role: String): User!
+     deleteUser(id: ID!): DeleteResponse!
+     changePassword(id: ID!, oldPassword: String!, newPassword: String!): DeleteResponse!
+
      createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      deleteTask(id: ID!): Boolean
+     updateTaskStatus(taskId: ID!, status: String!): Task
  
      startTimer(taskId: ID!): Timer
      stopTimer(taskId: ID!): StopTimerResponse!

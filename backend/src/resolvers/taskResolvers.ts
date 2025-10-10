@@ -9,7 +9,7 @@ const formatDate = (val: any) => {
   return d.toISOString().split("T")[0]; // YYYY-MM-DD
 };
 export const taskResolver = {
-tasks : async ({
+tasks: async ({
   projectId,
   userId,
 }: {
@@ -35,10 +35,20 @@ tasks : async ({
 
       const runningTimer = timers.find((t) => !t.endTime);
       let runningDuration = 0;
+      let runningTimerData = null;
+
       if (runningTimer) {
         runningDuration = Math.floor(
           (new Date().getTime() - new Date(runningTimer.startTime).getTime()) / 1000
         );
+        // Map runningTimer to match GraphQL Timer type
+        runningTimerData = {
+          id: runningTimer._id.toString(),          // required
+          taskId: runningTimer.taskId.toString(),   // required
+          startTime: runningTimer.startTime.toISOString(), // required
+          endTime: runningTimer.endTime ? runningTimer.endTime.toISOString() : null,
+          duration: runningTimer.duration || 0,
+        };
       }
 
       return {
@@ -46,13 +56,14 @@ tasks : async ({
         projectId: task.projectId.toString(),
         title: task.title,
         estimatedTime: task.estimatedTime,
+        status: task.status,
         totalTime: totalCompleted + runningDuration,
         isRunning: !!runningTimer,
-        runningTimer: runningTimer || undefined,
+        runningTimer: runningTimerData,
         overtime: (task as any).overtime || 0,
         savedTime: (task as any).savedTime || 0,
-        startDate:formatDate((task as any).startDate) || "",
-        endDate:formatDate((task as any).endDate) || "",
+        startDate: formatDate((task as any).startDate) || "",
+        endDate: formatDate((task as any).endDate) || "",
         assignedUser: (task as any).assignedUser
           ? {
               id: (task as any).assignedUser._id.toString(),
@@ -67,7 +78,6 @@ tasks : async ({
 
   return tasksWithDetails;
 },
-
 
   task: async ({ id }: { id: string }) => {
     const task = await Task.findById(id);
@@ -181,6 +191,7 @@ tasksForUser: async ({ userId }: { userId: string }) => {
       title: task.title,
       startDate:(task as any).startDate,
       endDate:(task as any).endDate,
+      status:task.status,
       estimatedTime: task.estimatedTime,
       totalTime: totalCompleted + runningDuration,
       isRunning: !!runningTimer,
@@ -283,7 +294,7 @@ dayWiseData: async ({
     const taskId = task._id.toString();
     const taskInfo = taskInfoMap[taskId];
     if (!taskInfo) return null;
-
+    const status = task.status
     const estimated = taskInfo.estimatedTime || 0;
     const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
 
@@ -307,6 +318,7 @@ dayWiseData: async ({
       estimatedTime: estimated,
       savedTime,
       overtime,
+      status,
     };
   })
   .filter(Boolean);
@@ -407,47 +419,49 @@ userDayWise: async ({
 
     // Compute tasks for today
     const taskTimers = tasks
-      .map((task) => {
-        const taskId = task._id.toString();
-        const taskInfo = taskInfoMap[taskId];
-        if (!taskInfo) return null;
+  .map((task) => {
+    const taskId = task._id.toString();
+    const taskInfo = taskInfoMap[taskId];
+    if (!taskInfo) return null;
 
-        const estimated = taskInfo.estimatedTime || 0;
-        const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
-        if (workedToday === 0) return null;
+    const estimated = taskInfo.estimatedTime || 0;
+    const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
+    if (workedToday === 0) return null;
 
-        const totalWorkedBefore = Object.entries(workedByTaskByDate[taskId] || {})
-          .filter(([d]) => d < (dayKey as any))
-          .reduce((sum, [, val]) => sum + val, 0);
+    const totalWorkedBefore = Object.entries(workedByTaskByDate[taskId] || {})
+      .filter(([d]) => d < (dayKey as any))
+      .reduce((sum, [, val]) => sum + val, 0);
 
-        const remainingEstimated = Math.max(estimated - totalWorkedBefore, 0);
-        const overtime = Math.max(workedToday - remainingEstimated, 0);
-        const savedTime = Math.max(estimated - (totalWorkedBefore + workedToday), 0);
+    const remainingEstimated = Math.max(estimated - totalWorkedBefore, 0);
+    const overtime = Math.max(workedToday - remainingEstimated, 0);
+    const savedTime = Math.max(estimated - (totalWorkedBefore + workedToday), 0);
 
-        // Push to project map
-        if (projectMap[taskInfo.projectId]) {
-          projectMap[taskInfo.projectId].tasks.push({
-            id: taskId,
-            title: task.title,
-            time: workedToday,
-            estimatedTime: estimated,
-            savedTime,
-            overtime,
-            startDate: taskInfo.startDate,
-            endDate: taskInfo.endDate,
-          });
-        }
+    if (projectMap[taskInfo.projectId]) {
+      projectMap[taskInfo.projectId].tasks.push({
+        id: taskId,
+        title: task.title,
+        time: workedToday,
+        estimatedTime: estimated,
+        savedTime,
+        overtime,
+        startDate: taskInfo.startDate,
+        endDate: taskInfo.endDate,
+        status: task.status,
+      });
+    }
 
-        return {
-          taskId,
-          title: task.title,
-          time: workedToday,
-          estimatedTime: estimated,
-          savedTime,
-          overtime,
-        };
-      })
-      .filter(Boolean);
+    return {
+      taskId,
+      title: task.title,
+      time: workedToday,
+      estimatedTime: estimated,
+      savedTime,
+      overtime,
+      status: task.status,
+    };
+  })
+  .filter(Boolean);
+
 
     const totalTime = taskTimers.reduce((sum, t) => sum + (t?.time || 0), 0);
 
@@ -463,7 +477,298 @@ userDayWise: async ({
     projects: Object.values(projectMap),
     dayWise: dayWiseData,
   };
+},
+updateTaskStatus: async ({ taskId, status }: { taskId: string; status: string }) => {
+
+  const allowedStatuses = ["pending", "in_progress", "code_review", "done"];
+  if (!allowedStatuses.includes(status)) {
+    throw new Error("Invalid status value");
+  }
+
+  const updatedTask = await Task.findByIdAndUpdate(
+    taskId,
+    { status },
+    { new: true, upsert: false }
+  )
+    .populate("assignedUser", "username _id") 
+    .exec();
+
+  if (!updatedTask) {
+    throw new Error("Task not found");
+  }
+
+  return updatedTask;
+},
+
+// userDayWiseAdmin: async ({
+//   startDate,
+//   endDate,
+// }: {
+//   startDate: string | Date;
+//   endDate: string | Date;
+// }) => {
+//   const start = new Date(startDate);
+//   const end = new Date(endDate);
+
+//   const dates: Date[] = [];
+//   const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+//   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
+
+//   while (current <= endUTC) {
+//     dates.push(new Date(current));
+//     current.setUTCDate(current.getUTCDate() + 1);
+//   }
+
+//   const users = await User.find().lean();
+
+//   const result = [];
+
+//   for (const user of users) {
+//     const tasks = await Task.find({ assignedUserId: user._id }).lean();
+//     const taskIds = tasks.map((t) => t._id.toString());
+
+//     const taskInfoMap: Record<string, any> = {};
+//     for (const task of tasks) {
+//       taskInfoMap[task._id.toString()] = {
+//         projectId: task.projectId.toString(),
+//         title: task.title,
+//         estimatedTime: task.estimatedTime || 0,
+//         startDate: (task as any).startDate ? new Date((task as any).startDate) : undefined,
+//         endDate: (task as any).endDate ? new Date((task as any).endDate) : undefined,
+//         status: task.status,
+//       };
+//     }
+
+//     // Fetch timers
+//     const timers = await Timer.find({ taskId: { $in: taskIds } }).lean();
+
+//     const workedByTaskByDate: Record<string, Record<string, number>> = {};
+//     timers.forEach((t: any) => {
+//       const taskId = t.taskId.toString();
+//       const dayKey = new Date(t.startTime).toISOString().split("T")[0];
+//       workedByTaskByDate[taskId] = workedByTaskByDate[taskId] || {};
+//       workedByTaskByDate[taskId][(dayKey as any)] = (workedByTaskByDate[taskId][(dayKey as any)] || 0) + (t.duration || 0);
+//     });
+
+//     // Fetch projects
+//     const projectIds = Array.from(new Set(tasks.map(t => t.projectId.toString())));
+//     const projects = await Project.find({ _id: { $in: projectIds } }).lean();
+//     const projectMap: Record<string, any> = {};
+//     for (const project of projects) {
+//       projectMap[project._id.toString()] = {
+//         id: project._id.toString(),
+//         name: project.name,
+//         description: project.description,
+//         tasks: [],
+//       };
+//     }
+
+//     // Build day-wise data
+//     const dayWiseData = dates.map((date) => {
+//       const dayKey = date.toISOString().split("T")[0];
+
+//       const taskTimers = tasks
+//         .map((task) => {
+//           const taskId = task._id.toString();
+//           const info = taskInfoMap[taskId];
+//           if (!info) return null;
+
+//           const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
+//           if (workedToday === 0) return null;
+
+//           const totalWorkedBefore = Object.entries(workedByTaskByDate[taskId] || {})
+//             .filter(([d]) => d < (dayKey as any))
+//             .reduce((sum, [, val]) => sum + val, 0);
+
+//           const remainingEstimated = Math.max(info.estimatedTime - totalWorkedBefore, 0);
+//           const overtime = Math.max(workedToday - remainingEstimated, 0);
+//           const savedTime = Math.max(info.estimatedTime - (totalWorkedBefore + workedToday), 0);
+
+//           // Add to project
+//           if (projectMap[info.projectId]) {
+//             projectMap[info.projectId].tasks.push({
+//               id: taskId,
+//               title: task.title,
+//               time: workedToday,
+//               estimatedTime: info.estimatedTime,
+//               savedTime,
+//               overtime,
+//               startDate: info.startDate,
+//               endDate: info.endDate,
+//               status: info.status,
+//             });
+//           }
+
+//           return {
+//             taskId,
+//             title: task.title,
+//             time: workedToday,
+//             estimatedTime: info.estimatedTime,
+//             savedTime,
+//             overtime,
+//             status: info.status,
+//           };
+//         })
+//         .filter(Boolean);
+
+//       const totalTime = taskTimers.reduce((sum, t) => sum + (t?.time || 0), 0);
+
+//       return {
+//         date: dayKey,
+//         time: totalTime,
+//         status: totalTime > 0 ? "Worked" : "Not Worked",
+//         tasks: taskTimers,
+//       };
+//     });
+
+//     result.push({
+//       id: user._id.toString(),
+//       username: user.username,
+//       email: user.email,
+//       projects: Object.values(projectMap),
+//       dayWise: dayWiseData,
+//     });
+//   }
+
+//   return { users: result };
+// },
+
+userDayWiseAdmin: async ({ startDate, endDate }: { startDate: string | Date; endDate: string | Date }) => {
+  const start = new Date(startDate);
+  start.setUTCHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setUTCHours(23, 59, 59, 999);
+
+  const dates: Date[] = [];
+  const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+  const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
+  while (current <= endUTC) {
+    dates.push(new Date(current));
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  const users = await User.find({role :{$ne:"admin"}}).lean();
+  const result = [];
+
+  for (const user of users) {
+    // ✅ isolate every user cleanly
+    const tasks = await Task.find({ assignedUserId: user._id }).lean();
+    const taskIds = tasks.map((t) => t._id.toString());
+
+    // --- task info map per user ---
+    const taskInfoMap: Record<string, any> = {};
+    for (const task of tasks) {
+      taskInfoMap[task._id.toString()] = {
+        projectId: task.projectId?.toString(),
+        title: task.title,
+        estimatedTime: task.estimatedTime || 0,
+        startDate: (task as any).startDate ? new Date((task as any).startDate) : undefined,
+        endDate: (task as any).endDate ? new Date((task as any).endDate) : undefined,
+        status: task.status,
+      };
+    }
+
+    // --- timers per user ---
+    const timers = await Timer.find({
+      taskId: { $in: taskIds },
+      startTime: { $gte: start, $lte: end },
+    }).lean();
+
+    const workedByTaskByDate: Record<string, Record<string, number>> = {};
+    for (const t of timers) {
+      const taskId = t.taskId.toString();
+      const dayKey = new Date(t.startTime).toISOString().split("T")[0];
+      if (!workedByTaskByDate[taskId]) workedByTaskByDate[taskId] = {};
+      workedByTaskByDate[taskId][(dayKey as any)] = (workedByTaskByDate[taskId][(dayKey as any)] || 0) + (t.duration || 0);
+    }
+
+    // ✅ Create a *new* project map per user, per request
+    const projectMap: Record<string, any> = {};
+
+    const dayWiseData = dates.map((date) => {
+      const dayKey = date.toISOString().split("T")[0];
+      const dayTasks: any[] = [];
+
+      for (const task of tasks) {
+        const taskId = task._id.toString();
+        const info = taskInfoMap[taskId];
+        if (!info) continue;
+
+        const workedToday = workedByTaskByDate[taskId]?.[(dayKey as any)] || 0;
+        if (workedToday === 0) continue;
+
+        const totalWorkedBefore = Object.entries(workedByTaskByDate[taskId] || {})
+          .filter(([d]) => d < (dayKey as any))
+          .reduce((sum, [, val]) => sum + val, 0);
+
+        const remainingEstimated = Math.max(info.estimatedTime - totalWorkedBefore, 0);
+        const overtime = Math.max(workedToday - remainingEstimated, 0);
+        const savedTime = Math.max(info.estimatedTime - (totalWorkedBefore + workedToday), 0);
+
+        // ✅ New isolated project map entry per user
+        if (!projectMap[info.projectId]) {
+          projectMap[info.projectId] = {
+            id: info.projectId,
+            name: null,
+            description: null,
+            tasks: [],
+          };
+        }
+
+        // ✅ Deep push — no shared reference
+        const newTask = {
+          taskId,
+          id: taskId,
+          title: info.title,
+          time: workedToday,
+          estimatedTime: info.estimatedTime,
+          savedTime,
+          overtime,
+          startDate: info.startDate,
+          endDate: info.endDate,
+          status: info.status,
+        };
+
+        projectMap[info.projectId].tasks.push({ ...newTask });
+        dayTasks.push({ ...newTask });
+      }
+
+      return {
+        date: dayKey,
+        time: dayTasks.reduce((s, t) => s + (t.time || 0), 0),
+        status: dayTasks.length > 0 ? "Worked" : "Not Worked",
+        tasks: [...dayTasks],
+      };
+    });
+
+    // ✅ Load project info cleanly
+    const projectIds = Object.keys(projectMap);
+    if (projectIds.length > 0) {
+      const projects = await Project.find({ _id: { $in: projectIds } }).lean();
+      for (const project of projects) {
+        const pid = project._id.toString();
+        if (projectMap[pid]) {
+          projectMap[pid].name = project.name;
+          projectMap[pid].description = project.description;
+        }
+      }
+    }
+
+    // ✅ Deep isolate this user completely
+    const userProjects = Object.values(projectMap).map((p: any) => ({
+      ...p,
+      tasks: p.tasks.map((t: any) => ({ ...t })),
+    }));
+
+    result.push({
+      id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      projects: userProjects,
+      dayWise: dayWiseData.map((d) => ({ ...d, tasks: d.tasks.map((t) => ({ ...t })) })),
+    });
+  }
+
+  return { users: result };
 }
-
-
 };

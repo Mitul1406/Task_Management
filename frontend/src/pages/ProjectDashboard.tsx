@@ -74,7 +74,6 @@ useEffect(() => {
     .forEach((task) => {
       if (!intervalsRef.current[task.id]) {
         intervalsRef.current[task.id] = setInterval(() => {
-            console.log("--->");
             
           setTasks((prev) => {
             const updated = { ...prev };
@@ -175,7 +174,6 @@ useEffect(() => {
 
   // Start or stop a timer
   const handleStartStopTimer = async (task: Task, projectId: string) => {
-    console.log("---->",projectId);
     
     if (task.isRunning) {
       const res = await stopTimer(task.id);

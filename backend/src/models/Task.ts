@@ -11,6 +11,7 @@ export interface ITask extends Document {
   totalDuration?: number;
   estimatedTime: number,
   assignedUserId?: string,
+  status: "pending" | "in_progress" | "in_testing" | "done";
 }
 
 const taskSchema = new Schema(
@@ -23,6 +24,11 @@ const taskSchema = new Schema(
     savedTime: { type: Number, default: 0 },
     startDate: { type: Date, required: true }, 
     endDate: { type: Date, required: true },
+    status: {
+      type: String,
+      enum: ["pending", "in_progress", "code_review", "done"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );

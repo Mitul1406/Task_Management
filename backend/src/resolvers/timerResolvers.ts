@@ -9,7 +9,6 @@ export const timerResolver = {
 
     const timer = new Timer({ taskId, startTime: new Date() });
     await timer.save();
-    console.log(timer);
     
     return timer;
   },
