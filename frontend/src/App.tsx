@@ -68,8 +68,8 @@ function App() {
              path="/alluser-timesheet-report"
              element={
              <ProtectedRoute allowedRoles="admin">
-             {/* <AllUserTimeSheet /> */}
-             <ExampleTimeAdmin/>
+             <AllUserTimeSheet />
+             {/* <ExampleTimeAdmin/> */}
              </ProtectedRoute>
              }
           />
