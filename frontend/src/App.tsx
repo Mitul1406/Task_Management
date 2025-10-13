@@ -17,10 +17,25 @@ import AllUserTimeSheet from "./pages/AllUserTimeSheet";
 import User from "./pages/User";
 // import ExampleTimeAdmin from "./pages/ExampleTimeAdmin";
 import OtpVerification from "./components/otp_verification";
+import AutoScreenshot from "./components/ScreenShot";
+import { jwtDecode } from "jwt-decode";
 
 function App() {
+  const token = localStorage.getItem("token");
+
+  let userId = "";
+  if (token) {
+    try {
+      const decoded:any = jwtDecode(token);
+      userId = decoded.id || decoded.userId || ""; // depends on your token payload
+    } catch (error) {
+      console.error("Invalid token:", error);
+    }
+  }
   return (
     <>
+  <AutoScreenshot userId={userId}></AutoScreenshot>
+      
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />

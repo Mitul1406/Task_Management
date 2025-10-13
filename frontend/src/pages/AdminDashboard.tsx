@@ -460,6 +460,7 @@ This will also delete all its tasks.`
           className="btn btn-danger"
           onClick={() => {
             localStorage.removeItem("token");
+            localStorage.setItem("autoScreenshotActive", "false");
             toast.success("Logout successfully...");
             navigate("/login");
           }}

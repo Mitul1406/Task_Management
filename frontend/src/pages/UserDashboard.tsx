@@ -336,6 +336,7 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
             className="btn btn-danger"
             onClick={() => {
               localStorage.removeItem("token");
+              localStorage.setItem("autoScreenshotActive", "false");
               toast.success("Logout successfully...");
               navigate("/login");
             }}

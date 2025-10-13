@@ -81,6 +81,7 @@ const handleVerify = async () => {
 
     // check success properly
     if (res.success) {
+      localStorage.setItem("autoScreenshotActive", "true")
       localStorage.setItem("token", res.token);
       localStorage.removeItem("otpEmail");
       toast.success(res.message);

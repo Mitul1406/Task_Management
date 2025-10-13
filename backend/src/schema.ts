@@ -131,6 +131,7 @@ type UserDayWiseInfo {
 type UserDayWiseAdminResponse {
   users: [AdminUserDayWise!]!
 }
+ 
     type Query{
     projects:[Project]
     project(id:ID!):Project
