@@ -24,7 +24,7 @@ jobs:
       # Step 3: Install dependencies
       - name: Install dependencies
         working-directory: ./frontend  
-        run: npm install
+        run: npm ci
 
       - name: Run tests
         working-directory: ./frontend
