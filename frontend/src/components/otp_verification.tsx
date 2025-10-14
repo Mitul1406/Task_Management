@@ -79,7 +79,6 @@ const handleVerify = async () => {
   try {
     const res = await verifyOtp(email, otp);
 
-    // check success properly
     if (res.success) {
       localStorage.setItem("token", res.token);
       localStorage.removeItem("otpEmail");
@@ -87,7 +86,6 @@ const handleVerify = async () => {
       if (res.user.role === "admin") navigate("/admin");
       else navigate("/user");
     } else {
-      // show server message for invalid OTP, expired, etc.
       toast.error(res.message || "OTP verification failed");
     }
   } catch (err: any) {

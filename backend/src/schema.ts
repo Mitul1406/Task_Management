@@ -131,6 +131,13 @@ type UserDayWiseInfo {
 type UserDayWiseAdminResponse {
   users: [AdminUserDayWise!]!
 }
+
+   type Screenshot {
+  id: ID!
+  url: String!
+  createdAt: String!
+}
+
     type Query{
     projects:[Project]
     project(id:ID!):Project
@@ -156,6 +163,8 @@ type UserDayWiseAdminResponse {
   ): UserDayWise!
 
   userDayWiseAdmin(startDate: String!, endDate: String!): UserDayWiseAdminResponse!
+
+  screenshotsByUser(userId: ID!): [Screenshot!]!
     }
 
     type Mutation{

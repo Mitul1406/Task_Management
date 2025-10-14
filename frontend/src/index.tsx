@@ -5,6 +5,7 @@ import App from "./App";
 import client from "./lib/apolloClient";
 import './index.css'
 import "bootstrap/dist/css/bootstrap.min.css";
+import { AuthProvider } from "./context/AuthContext";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -13,7 +14,9 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <ApolloProvider client={client}>
+      <AuthProvider>
       <App />
+      </AuthProvider>
     </ApolloProvider>
   </React.StrictMode>
 );

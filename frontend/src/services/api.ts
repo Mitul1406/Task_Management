@@ -412,7 +412,34 @@ const RESEND_OTP = gql`
     }
   }
 `;
+
+const SCREEN_SHOT=gql`
+query GetUserScreenshots($userId: ID!) {
+    screenshotsByUser(userId: $userId) {
+      id
+      url
+      createdAt
+    }
+  }
+`
 // API Functions
+export const getUserScreenshots = async (userId: string) => {
+  if (!userId) throw new Error("Missing userId");
+
+  try {
+    const res = await client.query({
+      query: SCREEN_SHOT,
+      variables: { userId },
+      fetchPolicy: "network-only", // optional: always fetch fresh data
+    });
+
+    return (res as any).data.screenshotsByUser;
+  } catch (err) {
+    console.error("Failed to fetch screenshots", err);
+    throw err;
+  }
+};
+
 export const verifyOtp = async (email: string, otp: string) => {
   const res = await client.mutate({
     mutation: VERIFY_OTP,

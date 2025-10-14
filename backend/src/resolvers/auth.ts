@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs";
+import { Screenshot } from "../models/ScreenShot.js";
 dotenv.config();
 const secret= process.env.JWT_SECRET!
 
@@ -138,5 +139,17 @@ verifyOtp: async ({ email, otp }: any) => {
         message: "New OTP sent successfully. Please check your email.",
       };
     },
+
+
+     screenshotsByUser: async ({ userId }: { userId: string }) => {
+  const screenshots = await Screenshot.find({ userId }).sort({ createdAt: -1 });
+
+  return screenshots.map(s => ({
+    id: s._id.toString(),
+    url: `/uploads/screenshots/${s.filename}`,
+    createdAt: s.createdAt.toISOString(),
+  }));
+}
+
 
 };
