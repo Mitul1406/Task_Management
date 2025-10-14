@@ -23,13 +23,31 @@ jobs:
 
       # Step 3: Install dependencies
       - name: Install dependencies
-        run: npm install --force
+        working-directory: ./frontend  
+        run: npm install
 
-      # Step 4: Run tests
       - name: Run tests
+        working-directory: ./frontend
         run: npm test
 
-      # Step 5: Build project
       - name: Build project
+        working-directory: ./frontend
         run: npm run build
+    
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install --force
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm test
+
+
+      # Optional Step 6: Deploy (e.g., to GitHub Pages)
+      # - name: Deploy to GitHub Pages
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: peaceiris/actions-gh-pages@v4
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_dir: ./build
 
