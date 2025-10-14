@@ -130,7 +130,13 @@ type UserDayWiseInfo {
 # Admin query response
 type UserDayWiseAdminResponse {
   users: [AdminUserDayWise!]!
-}
+} 
+
+type Screenshot {
+    id: ID!
+    filePath: String!
+    createdAt: String!
+  }
  
     type Query{
     projects:[Project]
@@ -157,6 +163,8 @@ type UserDayWiseAdminResponse {
   ): UserDayWise!
 
   userDayWiseAdmin(startDate: String!, endDate: String!): UserDayWiseAdminResponse!
+  
+     getUserScreenshots(userId: ID!): [Screenshot!]!
     }
 
     type Mutation{
@@ -181,6 +189,7 @@ type UserDayWiseAdminResponse {
      login(email: String!, password: String!): User
      verifyOtp(email: String!, otp: String!): VerifyOtpResponse!
      resendOTP(email: String!):VerifyOtpResponse!
+
     }
     `
 )

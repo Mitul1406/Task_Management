@@ -19,6 +19,7 @@ import User from "./pages/User";
 import OtpVerification from "./components/otp_verification";
 import AutoScreenshot from "./components/ScreenShot";
 import { jwtDecode } from "jwt-decode";
+import UserScreenShot from "./pages/UserScreenShot";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -101,6 +102,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/registration" element={<Register />} />
          <Route path="/otp-verification" element={<OtpVerification />} />
+         <Route
+          path="/screenshots"
+          element={token ? <UserScreenShot /> : <Navigate to="/" />}
+        />
 
 
           <Route
