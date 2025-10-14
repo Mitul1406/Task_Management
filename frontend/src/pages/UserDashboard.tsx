@@ -10,6 +10,8 @@ import {
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import AutoScreenshot from "./ScreenShot";
 
 interface Task {
   status: string;
@@ -34,6 +36,7 @@ const statusMap: Record<string, { label: string; bgColor: string }> = {
   done: { label: "Done", bgColor: "#2bc22bff" },
 };
 const UserDashboard: React.FC = () => {
+  const { logout } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
@@ -86,7 +89,6 @@ const UserDashboard: React.FC = () => {
 
   const formatDate = (val: any) => {
     if (!val) return "";
-    // handle case where val is already ISO string like "2025-10-03"
     if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
     const n = Number(val);
     if (isNaN(n)) return "";
@@ -119,7 +121,6 @@ const UserDashboard: React.FC = () => {
   };
   const fetchUserTasks = async () => {
     const data = await getUserTasks();
-    // Initialize runningDuration for live timers
     const updated = data.map((project: Project) => ({
       ...project,
       tasks: project.tasks.map((t) => ({
@@ -136,15 +137,11 @@ const UserDashboard: React.FC = () => {
 
   const handleStartStopTimer = async (task: Task, projectId: string) => {
     if (task.isRunning) {
-      // Stop the timer
       await stopTimer(task.id);
       clearInterval(intervalsRef.current[task.id]);
       delete intervalsRef.current[task.id];
-      // Refetch all tasks for this user (or project)
       const refreshedProjects = await getUserTasks();
-      // const updatedTask = await updateTaskStatus(task.id, "code_review");
 
-      // Update state with fresh totalTime and running info
       setProjects(
         refreshedProjects.map((project: Project) =>
           project.id === projectId
@@ -267,6 +264,8 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
 
   return (
     <div className="container mt-4">
+      <AutoScreenshot/>
+      
       {showPasswordForm && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
@@ -335,6 +334,7 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
           <button
             className="btn btn-danger"
             onClick={() => {
+              logout();
               localStorage.removeItem("token");
               toast.success("Logout successfully...");
               navigate("/login");

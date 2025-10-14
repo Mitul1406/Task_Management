@@ -17,13 +17,16 @@ import AllUserTimeSheet from "./pages/AllUserTimeSheet";
 import User from "./pages/User";
 // import ExampleTimeAdmin from "./pages/ExampleTimeAdmin";
 import OtpVerification from "./components/otp_verification";
+import ScreenShotView from "./pages/ScreenShotView";
 
 function App() {
   return (
     <>
+      
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/screenshots" element={<ScreenShotView />} />
 
           <Route
             path="/admin"

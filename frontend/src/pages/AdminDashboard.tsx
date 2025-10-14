@@ -16,6 +16,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
   endDate: string | number | Date;
@@ -50,6 +52,7 @@ const statusMap: Record<string, { label: string; bgColor: string }> = {
 };
 
 const AdminDashboard: React.FC = () => {
+  const {logout} = useAuth()
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
@@ -383,6 +386,7 @@ This will also delete all its tasks.`
 
   return (
     <div className="container mt-4">
+      <AutoScreenshot/>
       {showPasswordForm && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
@@ -459,6 +463,7 @@ This will also delete all its tasks.`
         <button
           className="btn btn-danger"
           onClick={() => {
+            logout();
             localStorage.removeItem("token");
             toast.success("Logout successfully...");
             navigate("/login");
