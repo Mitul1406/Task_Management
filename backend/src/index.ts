@@ -18,7 +18,7 @@ app.use(express.json());
 connectDb();
 app.use("/graphql", (req, res, next) => {
   const body = req.body;
-  if (body?.query?.includes("login") || body?.query?.includes("register") || body?.query?.includes("resendOTP") || body?.query?.includes("verifyOtp")) {
+  if (body?.query?.includes("login") || body?.query?.includes("register") || body?.query?.includes("resendOTP") || body?.query?.includes("verifyOtp") || body?.query?.includes("forgotPassword") || body?.query?.includes("resetPassword")) {
     return next();
   }
   authenticate(req, res, next);

@@ -18,6 +18,8 @@ import User from "./pages/User";
 // import ExampleTimeAdmin from "./pages/ExampleTimeAdmin";
 import OtpVerification from "./components/otp_verification";
 import ScreenShotView from "./pages/ScreenShotView";
+import ForgotPass from "./pages/ForgotPass";
+import ResetPage from "./pages/ResetPage";
 
 function App() {
   return (
@@ -103,7 +105,9 @@ function App() {
 
           <Route path="/login" element={<Login />} />
           <Route path="/registration" element={<Register />} />
-         <Route path="/otp-verification" element={<OtpVerification />} />
+          <Route path="/otp-verification" element={<OtpVerification />} />
+          <Route path="/forgot-password" element={<ForgotPass />} />
+          <Route path="/reset-password/:token" element={<ResetPage />} />
 
 
           <Route

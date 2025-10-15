@@ -120,6 +120,12 @@ const Login: React.FC = () => {
               required
             />
           </div>
+          <div className="mb-3 text-end">
+  <Link to="/forgot-password" className="small">
+    Forgot Password?
+  </Link>
+</div>
+
 
           <button
             type="submit"

@@ -580,7 +580,7 @@ This will also delete all its tasks.`
       {(project as any).tasks.length > 0
     ? expandedProject === project.id
       ? "Collapse"
-      : "View Tasks"
+      : "View and Add Tasks"
     : expandedProject === project.id
       ? "Collapse"
       : "Add Task"}
