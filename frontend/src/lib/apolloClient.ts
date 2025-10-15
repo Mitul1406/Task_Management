@@ -3,8 +3,7 @@ import { ApolloClient, InMemoryCache, HttpLink, ApolloLink, from } from "@apollo
 import { ErrorLink } from "@apollo/client/link/error";
 import { toast } from "react-toastify";
 
-const httpLink = new HttpLink({ uri:"https://6hxxv1d4-4040.inc1.devtunnels.ms/graphql" });
-//  "http://localhost:4040/graphql"
+const httpLink = new HttpLink({ uri:"http://localhost:4040/graphql/graphql" });
 
 const authLink = new ApolloLink((operation, forward) => {
   const token = localStorage.getItem("token");
