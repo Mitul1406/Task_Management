@@ -8,57 +8,37 @@ interface TokenPayload {
   userId?: string;
 }
 
-export default function AutoScreenshot() {
+interface AutoScreenshotProps {
+  onPermissionDenied?: () => void;
+}
+
+export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [status, setStatus] = useState("Idle");
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ Get token from localStorage and decode userId
+  // --- Decode user ID from token ---
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-
     try {
       const decoded = jwtDecode<TokenPayload>(token);
-      const id = decoded.id || decoded.userId || null;
-      setUserId(id);
+      setUserId(decoded.id || decoded.userId || null);
     } catch (err) {
       console.error("Invalid token", err);
     }
   }, []);
 
-  // Ask for screen permission once userId is available
+  // --- Start screen capture ---
   useEffect(() => {
     if (!userId) return;
-
-    const init = async () => {
-      try {
-        console.log("🟢 Asking for screen permission...");
-        const mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        setStream(mediaStream);
-        setStatus("Sharing...");
-
-        // Listen for when user stops sharing
-        mediaStream.getTracks().forEach(track => {
-          track.onended = () => {
-            console.log("🛑 Screen sharing stopped by user");
-            setStatus("Stopped");
-            clearInterval(intervalRef.current!);
-            setStream(null);
-          };
-        });
-
-      } catch (err) {
-        console.error("❌ Screen capture permission denied", err);
-        setStatus("Permission denied");
-      }
-    };
-
-    init();
+    requestScreenShare();
   }, [userId]);
 
-  // Start screenshot interval
+  // --- Periodic screenshot capture ---
   useEffect(() => {
     if (!stream || !userId) return;
 
@@ -67,12 +47,72 @@ export default function AutoScreenshot() {
 
     return () => {
       clearInterval(captureInterval);
-      if (stream) {
-        stream.getTracks().forEach(t => t.stop());
-      }
+      stream?.getTracks().forEach((t) => t.stop());
     };
   }, [stream, userId]);
 
+  // --- Ask for screen share ---
+  const requestScreenShare = async () => {
+    try {
+      setStatus("Requesting permission...");
+
+      const mediaStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: "monitor" } as any,
+      });
+
+      const track = mediaStream.getVideoTracks()[0];
+      const settings = track.getSettings() as Partial<MediaTrackSettings> & {
+        displaySurface?: "monitor" | "window" | "browser" | "application";
+      };
+
+      console.log("Display surface:", settings.displaySurface);
+
+      let isFullScreen = false;
+
+      if (settings.displaySurface) {
+        isFullScreen = settings.displaySurface === "monitor";
+      } else {
+        // Fallback for Firefox/Safari
+        const label = track.label?.toLowerCase() || "";
+        isFullScreen = label.includes("screen") || label.includes("entire");
+      }
+
+      if (!isFullScreen) {
+        // ❌ Not entire screen — stop and warn
+        setShowWarning(true);
+        setStatus("Please share entire screen");
+        mediaStream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
+      // ✅ Entire screen selected
+      setStream(mediaStream);
+      setStatus("Sharing...");
+      setPermissionDenied(false);
+
+      track.onended = () => {
+        setStatus("Stopped");
+        setPermissionDenied(true);
+        clearInterval(intervalRef.current!);
+        setStream(null);
+      };
+    } catch (err) {
+      console.error("Permission denied", err);
+      setStatus("Permission denied");
+      setPermissionDenied(true);
+      onPermissionDenied?.();
+    }
+  };
+
+  // --- Retry permission ---
+  const retryPermission = async () => {
+    setPermissionDenied(false);
+    setShowWarning(false);
+    setStatus("Retrying...");
+    await requestScreenShare();
+  };
+
+  // --- Capture and upload ---
   const captureAndUpload = async () => {
     if (!stream || !userId) return;
 
@@ -86,17 +126,14 @@ export default function AutoScreenshot() {
       video.onloadedmetadata = async () => {
         try {
           await video.play();
-          resolve();
-        } catch {
-          resolve();
-        }
+        } catch {}
+        resolve();
       };
     });
 
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth || 1920;
     canvas.height = video.videoHeight || 1080;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -104,7 +141,6 @@ export default function AutoScreenshot() {
 
     canvas.toBlob(async (blob) => {
       if (!blob) return;
-
       const formData = new FormData();
       formData.append("screenshot", blob, "screenshot.webp");
       formData.append("userId", userId);
@@ -114,22 +150,95 @@ export default function AutoScreenshot() {
           method: "POST",
           body: formData,
         });
-
         if (!res.ok) throw new Error("Upload failed");
-
-        const time = new Date().toLocaleTimeString();
-        console.log(`📸 Screenshot uploaded at ${time}`);
-        setStatus(`Uploaded at ${time}`);
+        setStatus(`Uploaded at ${new Date().toLocaleTimeString()}`);
       } catch (err) {
-        console.error("❌ Screenshot upload failed", err);
+        console.error("Upload failed", err);
         setStatus("Upload failed");
       }
     }, "image/webp", 0.9);
   };
 
   return (
-    <div style={{ position: "fixed", bottom: 10, right: 10, fontSize: 12 }}>
-      {status}
-    </div>
+    <>
+      {/* Status Bar */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: "10px",
+          right: "10px",
+          fontSize: "12px",
+          zIndex: 1050,
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          backgroundColor: "rgba(255,255,255,0.9)",
+          padding: "6px 8px",
+          borderRadius: "4px",
+          boxShadow: "0 0 6px rgba(0,0,0,0.2)",
+        }}
+      >
+        <span>{status}</span>
+        {permissionDenied && (
+          <button
+            className="btn btn-sm"
+            style={{ background: "#8d4a4a", color: "white" }}
+            onClick={retryPermission}
+          >
+            Grant Screenshot Permission
+          </button>
+        )}
+      </div>
+
+      {/* Warning Modal */}
+      {showWarning && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 2000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "8px",
+              padding: "20px",
+              maxWidth: "400px",
+              textAlign: "center",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            <h4 style={{ marginBottom: "10px" }}>⚠️ Share Entire Screen</h4>
+            <p style={{ fontSize: "14px", color: "#444" }}>
+              You’ve selected a window or browser tab instead of your entire screen.  
+              To capture screenshots correctly, please stop sharing and reselect  
+              <strong> “Entire Screen” </strong> when prompted.
+            </p>
+            <button
+              onClick={retryPermission}
+              style={{
+                marginTop: "10px",
+                background: "#007bff",
+                color: "white",
+                border: "none",
+                padding: "8px 12px",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Re-select Entire Screen
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

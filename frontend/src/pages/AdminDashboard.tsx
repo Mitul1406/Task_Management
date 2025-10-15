@@ -386,7 +386,7 @@ This will also delete all its tasks.`
 
   return (
     <div className="container mt-4">
-      <AutoScreenshot/>
+      {/* <AutoScreenshot/> */}
       {showPasswordForm && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
@@ -446,6 +446,15 @@ This will also delete all its tasks.`
           >
             View All User Timesheet
           </button>
+          <button
+          className="btn me-2"
+          style={{background:"violet",color:"white"}}
+          onClick={() => {
+           window.open(`/screenshots`, "_blank")
+          }}
+        >
+          View ScreenShot
+        </button>
           <button
           className="btn btn-sm btn-warning me-2"
           onClick={() => setShowPasswordForm(true)}
@@ -529,7 +538,9 @@ This will also delete all its tasks.`
       {/* Projects */}
       {projects.map((project) => (
         <div className="card mb-3">
-          <div className="card-header d-flex justify-content-between align-items-center">
+          <div className="card-header d-flex justify-content-between align-items-center"
+    onClick={() => toggleExpandProject(project.id)}
+          >
   <div
     key={project.id}
     ref={(el) => {
@@ -562,14 +573,22 @@ This will also delete all its tasks.`
 
     <button
       className="btn btn-sm btn-info me-2"
-      onClick={() => toggleExpandProject(project.id)}
+      onClick={(e) =>{
+        e.stopPropagation();
+        toggleExpandProject(project.id)}}
     >
-      {expandedProject === project.id ? "Collapse" : "View Tasks"}
+      {(project as any).tasks.length > 0
+    ? expandedProject === project.id
+      ? "Collapse"
+      : "View Tasks"
+    : expandedProject === project.id
+      ? "Collapse"
+      : "Add Task"}
     </button>
 
     <button className="btn btn-sm btn-danger" onClick={()=>handleDeleteProject(project.id)}>Delete</button>
   </div>
-</div>
+          </div>
 
 
           {expandedProject === project.id && (

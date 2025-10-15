@@ -42,7 +42,6 @@ app.post("/upload-screenshot", upload.single("screenshot"), async (req:any, res)
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     if (!userId) return res.status(400).json({ error: "Missing userId" });
 
-    // Save screenshot info in DB
     const screenshot = await Screenshot.create({
       userId,
       filename: req.file.filename,

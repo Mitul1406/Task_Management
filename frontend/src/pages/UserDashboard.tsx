@@ -325,6 +325,16 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
           >
             View Timesheet
           </button>
+          
+          <button
+            className="btn btn-sm me-2"
+            style={{background:"violet",color:"white"}}
+            onClick={() =>
+              window.open(`/screenshots/${id}`, "_blank")
+            }
+          >
+            View ScreenShot
+          </button>
           <button
           className="btn btn-sm btn-warning me-2"
           onClick={() => setShowPasswordForm(true)}
@@ -347,7 +357,7 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
 
       <h1 className="text-center">Task Tracker</h1>
       {projects.map((project) => (
-        <div key={project.id} className="card mb-3">
+        <div key={project.id} className="card mb-3" onClick={()=>toggleExpandProject(project.id)}>
           <div className="card-header d-flex justify-content-between align-items-center">
             <div>
               <strong>{project.name}</strong>
@@ -358,7 +368,9 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
             <div className="d-flex align-items-center">
               <button
                 className="btn btn-sm btn-info"
-                onClick={() => toggleExpandProject(project.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpandProject(project.id)}}
               >
                 {expandedProject === project.id ? "Collapse" : "View Tasks"}
               </button>

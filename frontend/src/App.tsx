@@ -26,13 +26,28 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/screenshots" element={<ScreenShotView />} />
 
           <Route
             path="/admin"
             element={
               <ProtectedRoute allowedRoles="admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/screenshots"
+            element={
+              <ProtectedRoute allowedRoles="admin">
+                <ScreenShotView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/screenshots/:id"
+            element={
+              <ProtectedRoute allowedRoles="user">
+                <ScreenShotView />
               </ProtectedRoute>
             }
           />
