@@ -12,6 +12,7 @@ import {
   getTasksByProject,
   updateTaskStatus,
   changePassword,
+  getAdminProjects,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -151,7 +152,10 @@ const formatDate = (val: any) => {
   };
 
   const fetchProjects = async () => {
-    const projectsData = await getProjects();
+    const token:any=localStorage.getItem("token")
+    const decode=jwtDecode(token)
+    
+    const projectsData = await getAdminProjects((decode as any).id);
     const projectsWithTasks = await Promise.all(
       projectsData.map(async (project: { id: string }) => {
         const tasks = await getTasksByProject(project.id);

@@ -76,6 +76,17 @@ const GET_PROJECTS = gql`
     }
   }
 `;
+const GET_ADMIN_PROJECT=gql`
+  query GetAdminsProjects($userId: ID!) {
+  adminsprojects(userId: $userId) {
+    id
+    name
+    description
+    createdAt
+  }
+}
+
+`;
 const USER_TASK=gql`query tasksForUser($userId: ID!) {
   tasksForUser(userId: $userId) {
     id
@@ -533,6 +544,16 @@ export const getUsers = async () => {
 export const getProjects = async () => {
   const res = await client.query({ query: GET_PROJECTS,fetchPolicy: "network-only", });
   return (res as any).data.projects;
+};
+
+export const getAdminProjects = async (userId: string) => {
+  const res = await client.query({
+    query: GET_ADMIN_PROJECT,
+    variables: { userId },
+    fetchPolicy: "network-only", // always fetch fresh data
+  });
+
+  return (res as any).data.adminsprojects;
 };
 
 export const getTasksByProject = async (projectId: string) => {
