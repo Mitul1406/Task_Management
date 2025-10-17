@@ -146,6 +146,7 @@ type UserDayWiseAdminResponse {
 
   type Query{
     projects:[Project]
+    adminsprojects(userId: ID!): [Project]
     project(id:ID!):Project
     tasks(projectId: ID!): [Task]
     task(id:ID!):Task

@@ -9,6 +9,9 @@ export const projectResolver ={
     project:async({id}:{id:string})=>{
         return await Project.findById(id)
     },
+    adminsprojects:async(args: { userId: string })=>{
+        return await Project.find({ adminId: args.userId });
+    },
     createProject:async({name,description}:{name:string,description:string})=>{
         const project=new Project({name,description})
         return await project.save();
