@@ -486,7 +486,9 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
                       className={`btn btn-sm ${
                         task.isRunning ? "btn-danger" : "btn-success"
                       }`}
-                      onClick={() => handleStartStopTimer(task, project.id)}
+                      onClick={(e) =>{ 
+                        e.stopPropagation();
+                        handleStartStopTimer(task, project.id)}}
                       disabled={(() => {
                         if (!(task as any).endDate) return false;
                         const endDate = new Date(
