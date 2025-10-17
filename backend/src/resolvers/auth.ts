@@ -8,7 +8,7 @@ import fs from "fs";
 import { Screenshot } from "../models/ScreenShot.js";
 dotenv.config();
 const secret= process.env.JWT_SECRET!
-
+const RESET_TOKEN_EXPIRY = 15 * 60;
 const generateOtp = ()=>Math.floor(100000+Math.random()*900000).toString()
 
 const sendMail = async (email: any, otp: string) => {
@@ -42,6 +42,33 @@ const sendMail = async (email: any, otp: string) => {
   }
 };
 
+const sendResetPasswordMail = async (email: string, token: string, username: string) => {
+  try {
+    const templatePath = path.join(process.cwd(), "src", "templates", "tasktracker-reset.html");
+    let htmlTemplate = fs.readFileSync(templatePath, "utf-8");
+
+    const resetLink = `http://localhost:3000/reset-password/${token}`;
+
+    htmlTemplate = htmlTemplate
+      .replace("{{RESET_LINK}}", resetLink)
+      .replace("{{YEAR}}", new Date().getFullYear().toString())
+      .replace("{{user}}", username);
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS },
+    });
+
+    await transporter.sendMail({
+      from: `"Task Tracker" <${process.env.EMAIL}>`,
+      to: email,
+      subject: "🔐 Task Tracker - Reset Your Password",
+      html: htmlTemplate,
+    });
+  } catch (err) {
+    throw new Error("Failed to send reset email");
+  }
+};
 export const authResolver = { 
     users: async () => {
       const users = await User.find({role:"user"});
@@ -121,7 +148,7 @@ verifyOtp: async ({ email, otp }: any) => {
 },
 
 
-    resendOTP: async ({ email }: { email: string }) => {
+  resendOTP: async ({ email }: { email: string }) => {
       const user: any = await User.findOne({ email });
       if (!user) throw new Error("User not found");
 
@@ -149,7 +176,42 @@ verifyOtp: async ({ email, otp }: any) => {
     url: `/uploads/screenshots/${s.filename}`,
     createdAt: s.createdAt.toISOString(),
   }));
-}
+},
+
+forgotPassword: async ({ email }: { email: string }) => {
+  const user: any = await User.findOne({ email });
+  if (!user) throw new Error("User not found");
+
+  const token = jwt.sign(
+    { userId: user._id, email: user.email },
+    secret,
+    { expiresIn: RESET_TOKEN_EXPIRY }
+  );
+
+  user.resetToken = token;
+  user.resetTokenExpiry = Date.now() + RESET_TOKEN_EXPIRY * 1000;
+  await user.save();
+
+  await sendResetPasswordMail(email, token, user.username);
+
+  return { success: true, message: "Reset link sent to your email" };
+},
+resetPassword: async ({ token, newPassword }: { token: string; newPassword: string }) => {
+  const user: any = await User.findOne({
+    resetToken: token,
+    resetTokenExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) throw new Error("Invalid or expired token");
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  user.password = hashedPassword;
+  user.resetToken = null;
+  user.resetTokenExpiry = null;
+  await user.save();
+
+  return { success: true, message: "Password reset successfully" };
+},
 
 
 };

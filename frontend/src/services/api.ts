@@ -264,7 +264,18 @@ const GET_DAY_WISE_DATA = gql`
     }
   }
 `;
-
+const RESET=gql` mutation ResetPassword($token: String!, $newPassword: String!) {
+    resetPassword(token: $token, newPassword: $newPassword) {
+      success
+      message
+    }
+  }`
+const FORGOT=gql` mutation ForgotPassword($email: String!) {
+    forgotPassword(email: $email) {
+      success
+      message
+    }
+  }`
 const GET_USER_DAY_WISE = gql`
   query GetUserDayWise($userId: ID!, $startDate: String!, $endDate: String!) {
     userDayWise(userId: $userId, startDate: $startDate, endDate: $endDate) {
@@ -354,7 +365,7 @@ const GET_USERS = gql`
     }
   }
 `;
-export const CREATE_USER = gql`
+const CREATE_USER = gql`
   mutation createUser($username: String!, $email: String!, $password: String!, $role: String) {
     createUser(username: $username, email: $email, password: $password, role: $role) {
       id
@@ -364,7 +375,7 @@ export const CREATE_USER = gql`
     }
   }
 `;
-export const UPDATE_USER = gql`
+const UPDATE_USER = gql`
   mutation updateUser($id: ID!, $username: String, $email: String, $role: String) {
     updateUser(id: $id, username: $username, email: $email, role: $role) {
       id
@@ -374,7 +385,7 @@ export const UPDATE_USER = gql`
     }
   }
 `;
-export const DELETE_USER = gql`
+const DELETE_USER = gql`
   mutation deleteUser($id: ID!) {
     deleteUser(id: $id) {
       message
@@ -423,6 +434,22 @@ query GetUserScreenshots($userId: ID!) {
   }
 `
 // API Functions
+export const forgotPassword = async (email: string) => {
+  const res = await client.mutate({
+    mutation: FORGOT,
+    variables: { email },
+  });
+  return (res as any).data.forgotPassword;
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  const res = await client.mutate({
+    mutation: RESET,
+    variables: { token, newPassword },
+  });
+  return (res as any).data.resetPassword;
+};
+
 export const getUserScreenshots = async (userId: string) => {
   if (!userId) throw new Error("Missing userId");
 

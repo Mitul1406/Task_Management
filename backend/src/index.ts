@@ -18,7 +18,7 @@ app.use(express.json());
 connectDb();
 app.use("/graphql", (req, res, next) => {
   const body = req.body;
-  if (body?.query?.includes("login") || body?.query?.includes("register") || body?.query?.includes("resendOTP") || body?.query?.includes("verifyOtp")) {
+  if (body?.query?.includes("login") || body?.query?.includes("register") || body?.query?.includes("resendOTP") || body?.query?.includes("verifyOtp") || body?.query?.includes("forgotPassword") || body?.query?.includes("resetPassword")) {
     return next();
   }
   authenticate(req, res, next);
@@ -36,13 +36,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-app.post("/upload-screenshot", upload.single("screenshot"), async (req:any, res) => {
+app.post("/upload-screenshot",authenticate, upload.single("screenshot"), async (req:any, res) => {
   try {
     const { userId } = req.body;
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     if (!userId) return res.status(400).json({ error: "Missing userId" });
 
-    // Save screenshot info in DB
     const screenshot = await Screenshot.create({
       userId,
       filename: req.file.filename,

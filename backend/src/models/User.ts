@@ -15,7 +15,10 @@ const userSchema:Schema=new Schema({
   role: { type: String, enum: ["admin", "user"], default: "user" },
   otp:String,
   otpExpiry:String,
-  isVerified:{type:Boolean,default:false}
+  isVerified:{type:Boolean,default:false},
+  resetToken: { type: String },
+  resetTokenExpiry: { type: Date },
+
 })
 
 export const User=mongoose.model<User>("User",userSchema)

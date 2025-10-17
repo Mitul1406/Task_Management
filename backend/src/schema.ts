@@ -138,7 +138,13 @@ type UserDayWiseAdminResponse {
   createdAt: String!
 }
 
-    type Query{
+    type AuthResponse {
+  success: Boolean!
+  message: String!
+}
+
+
+  type Query{
     projects:[Project]
     project(id:ID!):Project
     tasks(projectId: ID!): [Task]
@@ -189,6 +195,8 @@ type UserDayWiseAdminResponse {
      login(email: String!, password: String!): User
      verifyOtp(email: String!, otp: String!): VerifyOtpResponse!
      resendOTP(email: String!):VerifyOtpResponse!
+     forgotPassword(email: String!): AuthResponse!
+     resetPassword(token: String!, newPassword: String!): AuthResponse!
     }
     `
 )
