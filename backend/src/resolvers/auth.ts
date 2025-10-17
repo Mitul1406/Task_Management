@@ -148,7 +148,7 @@ verifyOtp: async ({ email, otp }: any) => {
 },
 
 
-    resendOTP: async ({ email }: { email: string }) => {
+  resendOTP: async ({ email }: { email: string }) => {
       const user: any = await User.findOne({ email });
       if (!user) throw new Error("User not found");
 

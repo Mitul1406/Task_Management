@@ -171,14 +171,14 @@ export default function ScreenShotView() {
                   <small className="text-muted">
                     {new Date(shot.createdAt).toLocaleString()}
                   </small>
-                  <div className="mt-2">
+                  {/* <div className="mt-2">
                     <button
                       className="btn btn-sm btn-primary"
                       onClick={() => openModal(`http://localhost:4040${shot.url}`)}
                     >
                       View Full Photo
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
