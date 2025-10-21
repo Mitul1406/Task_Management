@@ -433,7 +433,29 @@ query GetUserScreenshots($userId: ID!) {
     }
   }
 `
+	const GET_ADMIN_PROJECT=gql`
+  query GetAdminsProjects($userId: ID!) {
+  adminsprojects(userId: $userId) {
+    id
+    name
+    description
+    createdAt
+  }
+}
+
+`;
+
 // API Functions
+export const getAdminProjects = async (userId: string) => {
+  const res = await client.query({
+    query: GET_ADMIN_PROJECT,
+    variables: { userId },
+    fetchPolicy: "network-only", // always fetch fresh data
+  });
+
+  return (res as any).data.adminsprojects;
+};
+
 export const forgotPassword = async (email: string) => {
   const res = await client.mutate({
     mutation: FORGOT,

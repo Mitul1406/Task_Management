@@ -9,10 +9,24 @@ export const projectResolver ={
     project:async({id}:{id:string})=>{
         return await Project.findById(id)
     },
-    createProject:async({name,description}:{name:string,description:string})=>{
-        const project=new Project({name,description})
-        return await project.save();
+    adminsprojects:async(args: { userId: string })=>{
+        return await Project.find({ adminId: args.userId });
     },
+    createProject: async (
+    { name, description }: { name: string; description?: string },
+    context: any
+  ) => {
+    const userId = context.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const project = new Project({
+      name,
+      description,
+      adminId: userId, 
+    });
+
+    return await project.save();
+  },
     updateProject:async({id,name,description}:{id:string,name:string,description:string})=>{
         const project=await Project.findById(id);
         if(!project) throw new Error("Project not Found..")
