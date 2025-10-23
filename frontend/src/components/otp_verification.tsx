@@ -31,6 +31,7 @@ const OtpVerification: React.FC = () => {
           return;
         }
         if (decoded.role === "admin") navigate("/admin");
+      else if(decoded.role === "superAdmin") navigate("/superAdmin")
         else navigate("/user");
       } catch {
         localStorage.removeItem("token");
@@ -84,6 +85,7 @@ const handleVerify = async () => {
       localStorage.removeItem("otpEmail");
       toast.success(res.message);
       if (res.user.role === "admin") navigate("/admin");
+      else if(res.user.role === "superAdmin") navigate("/superAdmin")
       else navigate("/user");
     } else {
       toast.error(res.message || "OTP verification failed");

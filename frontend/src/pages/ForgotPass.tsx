@@ -19,6 +19,7 @@ const ForgotPass: React.FC = () => {
           return;
         }
         if (decoded.role === "admin") navigate("/admin");
+      else if(decoded.role === "superAdmin") navigate("/superAdmin")
         else navigate("/user");
       } catch {
         localStorage.removeItem("token");

@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import AutoScreenshot from "./ScreenShot";
+import CreateTaskModal from "../components/CreateTaskModal";
 
 interface Task {
   status: string;
@@ -46,6 +47,7 @@ const UserDashboard: React.FC = () => {
   const intervalsRef = useRef<{ [taskId: string]: NodeJS.Timer }>({});
   const [username, setUsername] = useState<string>("");
   const [id, setId] = useState<string>("");
+  const [showTaskModal, setShowTaskModal] = useState(false);
   const navigate = useNavigate();
   interface User {
     id: string;
@@ -96,7 +98,7 @@ const UserDashboard: React.FC = () => {
   };
   useEffect(() => {
     fetchUserTasks();
-  }, []);
+  }, [showTaskModal]);
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -335,6 +337,11 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
           >
             View ScreenShot
           </button>
+          
+        <button className="btn btn-primary btn-sm me-2" onClick={() => setShowTaskModal(true)}>
+        Create Your Own Task
+      </button>
+        <CreateTaskModal show={showTaskModal} onClose={() => setShowTaskModal(false)} />
           <button
           className="btn btn-sm btn-warning me-2"
           onClick={() => setShowPasswordForm(true)}

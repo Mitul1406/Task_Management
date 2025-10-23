@@ -1,7 +1,7 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import html2pdf from "html2pdf.js";
-import { getAllTimesheet } from "../services/api";
+import { getAllTimesheet, getAdminUserTimesheet } from "../services/api";
+import {jwtDecode} from "jwt-decode";
 
 const statusMap: Record<string, { label: string; bgColor: string }> = {
   pending: { label: "Pending", bgColor: "#064393ff" },
@@ -22,6 +22,21 @@ const formatTime = (seconds: number) => {
   return parts.length > 0 ? parts.join(" ") : "-";
 };
 
+// --- Helpers to get current user's role and ID ---
+const getCurrentUserRole = (): string | null => {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  const decoded: any = jwtDecode(token);
+  return decoded.role;
+};
+
+const getCurrentUserId = (): string | null => {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  const decoded: any = jwtDecode(token);
+  return decoded.id;
+};
+
 const AllUserTimeSheet: React.FC = () => {
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(today);
@@ -36,25 +51,41 @@ const AllUserTimeSheet: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await getAllTimesheet(startDate, endDate);
-        setUsers(res || []);
+
+        const role = getCurrentUserRole(); // superAdmin or admin
+        let data: any[] = [];
+
+        if (role === "superAdmin") {
+          data = await getAllTimesheet(startDate, endDate);
+        } else if (role === "admin") {
+          const adminId = getCurrentUserId();
+          if (!adminId) throw new Error("Admin ID not found");
+          data = await getAdminUserTimesheet(adminId, startDate, endDate);
+        } else {
+          throw new Error("Unauthorized role");
+        }
+
+        setUsers(data || []);
       } catch (err: any) {
         setError(err.message || "Failed to load data");
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [startDate, endDate]);
-const totalHours = () => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
 
-  const diffDays =
-    Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const totalHours = () => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-  return diffDays * 8 * 3600; 
-};
+    const diffDays =
+      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    return diffDays * 8 * 3600; 
+  };
+
   const handleDownload = () => {
     if (!pdfRef.current) return;
     html2pdf()
@@ -78,42 +109,42 @@ const totalHours = () => {
   if (error) return <div className="text-danger">{error}</div>;
 
   // Merge and calculate
-const mergedTasks: Record<string, any> = {};
+  const mergedTasks: Record<string, any> = {};
 
-users.forEach((user: any) => {
-  user.dayWise?.forEach((day: any) => {
-    day.tasks?.forEach((dt: any) => {
-      const proj =
-        user.projects?.find((p: any) =>
-          p.tasks?.some((t: any) => String(t.id) === String(dt.taskId))
-        ) || user.projects?.[0]; // fallback to first project if not found
+  users.forEach((user: any) => {
+    user.dayWise?.forEach((day: any) => {
+      day.tasks?.forEach((dt: any) => {
+        const proj =
+          user.projects?.find((p: any) =>
+            p.tasks?.some((t: any) => String(t.id) === String(dt.taskId))
+          ) || user.projects?.[0];
 
-      const key = `${user.username}_${proj?.id || "unknown"}_${dt.taskId}_${day.date}`;
+        const key = `${user.username}_${proj?.id || "unknown"}_${dt.taskId}_${day.date}`;
 
-      if (!mergedTasks[key]) {
-        mergedTasks[key] = {
-          assignee: user.username,
-          email: user.email,
-          project: proj?.name || "Unknown Project",
-          task: dt.title,
-          estimated: dt.estimatedTime || 0,
-          spent: dt.time || 0,
-          saved: dt.savedTime || 0,
-          overtime: dt.overtime || 0,
-          date: day.date,
-          status: dt.status,
-        };
-      } else {
-        mergedTasks[key].spent += dt.time || 0;
-        mergedTasks[key].saved = dt.savedTime || mergedTasks[key].saved;
-        mergedTasks[key].overtime += dt.overtime || 0;
-        mergedTasks[key].status = dt.status;
-      }
+        if (!mergedTasks[key]) {
+          mergedTasks[key] = {
+            assignee: user.username,
+            email: user.email,
+            project: proj?.name || "Unknown Project",
+            task: dt.title,
+            estimated: dt.estimatedTime || 0,
+            spent: dt.time || 0,
+            saved: dt.savedTime || 0,
+            overtime: dt.overtime || 0,
+            date: day.date,
+            status: dt.status,
+          };
+        } else {
+          mergedTasks[key].spent += dt.time || 0;
+          mergedTasks[key].saved = dt.savedTime || mergedTasks[key].saved;
+          mergedTasks[key].overtime += dt.overtime || 0;
+          mergedTasks[key].status = dt.status;
+        }
+      });
     });
   });
-});
 
-const allRows = Object.values(mergedTasks);
+  const allRows = Object.values(mergedTasks);
 
   const seenEstimateKeys = new Set<string>();
   const totalEstimated = allRows.reduce((sum: number, r: any) => {
@@ -184,13 +215,12 @@ const allRows = Object.values(mergedTasks);
 
       {/* PDF Content */}
       <div ref={pdfRef}>
-        <h4 className="fw-bold text-left mb-2">
-          Timesheet Summary </h4>
-          <div><p>
-        Date Range: <strong>{startDate}</strong> to{' '}
-        <strong>{endDate}</strong>
-      </p></div>
-        
+        <h4 className="fw-bold text-left mb-2">Timesheet Summary</h4>
+        <div>
+          <p>
+            Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
+          </p>
+        </div>
 
         <div className="row mb-4">
           {/* Overall Totals */}
@@ -262,42 +292,41 @@ const allRows = Object.values(mergedTasks);
               </tr>
             </thead>
             <tbody>
-  {allRows.length > 0 ? (
-    [...allRows]
-      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map((r: any, i: number) => (
-        <tr key={i}>
-          <td>{r.assignee}</td>
-          <td>{r.project}</td>
-          <td>{r.task}</td>
-          <td>{r.date}</td>
-          <td>{formatTime(r.estimated)}</td>
-          <td>{formatTime(r.spent)}</td>
-          <td className="text-success">{formatTime(r.saved)}</td>
-          <td className="text-danger">{formatTime(r.overtime)}</td>
-          <td>
-            <span
-              className="badge"
-              style={{
-                backgroundColor: statusMap[r.status]?.bgColor || "#6c757d",
-                color: "#fff",
-                fontSize: "11px",
-              }}
-            >
-              {statusMap[r.status]?.label || r.status}
-            </span>
-          </td>
-        </tr>
-      ))
-  ) : (
-    <tr>
-      <td colSpan={9} className="text-center text-muted py-3">
-        No records found
-      </td>
-    </tr>
-  )}
-</tbody>
-
+              {allRows.length > 0 ? (
+                [...allRows]
+                  .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .map((r: any, i: number) => (
+                    <tr key={i}>
+                      <td>{r.assignee}</td>
+                      <td>{r.project}</td>
+                      <td>{r.task}</td>
+                      <td>{r.date}</td>
+                      <td>{formatTime(r.estimated)}</td>
+                      <td>{formatTime(r.spent)}</td>
+                      <td className="text-success">{formatTime(r.saved)}</td>
+                      <td className="text-danger">{formatTime(r.overtime)}</td>
+                      <td>
+                        <span
+                          className="badge"
+                          style={{
+                            backgroundColor: statusMap[r.status]?.bgColor || "#6c757d",
+                            color: "#fff",
+                            fontSize: "11px",
+                          }}
+                        >
+                          {statusMap[r.status]?.label || r.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+              ) : (
+                <tr>
+                  <td colSpan={9} className="text-center text-muted py-3">
+                    No records found
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
       </div>
