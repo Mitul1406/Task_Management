@@ -120,7 +120,7 @@ type UserDayWiseInfo {
   role: String!
 }
     #admin all data
-    type AdminUserDayWise {
+type AdminUserDayWise {
   id: ID!
   username: String!
   email: String!
@@ -175,7 +175,7 @@ type UserDayWiseAdminResponse {
   ): UserDayWise!
 
   userDayWiseAdmin(startDate: String!, endDate: String!): UserDayWiseAdminResponse!
-
+  userDayWiseAdminUser(adminId:String!,startDate: String!, endDate: String!): UserDayWiseAdminResponse!
   screenshotsByUser(userId: ID!): [Screenshot!]!
     }
 

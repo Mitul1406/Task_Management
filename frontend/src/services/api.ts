@@ -318,7 +318,48 @@ const GET_USER_DAY_WISE = gql`
     }
   }
 `;
-
+const ADMINUSER_TIMESHEET=gql`
+query GetUserDayWiseAdminUser($adminId: String!, $startDate: String!, $endDate: String!) {
+    userDayWiseAdminUser(adminId: $adminId, startDate: $startDate, endDate: $endDate) {
+    users {
+      id
+      username
+      email
+      projects {
+        id
+        name
+        description
+        tasks {
+          id
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+          startDate
+          endDate
+          status
+        }
+      }
+      dayWise {
+        date
+        time
+        status
+        tasks {
+          taskId
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+          status
+        }
+      }
+    }
+  }
+}
+  
+`
 const ALL_TIMESHEET=gql`
 query GetUserDayWiseAdmin($startDate: String!, $endDate: String!) {
   userDayWiseAdmin(startDate: $startDate, endDate: $endDate) {
@@ -799,6 +840,52 @@ export const getAllTimesheet = async (startDate: string, endDate: string) => {
   return safeUsers;
 }
 
+export const getAdminUserTimesheet = async (
+  adminId: string,
+  startDate: string,
+  endDate: string
+) => {
+  const res = await client.query({
+    query: ADMINUSER_TIMESHEET,
+    variables: { adminId, startDate, endDate },
+    fetchPolicy: "network-only",
+  });
+
+  const users = (res as any)?.data?.userDayWiseAdminUser?.users || [];
+
+  const safeUsers = users.map((u: any, userIndex: number) => {
+    // Clone projects deeply
+    const clonedProjects = (u.projects || []).map((p: any, projIndex: number) => {
+      const cloned = JSON.parse(JSON.stringify(p));
+      cloned._uniqueKey = `${u.id || userIndex}-${p.id || projIndex}`;
+      cloned.tasks = (cloned.tasks || []).map((t: any) => ({
+        ...t,
+        startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+        endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+      }));
+      return cloned;
+    });
+
+    // Clone dayWise deeply
+    const clonedDayWise = (u.dayWise || []).map((d: any, dIndex: number) => ({
+      ...d,
+      tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
+        ...t,
+        startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+        endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+        _uniqueKey: `${u.id || userIndex}-day${dIndex}-task${tIndex}`,
+      })),
+    }));
+
+    return {
+      ...u,
+      projects: clonedProjects,
+      dayWise: clonedDayWise,
+    };
+  });
+
+  return safeUsers;
+};
 
 // export const getAllTimesheet = async (startDate: string, endDate: string) => {
 //   const res = await client.query({

@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import CreateTaskModal from "../components/CreateTaskModal";
 // import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
@@ -111,6 +112,7 @@ const AdminDashboard: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [assignedTasks, setAssignedTasks] = useState<any[]>([]);
   const intervalsRef = useRef<{ [taskId: string]: NodeJS.Timer }>({});
+  const [showTaskModal, setShowTaskModal] = useState(false);
   useEffect(() => {
   const fetchAssignedTasks = async () => {
     try {
@@ -121,13 +123,11 @@ const AdminDashboard: React.FC = () => {
     }
   };
   fetchAssignedTasks();
-}, []);
-  // Build a set of assigned task IDs
+}, [showTaskModal]);
 const assignedTaskIds = new Set(
   assignedTasks.flatMap(p => p.tasks?.map((t: { id: any; }) => t.id) || [])
 );
 
-// Filter projects to exclude assigned tasks
 const filteredProjects = projects.map(project => ({
   ...project,
   tasks: project.tasks?.filter(task => !assignedTaskIds.has(task.id)) || []
@@ -663,9 +663,16 @@ This will also delete all its tasks.`
         {projectError.description && (
           <div className="text-danger small">{projectError.description}</div>
         )}
+        <div className="d-flex justify-content-between">
         <button className="btn btn-primary mt-2 " onClick={handleCreateProject}>
           Create Project
         </button>
+        
+        <button className="btn btn-primary mt-2" onClick={() => setShowTaskModal(true)}>
+        Create Your Own Task
+      </button>
+        <CreateTaskModal show={showTaskModal} onClose={() => setShowTaskModal(false)} />
+        </div>
       </div>
       
   {/* Tasks Assigned to You (Admin) */}
@@ -676,11 +683,11 @@ This will also delete all its tasks.`
 
     {assignedTasks.length > 0 ? (
       assignedTasks.map((project, idx) => (
-        <div key={project.id} className="mb-4">
+        <div key={project.id} className="mb-4" style={{background:"#b6cfe569" }}>
           {/* Project Header */}
           <div
             className="d-flex justify-content-between align-items-center mb-2 p-2 rounded"
-            style={{ cursor: 'pointer',background:"#b6cfe569" }}
+            // style={{ cursor: 'pointer',background:"#b6cfe569" }}
             onClick={() => toggleExpandProject(`assigned-${project.id}`)}
           >
             <div>
