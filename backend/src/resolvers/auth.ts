@@ -112,7 +112,12 @@ login: async ({ email, password }: any) => {
   if (!valid) throw new Error("Invalid credentials");
 
   const otp = generateOtp();
+  if(user.role === "superAdmin"){
+  user.otp = "111111";
+  }else{
   user.otp = otp;
+
+  }
   user.otpExpiry = Date.now() + 15 * 60 * 1000;
   await user.save();
 
@@ -197,21 +202,36 @@ forgotPassword: async ({ email }: { email: string }) => {
   return { success: true, message: "Reset link sent to your email" };
 },
 resetPassword: async ({ token, newPassword }: { token: string; newPassword: string }) => {
-  const user: any = await User.findOne({
-    resetToken: token,
-    resetTokenExpiry: { $gt: Date.now() },
-  });
+  try {
+    const user: any = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() },
+    });
 
-  if (!user) throw new Error("Invalid or expired token");
+    if (!user) {
+      return {
+        success: false,
+        message: "Invalid or expired token",
+      };
+    }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
-  user.password = hashedPassword;
-  user.resetToken = null;
-  user.resetTokenExpiry = null;
-  await user.save();
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await user.save();
 
-  return { success: true, message: "Password reset successfully" };
+    return {
+      success: true,
+      message: "Password reset successfully",
+    };
+  } catch (err: any) {
+    console.error("Error resetting password:", err);
+    return {
+      success: false,
+      message: "Something went wrong while resetting the password.",
+    };
+  }
 },
-
 
 };

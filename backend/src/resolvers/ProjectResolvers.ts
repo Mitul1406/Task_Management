@@ -4,7 +4,7 @@ import { Timer } from "../models/Timer.js"
 
 export const projectResolver ={
     projects:async()=>{
-        return await Project.find()
+        return await Project.find().populate("adminId")
     },
     project:async({id}:{id:string})=>{
         return await Project.findById(id)
@@ -25,7 +25,7 @@ export const projectResolver ={
       adminId: userId, 
     });
 
-    return await project.save();
+    return (await project.save()).populate("adminId");
   },
     updateProject:async({id,name,description}:{id:string,name:string,description:string})=>{
         const project=await Project.findById(id);

@@ -67,12 +67,15 @@ interface UserDayWiseResponse {
 }
 // GraphQL Queries & Mutations
 const GET_PROJECTS = gql`
-  query {
+    query {
     projects {
       id
       name
       description
       createdAt
+      adminId{
+        username
+      }
     }
   }
 `;
@@ -143,6 +146,9 @@ const CREATE_PROJECT = gql`
       id
       name
       description
+      adminId{
+      username
+      }
     }
   }
 `;
@@ -354,6 +360,16 @@ query GetUserDayWiseAdmin($startDate: String!, $endDate: String!) {
   }
 }
 `
+const GET_ALL_USERS = gql`
+  query {
+    allusers {
+      id
+      username
+      email
+      role
+    }
+  }
+`;
 
 const GET_USERS = gql`
   query {
@@ -366,25 +382,35 @@ const GET_USERS = gql`
   }
 `;
 const CREATE_USER = gql`
-  mutation createUser($username: String!, $email: String!, $password: String!, $role: String) {
-    createUser(username: $username, email: $email, password: $password, role: $role) {
+  mutation createUser($username: String!, $email: String!, $role: String) {
+  createUser(username: $username, email: $email, role: $role) {
+    success
+    message
+    user {
       id
       username
       email
       role
     }
   }
+}
+
 `;
 const UPDATE_USER = gql`
   mutation updateUser($id: ID!, $username: String, $email: String, $role: String) {
     updateUser(id: $id, username: $username, email: $email, role: $role) {
-      id
-      username
-      email
-      role
+      success
+      message
+      user {
+        id
+        username
+        email
+        role
+      }
     }
   }
 `;
+
 const DELETE_USER = gql`
   mutation deleteUser($id: ID!) {
     deleteUser(id: $id) {
@@ -536,7 +562,6 @@ export const updateUser = async (userData: {
 export const createUser = async (userData: {
   username: string;
   email: string;
-  password: string;
   role?: string;
 }) => {
   const res = await client.mutate({
@@ -544,6 +569,14 @@ export const createUser = async (userData: {
     variables: userData,
   });
   return (res as any).data.createUser;
+};
+
+export const getAllUsers = async () => {
+  const res = await client.query({
+    query: GET_ALL_USERS,
+    fetchPolicy: "network-only",
+  });
+  return (res as any).data.allusers;
 };
 export const getUsers = async () => {
   const res = await client.query({

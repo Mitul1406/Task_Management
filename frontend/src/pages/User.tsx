@@ -15,7 +15,6 @@ function UserPage() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    password: "",
     role: "user",
   });
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -43,34 +42,55 @@ function UserPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (editingUser) {
-        await updateUser({ 
-        id: editingUser.id, 
+  e.preventDefault();
+
+  try {
+    setLoading(true);
+
+    if (editingUser) {
+      const res = await updateUser({
+        id: editingUser.id,
         username: formData.username,
         email: formData.email,
-        role: formData.role,});
-        toast.success("User updated successfully");
-      } else {
-        await createUser(formData);
-        toast.success("User created successfully");
+        role: formData.role,
+      });
+
+      if (!res.success) {
+        toast.error(res.message); 
+        return;
       }
-      setFormData({ username: "", email: "", password: "", role: "user" });
-      setEditingUser(null);
-      fetchUsers();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to save user");
+
+      toast.success(res.message);
+      console.log("Updated user:", res.user);
+    } else {
+      const res = await createUser(formData);
+
+      if (!res.success) {
+        toast.error(res.message); 
+        return;
+      }
+
+      toast.success(res.message);
+      console.log("New user created:", res.user);
     }
-  };
+
+    setFormData({ username: "", email: "", role: "user" });
+    setEditingUser(null);
+    fetchUsers();
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Failed to save user");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
       username: user.username,
       email: user.email,
-      password: "",
       role: user.role,
     });
   };
@@ -91,7 +111,7 @@ function UserPage() {
 
   const handleCancelEdit = () => {
     setEditingUser(null);
-    setFormData({ username: "", email: "", password: "", role: "user" });
+    setFormData({ username: "", email: "", role: "user" });
   };
 
   return (
@@ -126,7 +146,7 @@ function UserPage() {
             />
           </div>
 
-          {!editingUser && (
+          {/* {!editingUser && (
             <div className="col-md-3 mb-3">
               <input
                 type="password"
@@ -138,7 +158,7 @@ function UserPage() {
                 required
               />
             </div>
-          )}
+          )} */}
 
           <div className="col-md-2 mb-3">
             <select

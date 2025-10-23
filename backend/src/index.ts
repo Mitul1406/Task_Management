@@ -56,6 +56,25 @@ app.post("/upload-screenshot",authenticate, upload.single("screenshot"), async (
 });
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+app.delete("/screenshots", authenticate, async (req: any, res) => {
+  try {
+    const { ids } = req.body; 
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "No screenshots specified" });
+    }
+    const screenshots = await Screenshot.find({ _id: { $in: ids } });
+    for (const shot of screenshots) {
+      if (fs.existsSync((shot as any).filePath)) fs.unlinkSync((shot as any).filePath);
+    }
+    await Screenshot.deleteMany({ _id: { $in: ids } });
+    res.json({ success: true, deletedCount: screenshots.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
 app.use(
   "/graphql",
   graphqlHTTP((req: any) => ({

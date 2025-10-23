@@ -8,6 +8,7 @@ export const schema=buildSchema(`
         description:String,
         createdAt:String,
         tasks:[Task]
+        adminId:User
     }
     type Task {
     id: ID!
@@ -142,7 +143,11 @@ type UserDayWiseAdminResponse {
   success: Boolean!
   message: String!
 }
-
+ type CreateUserResponse {
+  success: Boolean!
+  message: String!
+  user: User
+}
 
   type Query{
     projects:[Project]
@@ -153,7 +158,7 @@ type UserDayWiseAdminResponse {
     users: [User!]!
     tasksForUser(userId: ID!): [Project!]!
 
-    user(id: ID!): User
+    allusers: [User!]!
 
     dayWiseData(
     projectId: ID!
@@ -179,8 +184,8 @@ type UserDayWiseAdminResponse {
      updateProject(id: ID!, name: String, description: String): Project
      deleteProject(id: ID!): Boolean
 
-     createUser(username: String!, email: String!, password: String!, role: String): User!
-     updateUser(id: ID!, username: String, email: String, role: String): User!
+     createUser(username: String!, email: String!, role: String): CreateUserResponse!
+     updateUser(id: ID!, username: String, email: String, role: String): CreateUserResponse!
      deleteUser(id: ID!): DeleteResponse!
      changePassword(id: ID!, oldPassword: String!, newPassword: String!): DeleteResponse!
 

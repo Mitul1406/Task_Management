@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  getProjects,
   createProject,
   deleteProject,
   createTaskAdmin,
@@ -13,12 +12,15 @@ import {
   updateTaskStatus,
   changePassword,
   getAdminProjects,
+  getUserTasks,
+  stopTimer,
+  startTimer,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
-import AutoScreenshot from "./ScreenShot";
+// import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
   endDate: string | number | Date;
@@ -46,14 +48,14 @@ interface User {
   role: string;
 }
 const statusMap: Record<string, { label: string; bgColor: string }> = {
-  pending: { label: "Pending", bgColor: "#064393ff" },       
-  in_progress: { label: "In Progress", bgColor: "#4b0867ff" }, 
-  code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
-  done: { label: "Done", bgColor: "#2bc22bff" },    
+  pending: { label: "Pending", bgColor: "#064393ff" },
+  in_progress: { label: "In Progress", bgColor: "#4b0867ff" },
+  code_review: { label: "Code Review", bgColor: "#a1dcaeff" },
+  done: { label: "Done", bgColor: "#2bc22bff" },
 };
 
 const AdminDashboard: React.FC = () => {
-  const {logout} = useAuth()
+  const { logout } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
@@ -97,33 +99,110 @@ const AdminDashboard: React.FC = () => {
   const projectRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [id, setId] = useState<string>("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [newTaskStartDate, setNewTaskStartDate] = useState<{ [key: string]: string }>({});
-  const [newTaskEndDate, setNewTaskEndDate] = useState<{ [key: string]: string }>({});
+  const [newTaskStartDate, setNewTaskStartDate] = useState<{
+    [key: string]: string;
+  }>({});
+  const [newTaskEndDate, setNewTaskEndDate] = useState<{
+    [key: string]: string;
+  }>({});
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-    const [oldPassword, setOldPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [newPassword, setNewPassword] = useState("");
+  const [oldPassword, setOldPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [assignedTasks, setAssignedTasks] = useState<any[]>([]);
+  const intervalsRef = useRef<{ [taskId: string]: NodeJS.Timer }>({});
+  useEffect(() => {
+  const fetchAssignedTasks = async () => {
+    try {
+      const tasks = await getUserTasks();
+      setAssignedTasks(tasks);
+    } catch (err) {
+      console.error("Error fetching assigned tasks:", err);
+    }
+  };
+  fetchAssignedTasks();
+}, []);
+  // Build a set of assigned task IDs
+const assignedTaskIds = new Set(
+  assignedTasks.flatMap(p => p.tasks?.map((t: { id: any; }) => t.id) || [])
+);
+
+// Filter projects to exclude assigned tasks
+const filteredProjects = projects.map(project => ({
+  ...project,
+  tasks: project.tasks?.filter(task => !assignedTaskIds.has(task.id)) || []
+}));
+
   const todayDate = () => new Date().toISOString().split("T")[0];
   const navigate = useNavigate();
- const handleStatusChange = async (taskId: string, newStatus: string) => {
-  try {
-    const updatedTask = await updateTaskStatus(taskId, newStatus); 
+  const handleStatusChange = async (taskId: string, newStatus: string) => {
+    try {
+      const updatedTask = await updateTaskStatus(taskId, newStatus);
 
-    setProjects((prevProjects) =>
-      prevProjects.map((project) => ({
-        ...project,
-        tasks: project.tasks?.map((task) =>
-          task.id === taskId ? { ...task, status: updatedTask.status } : task
-        ),
-      }))
-    );
+      setProjects((prevProjects) =>
+        prevProjects.map((project) => ({
+          ...project,
+          tasks: project.tasks?.map((task) =>
+            task.id === taskId ? { ...task, status: updatedTask.status } : task
+          ),
+        }))
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update status");
+    }
+  };
+const handleStatusClick = async (taskId: string, projectId: string) => {
+  const task = assignedTasks
+    .find((p: any) => p.id === projectId)
+    ?.tasks.find((t: any) => t.id === taskId);
+
+  if (!task) return;
+
+  const confirmUpdate = window.confirm(
+    `Are you sure you want to change the status of "${task.title}" to code_review?`
+  );
+  if (!confirmUpdate) return;
+
+  // Update UI immediately
+  setAssignedTasks((prev) =>
+    prev.map((proj: any) =>
+      proj.id === projectId
+        ? {
+            ...proj,
+            tasks: proj.tasks.map((t: any) =>
+              t.id === taskId ? { ...t, status: "code_review" } : t
+            ),
+          }
+        : proj
+    )
+  );
+
+  try {
+    // Call API to update status
+    await updateTaskStatus(taskId, "code_review");
+    toast.success("Status updated to code_review");
   } catch (err) {
     console.error(err);
-    toast.error("Failed to update status");
+    alert("Failed to update status, reverting...");
+
+    // Rollback if API fails
+    setAssignedTasks((prev) =>
+      prev.map((proj: any) =>
+        proj.id === projectId
+          ? {
+              ...proj,
+              tasks: proj.tasks.map((t: any) =>
+                t.id === taskId ? { ...t, status: task.status } : t
+              ),
+            }
+          : proj
+      )
+    );
   }
 };
 
-useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       const parsed = jwtDecode<User>(token);
@@ -131,15 +210,14 @@ useEffect(() => {
       setUsername(parsed.username || "");
     }
   }, []);
-const formatDate = (val: any) => {
-  if (!val) return "";
-  // handle case where val is already ISO string like "2025-10-03"
-  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-  const n = Number(val);
-  if (isNaN(n)) return "";
-  return new Date(n).toISOString().split("T")[0];
-};
-
+  const formatDate = (val: any) => {
+    if (!val) return "";
+    // handle case where val is already ISO string like "2025-10-03"
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    const n = Number(val);
+    if (isNaN(n)) return "";
+    return new Date(n).toISOString().split("T")[0];
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -152,8 +230,8 @@ const formatDate = (val: any) => {
   };
 
   const fetchProjects = async () => {
-    const token:any=localStorage.getItem("token")
-    const decode:any=jwtDecode(token)
+    const token: any = localStorage.getItem("token");
+    const decode: any = jwtDecode(token);
 
     const projectsData = await getAdminProjects(decode.id);
     const projectsWithTasks = await Promise.all(
@@ -168,6 +246,83 @@ const formatDate = (val: any) => {
   const toggleExpandProject = (id: string) => {
     setExpandedProject((prev) => (prev === id ? null : id));
   };
+const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
+  if (task.isRunning) {
+    // Stop the timer
+    await stopTimer(task.id);
+    clearInterval(intervalsRef.current[task.id]);
+    delete intervalsRef.current[task.id];
+
+    // Calculate final times
+    const updatedTotalTime = (task.totalTime || 0) + (task.runningDuration || 0);
+    const savedTime = Math.max((task.estimatedTime || 0) - updatedTotalTime, 0);
+    const overtime = Math.max(updatedTotalTime - (task.estimatedTime || 0), 0);
+
+    setAssignedTasks((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              tasks: p.tasks.map((t: { id: any; }) =>
+                t.id === task.id
+                  ? {
+                      ...t,
+                      isRunning: false,
+                      runningDuration: 0,
+                      totalTime: updatedTotalTime,
+                      savedTime,
+                      overtime,
+                    }
+                  : t
+              ),
+            }
+          : p
+      )
+    );
+  } else {
+    // Start the timer
+    await startTimer(task.id);
+    const updatedTask = await updateTaskStatus(task.id, "in_progress");
+
+    setAssignedTasks((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              tasks: p.tasks.map((t: { id: any; }) =>
+                t.id === task.id
+                  ? {
+                      ...t,
+                      isRunning: true,
+                      runningDuration: 0,
+                      status: updatedTask.status,
+                    }
+                  : t
+              ),
+            }
+          : p
+      )
+    );
+
+    // Start live interval
+    intervalsRef.current[task.id] = setInterval(() => {
+      setAssignedTasks((prev) =>
+        prev.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                tasks: p.tasks.map((t: { id: any; runningDuration: any; }) =>
+                  t.id === task.id
+                    ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+                    : t
+                ),
+              }
+            : p
+        )
+      );
+    }, 1000);
+  }
+};
 
   const handleCreateProject = async () => {
     const errors: { name?: string; description?: string } = {};
@@ -203,9 +358,9 @@ const formatDate = (val: any) => {
       error = "Please enter at least one value for Hours, Minutes, or Seconds";
     } else if (!assignedUserId) {
       error = "Please assign a user";
-    }else if (!startDate || !endDate) {
-    error = "Start date is required";
-  }
+    } else if (!startDate || !endDate) {
+      error = "Start date is required";
+    }
 
     if (error) {
       setTaskErrors((prev) => ({ ...prev, [projectId]: error }));
@@ -224,18 +379,15 @@ const formatDate = (val: any) => {
     );
 
     const newTask = {
-  ...task,
-  savedTime: task.estimatedTime || 0, 
-};
+      ...task,
+      savedTime: task.estimatedTime || 0,
+    };
 
-setProjects((prev) =>
-  prev.map((p) =>
-    p.id === projectId
-      ? { ...p, tasks: [...(p.tasks || []), newTask] }
-      : p
-  )
-);
-
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId ? { ...p, tasks: [...(p.tasks || []), newTask] } : p
+      )
+    );
 
     setTaskEdits((prev) => ({
       ...prev,
@@ -258,65 +410,64 @@ setProjects((prev) =>
     setSelectedUser((prev) => ({ ...prev, [projectId]: "" }));
   };
 
-const handleUpdateTask = async (taskId: string, projectId: string) => {
-  const edit = taskEdits[taskId];
+  const handleUpdateTask = async (taskId: string, projectId: string) => {
+    const edit = taskEdits[taskId];
 
-  // Validation
-  if (!edit.startDate) {
-    toast.error("Start date is required");
-    return;
-  }
-  if (!edit.endDate) {
-    toast.error("End date is required");
-    return;
-  }
-  if (new Date(edit.endDate) < new Date(edit.startDate)) {
-    toast.error("End date cannot be before start date");
-    return;
-  }
+    // Validation
+    if (!edit.startDate) {
+      toast.error("Start date is required");
+      return;
+    }
+    if (!edit.endDate) {
+      toast.error("End date is required");
+      return;
+    }
+    if (new Date(edit.endDate) < new Date(edit.startDate)) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
 
-  const estimatedTime = edit.hours * 3600 + edit.minutes * 60 + edit.seconds;
+    const estimatedTime = edit.hours * 3600 + edit.minutes * 60 + edit.seconds;
 
-  const updated = await updateTaskAdmin(
-    taskId,
-    edit.title,
-    estimatedTime,
-    edit.assignedUser,
-    edit.startDate,
-    edit.endDate
-  );
+    const updated = await updateTaskAdmin(
+      taskId,
+      edit.title,
+      estimatedTime,
+      edit.assignedUser,
+      edit.startDate,
+      edit.endDate
+    );
 
-  toast.success(`Task ${updated.title} updated successfully...`);
+    toast.success(`Task ${updated.title} updated successfully...`);
 
-  setProjects((prev) =>
-    prev.map((p) =>
-      p.id === projectId
-        ? {
-            ...p,
-            tasks: p.tasks?.map((t) =>
-              t.id === taskId ? { ...t, ...updated } : t
-            ),
-          }
-        : p
-    )
-  );
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              tasks: p.tasks?.map((t) =>
+                t.id === taskId ? { ...t, ...updated } : t
+              ),
+            }
+          : p
+      )
+    );
 
-  setEditingTaskId(null);
+    setEditingTaskId(null);
 
-  setTaskEdits((prev) => ({
-    ...prev,
-    [taskId]: {
-      title: updated.title,
-      hours: Math.floor((updated.estimatedTime || 0) / 3600),
-      minutes: Math.floor(((updated.estimatedTime || 0) % 3600) / 60),
-      seconds: (updated.estimatedTime || 0) % 60,
-      assignedUser: updated.assignedUser?.id || "",
-      startDate: updated.startDate,
-      endDate: updated.endDate,
-    },
-  }));
-};
-
+    setTaskEdits((prev) => ({
+      ...prev,
+      [taskId]: {
+        title: updated.title,
+        hours: Math.floor((updated.estimatedTime || 0) / 3600),
+        minutes: Math.floor(((updated.estimatedTime || 0) % 3600) / 60),
+        seconds: (updated.estimatedTime || 0) % 60,
+        assignedUser: updated.assignedUser?.id || "",
+        startDate: updated.startDate,
+        endDate: updated.endDate,
+      },
+    }));
+  };
 
   const handleDeleteTask = async (taskId: string, projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
@@ -336,7 +487,7 @@ const handleUpdateTask = async (taskId: string, projectId: string) => {
       )
     );
   };
- const handlePasswordChange = async (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
@@ -348,12 +499,12 @@ const handleUpdateTask = async (taskId: string, projectId: string) => {
     } catch (err: any) {
       console.error("Change password error:", err);
       const errorMessage =
-      err?.networkError?.result?.errors?.[0]?.message ||
-      err?.graphQLErrors?.[0]?.message ||
-      err?.message ||
-      "Failed to change password";
+        err?.networkError?.result?.errors?.[0]?.message ||
+        err?.graphQLErrors?.[0]?.message ||
+        err?.message ||
+        "Failed to change password";
 
-    toast.error(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -372,21 +523,21 @@ This will also delete all its tasks.`
 
     if (expandedProject === id) setExpandedProject(null);
   };
-   const formatDuration = (seconds: number) => {
-  if (!seconds || seconds <= 0) return "-";
+  const formatDuration = (seconds: number) => {
+    if (!seconds || seconds <= 0) return "-";
 
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
 
-  const parts: string[] = [];
+    const parts: string[] = [];
 
-  if (h > 0) parts.push(`${h.toString().padStart(2, "0")}h`);
-  if (m > 0) parts.push(`${m.toString().padStart(2, "0")}m`);
-  if (s > 0) parts.push(`${s.toString().padStart(2, "0")}s`);
+    if (h > 0) parts.push(`${h.toString().padStart(2, "0")}h`);
+    if (m > 0) parts.push(`${m.toString().padStart(2, "0")}m`);
+    if (s > 0) parts.push(`${s.toString().padStart(2, "0")}s`);
 
-  return parts.length > 0 ? parts.join(" ") : "-";
-};
+    return parts.length > 0 ? parts.join(" ") : "-";
+  };
 
   return (
     <div className="container mt-4">
@@ -396,7 +547,10 @@ This will also delete all its tasks.`
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
           style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
         >
-          <div className="bg-white p-4 rounded shadow" style={{ width: "320px" }}>
+          <div
+            className="bg-white p-4 rounded shadow"
+            style={{ width: "320px" }}
+          >
             <h5 className="text-center mb-3">Change Password</h5>
             <form onSubmit={handlePasswordChange}>
               <div className="mb-3">
@@ -444,46 +598,44 @@ This will also delete all its tasks.`
         <div className="d-flex ms-auto">
           <button
             className="btn btn-sm btn-success me-2"
-            onClick={() =>
-              window.open(`/alluser-timesheet-report`, "_blank")
-            }
+            onClick={() => window.open(`/alluser-timesheet-report`, "_blank")}
           >
             View All User Timesheet
           </button>
           <button
-          className="btn me-2"
-          style={{background:"violet",color:"white"}}
-          onClick={() => {
-           window.open(`/screenshots`, "_blank")
-          }}
-        >
-          View ScreenShot
-        </button>
+            className="btn me-2"
+            style={{ background: "violet", color: "white" }}
+            onClick={() => {
+              window.open(`/screenshots`, "_blank");
+            }}
+          >
+            View ScreenShot
+          </button>
           <button
-          className="btn btn-sm btn-warning me-2"
-          onClick={() => setShowPasswordForm(true)}
-        >
-          Change Password
-        </button>
-        <button
-          className="btn btn-primary me-2"
-          onClick={() => {
-           window.open(`/userView`, "_blank")
-          }}
-        >
-          Users
-        </button>
-        <button
-          className="btn btn-danger"
-          onClick={() => {
-            logout();
-            localStorage.removeItem("token");
-            toast.success("Logout successfully...");
-            navigate("/login");
-          }}
-        >
-          Logout
-        </button>
+            className="btn btn-sm btn-warning me-2"
+            onClick={() => setShowPasswordForm(true)}
+          >
+            Change Password
+          </button>
+          <button
+            className="btn btn-primary me-2"
+            onClick={() => {
+              window.open(`/userView`, "_blank");
+            }}
+          >
+            Users
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={() => {
+              logout();
+              localStorage.removeItem("token");
+              toast.success("Logout successfully...");
+              navigate("/login");
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
 
@@ -515,6 +667,121 @@ This will also delete all its tasks.`
           Create Project
         </button>
       </div>
+      
+  {/* Tasks Assigned to You (Admin) */}
+
+<div className="card mb-2">
+  <div className="card-body">
+ <h5 className="mb-3">Your Tasks:</h5>
+
+    {assignedTasks.length > 0 ? (
+      assignedTasks.map((project, idx) => (
+        <div key={project.id} className="mb-4">
+          {/* Project Header */}
+          <div
+            className="d-flex justify-content-between align-items-center mb-2 p-2 rounded"
+            style={{ cursor: 'pointer',background:"#b6cfe569" }}
+            onClick={() => toggleExpandProject(`assigned-${project.id}`)}
+          >
+            <div>
+              <strong>{project.name || "General Task"}</strong>
+              {project.project?.description && (
+                <p className="mb-0 text-muted">{project.project.description}</p>
+              )}
+            </div>
+            <div>
+              <button
+                className="btn btn-sm btn-info"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpandProject(`assigned-${project.id}`);
+                }}
+              >
+                {expandedProject === `assigned-${project.id}` ? "Collapse" : "View Tasks"}
+              </button>
+            </div>
+          </div>
+
+          {/* Project Tasks Table */}
+          {expandedProject === `assigned-${project.id}` && (
+            <div className="table-responsive">
+              <table className="table table-bordered align-middle mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th>Task Name</th>
+                    <th>Estimated Time</th>
+                    <th>Time Consumed</th>
+                    <th>Saved Time</th>
+                    <th>Overtime</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {project.tasks.length > 0 ? (
+                    project.tasks.map((task: any) => (
+                      <tr key={task.id}>
+                        <td>{task.title}</td>
+                        <td>{formatDuration(task.estimatedTime || 0)}</td>
+                        <td>{formatDuration((task.totalTime || 0) + (task.runningDuration || 0))}</td>
+                        <td>{formatDuration(Math.max((task.estimatedTime || 0) - ((task.totalTime || 0) + (task.runningDuration || 0)), 0))}</td>
+                        <td>{formatDuration(Math.max(((task.totalTime || 0) + (task.runningDuration || 0)) - (task.estimatedTime || 0), 0))}</td>
+                        <td>{formatDate(task.startDate)}</td>
+                        <td>{formatDate(task.endDate)}</td>
+                        <td>
+                          <span
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: "4px",
+                              color: "#fff",
+                              backgroundColor: statusMap[task.status]?.bgColor || "#6c757d",
+                              display: "inline-block",
+                            }}
+                          >
+                            {statusMap[task.status]?.label || task.status}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className={`btn btn-sm ${task.isRunning ? "btn-danger" : "btn-success"} me-2`}
+                            onClick={() => handleStartStopTimerAssigned(task, project.id)}
+                          >
+                            {task.isRunning ? "Stop Timer" : "Start Timer"}
+                          </button>
+                          <button
+                            className="btn btn-sm btn-primary"
+                            disabled={
+                              !task.endDate ||
+                              formatDate(new Date(parseInt(task.endDate, 10))) < new Date().setHours(0, 0, 0, 0) ||
+                              task.status === "done"
+                            }
+                            onClick={() => handleStatusClick(task.id, project.id)}
+                          >
+                            Change Status to code_review
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="text-center text-muted">
+                        No tasks found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ))
+    ) : (
+      <p className="text-muted">No assigned tasks available.</p>
+    )}
+  </div>
+</div>
       <div className="mb-4 d-flex justify-content-start align-items-center">
         <h3 className="mb-0">Filter By Project Name:</h3>
         <select
@@ -538,62 +805,74 @@ This will also delete all its tasks.`
           ))}
         </select>
       </div>
-
       {/* Projects */}
-      {projects.map((project) => (
+      {
+      filteredProjects
+      .map((project) => (
+
         <div className="card mb-3">
-          <div className="card-header d-flex justify-content-between align-items-center"
-    onClick={() => toggleExpandProject(project.id)}
+          <div
+            className="card-header d-flex justify-content-between align-items-center"
+            onClick={() => toggleExpandProject(project.id)}
           >
-  <div
-    key={project.id}
-    ref={(el) => {
-      projectRefs.current[project.id] = el;
-    }}
-  >
-    <strong>{project.name}</strong>
-    {project.description && (
-      <p className="mb-0">{project.description}</p>
-    )}
-  </div>
+            <div
+              key={project.id}
+              ref={(el) => {
+                projectRefs.current[project.id] = el;
+              }}
+            >
+              <strong>{project.name}</strong>
+              {project.description && (
+                <p className="mb-0">{project.description}</p>
+              )}
+            </div>
 
-  <div className="d-flex align-items-center">
-    {project.tasks && project.tasks.length > 0 && (
-      <button
-        className="btn btn-sm btn-success me-2"
-        onClick={() => window.open(`/timesheet-report/${project.id}`, "_blank")}
-      >
-        View Timesheet
-      </button>
-    )}
-    {project.tasks && project.tasks.length > 0 && (
-      <button
-        className="btn btn-sm btn-warning me-2"
-        onClick={() => window.open(`/project-report/${project.id}`, "_blank")}
-      >
-        View Report
-      </button>
-    )}
+            <div className="d-flex align-items-center">
+              {project.tasks && project.tasks.length > 0 && (
+                <button
+                  className="btn btn-sm btn-success me-2"
+                  onClick={() =>
+                    window.open(`/timesheet-report/${project.id}`, "_blank")
+                  }
+                >
+                  View Timesheet
+                </button>
+              )}
+              {project.tasks && project.tasks.length > 0 && (
+                <button
+                  className="btn btn-sm btn-warning me-2"
+                  onClick={() =>
+                    window.open(`/project-report/${project.id}`, "_blank")
+                  }
+                >
+                  View Report
+                </button>
+              )}
 
-    <button
-      className="btn btn-sm btn-info me-2"
-      onClick={(e) =>{
-        e.stopPropagation();
-        toggleExpandProject(project.id)}}
-    >
-      {(project as any).tasks.length > 0
-    ? expandedProject === project.id
-      ? "Collapse"
-      : "View and Add Tasks"
-    : expandedProject === project.id
-      ? "Collapse"
-      : "Add Task"}
-    </button>
+              <button
+                className="btn btn-sm btn-info me-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpandProject(project.id);
+                }}
+              >
+                {(project as any).tasks.length > 0
+                  ? expandedProject === project.id
+                    ? "Collapse"
+                    : "View and Add Tasks"
+                  : expandedProject === project.id
+                  ? "Collapse"
+                  : "Add Task"}
+              </button>
 
-    <button className="btn btn-sm btn-danger" onClick={()=>handleDeleteProject(project.id)}>Delete</button>
-  </div>
+              <button
+                className="btn btn-sm btn-danger"
+                onClick={() => handleDeleteProject(project.id)}
+              >
+                Delete
+              </button>
+            </div>
           </div>
-
 
           {expandedProject === project.id && (
             <div className="card-body">
@@ -613,40 +892,58 @@ This will also delete all its tasks.`
                     }
                   />
                 </div>
-                   <div className="d-flex flex-column">
-    <label>Start Date</label>
-    <input
-      type="date"
-      className="form-control"
-      value={newTaskStartDate[project.id] || todayDate()}
-      onChange={e => {
-        const startDate = e.target.value;
-        setNewTaskStartDate(prev => ({ ...prev, [project.id]: startDate }));
-        // Adjust end date if it’s before start date
-        if (newTaskEndDate[project.id] && newTaskEndDate[project.id] < startDate) {
-          setNewTaskEndDate(prev => ({ ...prev, [project.id]: startDate }));
-        }
-      }}
-    />
-  </div>
-  <div className="d-flex flex-column">
-    <label>End Date</label>
-    <input
-      type="date"
-      className="form-control"
-      // disabled={(newTaskHours[project.id] || 0) < 9}
-      value={newTaskEndDate[project.id] || newTaskStartDate[project.id] || todayDate()}
-      min={newTaskStartDate[project.id] || todayDate()}
-      onChange={e => setNewTaskEndDate(prev => ({ ...prev, [project.id]: e.target.value }))}
-    />
-  </div>
+                <div className="d-flex flex-column">
+                  <label>Start Date</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={newTaskStartDate[project.id] || todayDate()}
+                    onChange={(e) => {
+                      const startDate = e.target.value;
+                      setNewTaskStartDate((prev) => ({
+                        ...prev,
+                        [project.id]: startDate,
+                      }));
+                      // Adjust end date if it’s before start date
+                      if (
+                        newTaskEndDate[project.id] &&
+                        newTaskEndDate[project.id] < startDate
+                      ) {
+                        setNewTaskEndDate((prev) => ({
+                          ...prev,
+                          [project.id]: startDate,
+                        }));
+                      }
+                    }}
+                  />
+                </div>
+                <div className="d-flex flex-column">
+                  <label>End Date</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    // disabled={(newTaskHours[project.id] || 0) < 9}
+                    value={
+                      newTaskEndDate[project.id] ||
+                      newTaskStartDate[project.id] ||
+                      todayDate()
+                    }
+                    min={newTaskStartDate[project.id] || todayDate()}
+                    onChange={(e) =>
+                      setNewTaskEndDate((prev) => ({
+                        ...prev,
+                        [project.id]: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
                 <div className="d-flex flex-column">
                   <label>Hours</label>
                   <input
                     type="number"
                     className="form-control"
                     value={newTaskHours[project.id] || 0}
-                    style={{width:"80px"}}
+                    style={{ width: "80px" }}
                     onChange={(e) =>
                       setNewTaskHours((prev) => ({
                         ...prev,
@@ -660,8 +957,7 @@ This will also delete all its tasks.`
                   <input
                     type="number"
                     className="form-control"
-                    style={{width:"80px"}}
-
+                    style={{ width: "80px" }}
                     value={newTaskMinutes[project.id] || 0}
                     onChange={(e) =>
                       setNewTaskMinutes((prev) => ({
@@ -676,7 +972,7 @@ This will also delete all its tasks.`
                   <input
                     type="number"
                     className="form-control"
-                    style={{width:"80px"}}
+                    style={{ width: "80px" }}
                     value={newTaskSeconds[project.id] || 0}
                     onChange={(e) =>
                       setNewTaskSeconds((prev) => ({
@@ -726,338 +1022,383 @@ This will also delete all its tasks.`
               {/* Task Table */}
               {project.tasks && project.tasks.length > 0 && (
                 <div style={{ overflowX: "auto" }}>
-  <table
-    className="table table-bordered mt-3 align-middle"
-    style={{
-      tableLayout: "fixed",
-      width: "100%",
-      wordWrap: "break-word",
-    }}
-  >
-    <thead className="table-light">
-      <tr>
-        <th style={{ width: "15%" }}>Task Name</th>
-        <th style={{ width: "6%" }}>HH</th>
-        <th style={{ width: "6%" }}>MM</th>
-        <th style={{ width: "6%" }}>SS</th>
-        <th style={{ width: "12%" }}>Time Consume</th>
-        <th style={{ width: "12%" }}>Saved Time</th>
-        <th style={{ width: "12%" }}>Overtime</th>
-        <th style={{ width: "12%" }}>Start Date</th>
-        <th style={{ width: "12%" }}>End Date</th>
-        <th style={{ width: "10%" }}>Assigned User</th>
-        <th style={{ width: "14%" }}>Status</th>
-        <th style={{ width: "12%" }}>Actions</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {project.tasks.map((task) => {
-        const isEditing = editingTaskId === task.id;
-        const edit = taskEdits[task.id] || {
-          title: task.title,
-          hours: Math.floor((task.estimatedTime || 0) / 3600),
-          minutes: Math.floor(((task.estimatedTime || 0) % 3600) / 60),
-          seconds: (task.estimatedTime || 0) % 60,
-          assignedUser:
-            task.assignedUser?.id || task.assignedUserId || "",
-        };
-
-        return (
-          <tr key={task.id}>
-            {/* Task Name */}
-            <td
-              style={{
-                whiteSpace: "normal",
-                wordBreak: "break-word",
-                verticalAlign: "middle",
-              }}
-            >
-              {isEditing ? (
-                <input
-                  type="text"
-                  className="form-control"
-                  value={edit.title}
-                  onChange={(e) =>
-                    setTaskEdits((prev) => ({
-                      ...prev,
-                      [task.id]: { ...edit, title: e.target.value },
-                    }))
-                  }
-                />
-              ) : (
-                task.title
-              )}
-            </td>
-
-            {/* HH */}
-            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
-              {isEditing ? (
-                <input
-                  type="number"
-                  className="form-control form-control-sm"
-                  value={edit.hours}
-                  onChange={(e) =>
-                    setTaskEdits((prev) => ({
-                      ...prev,
-                      [task.id]: {
-                        ...edit,
-                        hours: Number(e.target.value),
-                      },
-                    }))
-                  }
-                />
-              ) : (
-                Math.floor((task.estimatedTime || 0) / 3600)
-              )}
-            </td>
-
-            {/* MM */}
-            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
-              {isEditing ? (
-                <input
-                  type="number"
-                  className="form-control form-control-sm"
-                  value={edit.minutes}
-                  onChange={(e) =>
-                    setTaskEdits((prev) => ({
-                      ...prev,
-                      [task.id]: {
-                        ...edit,
-                        minutes: Number(e.target.value),
-                      },
-                    }))
-                  }
-                />
-              ) : (
-                Math.floor(((task.estimatedTime || 0) % 3600) / 60)
-              )}
-            </td>
-
-            {/* SS */}
-            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
-              {isEditing ? (
-                <input
-                  type="number"
-                  className="form-control form-control-sm"
-                  value={edit.seconds}
-                  onChange={(e) =>
-                    setTaskEdits((prev) => ({
-                      ...prev,
-                      [task.id]: {
-                        ...edit,
-                        seconds: Number(e.target.value),
-                      },
-                    }))
-                  }
-                />
-              ) : (
-                (task.estimatedTime || 0) % 60
-              )}
-            </td>
-
-            {/* Time Consume */}
-            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
-              <span className="badge bg-info">
-                {formatDuration((task as any).totalTime || 0)}
-              </span>
-            </td>
-
-            {/* Saved Time */}
-            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
-              <span className="badge bg-success">
-                {formatDuration((task as any).savedTime || 0)}
-              </span>
-            </td>
-
-            {/* Overtime */}
-            <td style={{ textAlign: "left", verticalAlign: "middle" }}>
-              <span className="badge bg-warning text-dark">
-                {formatDuration((task as any).overtime || 0)}
-              </span>
-            </td>
-
-            {/* Start Date */}
-            <td style={{ verticalAlign: "middle" }}>
-              {isEditing ? (
-                <input
-                  type="date"
-                  className="form-control"
-                  value={edit.startDate || ""}
-                  onChange={(e) =>
-                    setTaskEdits((prev) => ({
-                      ...prev,
-                      [task.id]: {
-                        ...edit,
-                        startDate: e.target.value,
-                      },
-                    }))
-                  }
-                />
-              ) : task.startDate ? (
-                formatDate(task.startDate)
-              ) : (
-                "-"
-              )}
-            </td>
-
-            {/* End Date */}
-            <td style={{ verticalAlign: "middle" }}>
-              {isEditing ? (
-                <input
-                  type="date"
-                  className="form-control"
-                  min={edit.startDate || ""}
-                  value={edit.endDate || ""}
-                  onChange={(e) =>
-                    setTaskEdits((prev) => ({
-                      ...prev,
-                      [task.id]: {
-                        ...edit,
-                        endDate: e.target.value,
-                      },
-                    }))
-                  }
-                />
-              ) : task.endDate ? (
-                formatDate(task.endDate)
-              ) : (
-                "-"
-              )}
-            </td>
-
-            {/* Assigned User */}
-            <td
-              style={{
-                whiteSpace: "normal",
-                wordBreak: "break-word",
-                verticalAlign: "middle",
-              }}
-            >
-              {isEditing ? (
-                <select
-                  className="form-select"
-                  value={edit.assignedUser || ""}
-                  onChange={(e) =>
-                    setTaskEdits((prev) => ({
-                      ...prev,
-                      [task.id]: {
-                        ...edit,
-                        assignedUser: e.target.value,
-                      },
-                    }))
-                  }
-                >
-                  <option value="">Select User</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.username}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                task.assignedUser?.username || "Unassigned"
-              )}
-            </td>
-<td>
-  {isEditing ? (
-    <select
-      value={task.status}
-      onChange={(e) => handleStatusChange(task.id, e.target.value)}
-      className="form-select"
-    >
-      {Object.entries(statusMap).map(([key, { label }]) => (
-        <option key={key} value={key}>
-          {label}
-        </option>
-      ))}
-    </select>
-  ) : (
-    <span
-      style={{
-        padding: "4px 8px",
-        borderRadius: "4px",
-        color: "#fff",
-        backgroundColor: statusMap[task.status]?.bgColor || "#6c757d",
-        textAlign: "center",
-        display: "inline-block",
-      }}
-    >
-      {statusMap[task.status]?.label || task.status}
-    </span>
-  )}
-</td>
-
-
-            {/* Actions */}
-            <td style={{ verticalAlign: "middle" }}>
-              {isEditing ? (
-                <>
-                  <button
-                    className="btn btn-sm btn-success"
-                    style={{ width: "80px" }}
-                    onClick={() => {
-                      handleUpdateTask(task.id, project.id);
-                      setEditingTaskId(null);
+                  <table
+                    className="table table-bordered mt-3 align-middle"
+                    style={{
+                      tableLayout: "fixed",
+                      width: "100%",
+                      wordWrap: "break-word",
                     }}
                   >
-                    Save
-                  </button>
-                  <button
-                    className="btn btn-sm btn-secondary mt-2"
-                    style={{ width: "80px" }}
-                    onClick={() => setEditingTaskId(null)}
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    className="btn btn-sm btn-primary me-2"
-                    style={{ width: "80px" }}
-                    onClick={() => {
-                      setEditingTaskId(task.id);
-                      setTaskEdits((prev) => ({
-                        ...prev,
-                        [task.id]: {
+                    <thead className="table-light">
+                      <tr>
+                        <th style={{ width: "15%" }}>Task Name</th>
+                        <th style={{ width: "6%" }}>HH</th>
+                        <th style={{ width: "6%" }}>MM</th>
+                        <th style={{ width: "6%" }}>SS</th>
+                        <th style={{ width: "12%" }}>Time Consume</th>
+                        <th style={{ width: "12%" }}>Saved Time</th>
+                        <th style={{ width: "12%" }}>Overtime</th>
+                        <th style={{ width: "12%" }}>Start Date</th>
+                        <th style={{ width: "12%" }}>End Date</th>
+                        <th style={{ width: "10%" }}>Assigned User</th>
+                        <th style={{ width: "14%" }}>Status</th>
+                        <th style={{ width: "12%" }}>Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {project.tasks.map((task) => {
+                        const isEditing = editingTaskId === task.id;
+                        const edit = taskEdits[task.id] || {
                           title: task.title,
-                          hours: Math.floor(
-                            (task.estimatedTime || 0) / 3600
-                          ),
+                          hours: Math.floor((task.estimatedTime || 0) / 3600),
                           minutes: Math.floor(
                             ((task.estimatedTime || 0) % 3600) / 60
                           ),
                           seconds: (task.estimatedTime || 0) % 60,
                           assignedUser:
-                            task.assignedUser?.id ||
-                            task.assignedUserId ||
-                            "",
-                          startDate: formatDate(task.startDate),
-                          endDate: formatDate(task.endDate),
-                        },
-                      }));
-                    }}
-                  >
-                    Update
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger mt-1"
-                    style={{ width: "80px" }}
-                    onClick={() => handleDeleteTask(task.id, project.id)}
-                  >
-                    Delete
-                  </button>
-                </>
-              )}
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
-</div>
+                            task.assignedUser?.id || task.assignedUserId || "",
+                        };
 
+                        return (
+                          <tr key={task.id}>
+                            {/* Task Name */}
+                            <td
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  value={edit.title}
+                                  onChange={(e) =>
+                                    setTaskEdits((prev) => ({
+                                      ...prev,
+                                      [task.id]: {
+                                        ...edit,
+                                        title: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                task.title
+                              )}
+                            </td>
+
+                            {/* HH */}
+                            <td
+                              style={{
+                                textAlign: "left",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  className="form-control form-control-sm"
+                                  value={edit.hours}
+                                  onChange={(e) =>
+                                    setTaskEdits((prev) => ({
+                                      ...prev,
+                                      [task.id]: {
+                                        ...edit,
+                                        hours: Number(e.target.value),
+                                      },
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                Math.floor((task.estimatedTime || 0) / 3600)
+                              )}
+                            </td>
+
+                            {/* MM */}
+                            <td
+                              style={{
+                                textAlign: "left",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  className="form-control form-control-sm"
+                                  value={edit.minutes}
+                                  onChange={(e) =>
+                                    setTaskEdits((prev) => ({
+                                      ...prev,
+                                      [task.id]: {
+                                        ...edit,
+                                        minutes: Number(e.target.value),
+                                      },
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                Math.floor(
+                                  ((task.estimatedTime || 0) % 3600) / 60
+                                )
+                              )}
+                            </td>
+
+                            {/* SS */}
+                            <td
+                              style={{
+                                textAlign: "left",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  className="form-control form-control-sm"
+                                  value={edit.seconds}
+                                  onChange={(e) =>
+                                    setTaskEdits((prev) => ({
+                                      ...prev,
+                                      [task.id]: {
+                                        ...edit,
+                                        seconds: Number(e.target.value),
+                                      },
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                (task.estimatedTime || 0) % 60
+                              )}
+                            </td>
+
+                            {/* Time Consume */}
+                            <td
+                              style={{
+                                textAlign: "left",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              <span className="badge bg-info">
+                                {formatDuration((task as any).totalTime || 0)}
+                              </span>
+                            </td>
+
+                            {/* Saved Time */}
+                            <td
+                              style={{
+                                textAlign: "left",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              <span className="badge bg-success">
+                                {formatDuration((task as any).savedTime || 0)}
+                              </span>
+                            </td>
+
+                            {/* Overtime */}
+                            <td
+                              style={{
+                                textAlign: "left",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              <span className="badge bg-warning text-dark">
+                                {formatDuration((task as any).overtime || 0)}
+                              </span>
+                            </td>
+
+                            {/* Start Date */}
+                            <td style={{ verticalAlign: "middle" }}>
+                              {isEditing ? (
+                                <input
+                                  type="date"
+                                  className="form-control"
+                                  value={edit.startDate || ""}
+                                  onChange={(e) =>
+                                    setTaskEdits((prev) => ({
+                                      ...prev,
+                                      [task.id]: {
+                                        ...edit,
+                                        startDate: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                />
+                              ) : task.startDate ? (
+                                formatDate(task.startDate)
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+
+                            {/* End Date */}
+                            <td style={{ verticalAlign: "middle" }}>
+                              {isEditing ? (
+                                <input
+                                  type="date"
+                                  className="form-control"
+                                  min={edit.startDate || ""}
+                                  value={edit.endDate || ""}
+                                  onChange={(e) =>
+                                    setTaskEdits((prev) => ({
+                                      ...prev,
+                                      [task.id]: {
+                                        ...edit,
+                                        endDate: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                />
+                              ) : task.endDate ? (
+                                formatDate(task.endDate)
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+
+                            {/* Assigned User */}
+                            <td
+                              style={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              {isEditing ? (
+                                <select
+                                  className="form-select"
+                                  value={edit.assignedUser || ""}
+                                  onChange={(e) =>
+                                    setTaskEdits((prev) => ({
+                                      ...prev,
+                                      [task.id]: {
+                                        ...edit,
+                                        assignedUser: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                >
+                                  <option value="">Select User</option>
+                                  {users.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                      {u.username}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                task.assignedUser?.username || "Unassigned"
+                              )}
+                            </td>
+                            <td>
+                              {isEditing ? (
+                                <select
+                                  value={task.status}
+                                  onChange={(e) =>
+                                    handleStatusChange(task.id, e.target.value)
+                                  }
+                                  className="form-select"
+                                >
+                                  {Object.entries(statusMap).map(
+                                    ([key, { label }]) => (
+                                      <option key={key} value={key}>
+                                        {label}
+                                      </option>
+                                    )
+                                  )}
+                                </select>
+                              ) : (
+                                <span
+                                  style={{
+                                    padding: "4px 8px",
+                                    borderRadius: "4px",
+                                    color: "#fff",
+                                    backgroundColor:
+                                      statusMap[task.status]?.bgColor ||
+                                      "#6c757d",
+                                    textAlign: "center",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {statusMap[task.status]?.label || task.status}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Actions */}
+                            <td style={{ verticalAlign: "middle" }}>
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    className="btn btn-sm btn-success"
+                                    style={{ width: "80px" }}
+                                    onClick={() => {
+                                      handleUpdateTask(task.id, project.id);
+                                      setEditingTaskId(null);
+                                    }}
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-secondary mt-2"
+                                    style={{ width: "80px" }}
+                                    onClick={() => setEditingTaskId(null)}
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    className="btn btn-sm btn-primary me-2"
+                                    style={{ width: "80px" }}
+                                    onClick={() => {
+                                      setEditingTaskId(task.id);
+                                      setTaskEdits((prev) => ({
+                                        ...prev,
+                                        [task.id]: {
+                                          title: task.title,
+                                          hours: Math.floor(
+                                            (task.estimatedTime || 0) / 3600
+                                          ),
+                                          minutes: Math.floor(
+                                            ((task.estimatedTime || 0) % 3600) /
+                                              60
+                                          ),
+                                          seconds:
+                                            (task.estimatedTime || 0) % 60,
+                                          assignedUser:
+                                            task.assignedUser?.id ||
+                                            task.assignedUserId ||
+                                            "",
+                                          startDate: formatDate(task.startDate),
+                                          endDate: formatDate(task.endDate),
+                                        },
+                                      }));
+                                    }}
+                                  >
+                                    Update
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-danger mt-1"
+                                    style={{ width: "80px" }}
+                                    onClick={() =>
+                                      handleDeleteTask(task.id, project.id)
+                                    }
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
