@@ -148,7 +148,7 @@ export default function ScreenShotView() {
     if (!["admin", "superadmin"].includes(userRole) || ids.length === 0) return;
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:4040/screenshots", {
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/screenshots`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -269,11 +269,11 @@ export default function ScreenShotView() {
                   />
                 )}
                 <img
-                  src={`http://localhost:4040${shot.url}`}
+                  src={`${process.env.REACT_APP_BACKEND_URL}${shot.url}`}
                   alt={`Screenshot ${shot.id}`}
                   className="card-img-top"
                   style={{ maxHeight: "200px", objectFit: "cover", cursor: "pointer" }}
-                  onClick={() => openModal(`http://localhost:4040${shot.url}`)}
+                  onClick={() => openModal(`${process.env.REACT_APP_BACKEND_URL}${shot.url}`)}
                 />
                 {!selectMode && ["admin", "superadmin"].includes(userRole) && (
                   <button
