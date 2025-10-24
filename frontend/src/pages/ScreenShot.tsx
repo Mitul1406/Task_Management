@@ -167,7 +167,7 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
 
         try {
           const token = localStorage.getItem("token");
-          const res = await fetch("http://localhost:4040/upload-screenshot", {
+          const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/upload-screenshot`, {
             method: "POST",
             body: formData,
             headers:{
@@ -223,7 +223,7 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
       </div>
 
       {/* Warning Modal */}
-      {showWarning && (
+      {(showWarning || permissionDenied) && (
         <div
           style={{
             position: "fixed",
