@@ -57,7 +57,7 @@ const AllUserTimeSheet: React.FC = () => {
 
         if (role === "superAdmin") {
           data = await getAllTimesheet(startDate, endDate);
-        } else if (role === "admin") {
+        } else if (role === "teamLead" || role === "projectManager") {
           const adminId = getCurrentUserId();
           if (!adminId) throw new Error("Admin ID not found");
           data = await getAdminUserTimesheet(adminId, startDate, endDate);

@@ -99,6 +99,7 @@ const AdminDashboard: React.FC = () => {
   );
   const projectRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [id, setId] = useState<string>("");
+  const [role, setRole] = useState<string>("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [newTaskStartDate, setNewTaskStartDate] = useState<{
     [key: string]: string;
@@ -207,6 +208,7 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
     if (token) {
       const parsed = jwtDecode<User>(token);
       setId(parsed.id || "");
+      setRole(parsed.role||"")
       setUsername(parsed.username || "");
     }
   }, []);
@@ -594,7 +596,10 @@ This will also delete all its tasks.`
         </div>
       )}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Welcome Admin: {username}</h2>
+        <h2>Welcome {role === "teamLead"
+    ? "Team Leader"
+    : 
+    "Project Manager"} : {username}</h2>
         <div className="d-flex ms-auto">
           <button
             className="btn btn-sm btn-success me-2"

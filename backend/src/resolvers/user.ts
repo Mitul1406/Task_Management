@@ -59,20 +59,22 @@ createUser: async (
       };
     }
 
-    const newUser = new User({
+    const newUser:any = new User({
       username,
       email,
       password: "", // password will be set via reset link
       role: role || "user",
     });
 
-    (await newUser.save()).populate("user");
-
     const resetToken = jwt.sign(
       { id: newUser._id, email: newUser.email },
       process.env.JWT_SECRET as string,
       { expiresIn: "1d" }
     );
+
+    newUser.resetToken = resetToken;
+newUser.resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+await newUser.save();
 
     await sendResetPasswordMail(newUser.email, resetToken, newUser.username);
 

@@ -167,8 +167,9 @@ function UserPage() {
               value={formData.role}
               onChange={handleChange}
             >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
+              <option value="user">Employee</option>
+              <option value="teamLead">Team Lead</option>
+              <option value="projectManager">Project Manager</option>
             </select>
           </div>
 
@@ -214,7 +215,7 @@ function UserPage() {
                   <tr key={user.id}>
                     <td>{user.username}</td>
                     <td>{user.email}</td>
-                    <td>{user.role}</td>
+                    <td>{user.role==="user"?"Employee":user.role}</td>
                     <td>
                       <button
                         className="btn btn-sm btn-warning me-2"
