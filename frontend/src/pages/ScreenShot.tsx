@@ -38,33 +38,47 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
 
   // --- Start periodic screenshots ---
   useEffect(() => {
-    if (!stream || !userId) return;
+  if (!stream || !userId) return;
 
-    const captureInterval = setInterval(() => captureAndUpload(), SCREENSHOT_INTERVAL);
-    intervalRef.current = captureInterval;
+  const MIN_INTERVAL = 1 * 1000;   // 1 minute
+  const MAX_INTERVAL = 15 * 1000;  // 15 minutes
 
-    return () => {
-      clearInterval(captureInterval);
-      stream?.getTracks().forEach((t) => t.stop());
-    };
-  }, [stream, userId]);
+  function getRandomInterval() {
+    return Math.floor(Math.random() * (MAX_INTERVAL - MIN_INTERVAL + 1)) + MIN_INTERVAL;
+  }
+
+  let timeoutId: NodeJS.Timeout | null = null;
+
+  const scheduleNextCapture = async () => {
+    await captureAndUpload(); // take a screenshot
+    const nextDelay = getRandomInterval();
+    timeoutId = setTimeout(scheduleNextCapture, nextDelay);
+  };
+
+  // start the first random capture
+  const initialDelay = getRandomInterval();
+  timeoutId = setTimeout(scheduleNextCapture, initialDelay);
+
+  // cleanup on unmount
+  return () => {
+    if (timeoutId) clearTimeout(timeoutId);
+    stream?.getTracks().forEach((t) => t.stop());
+  };
+}, [stream, userId]);
+
+    // useEffect(() => {
+    //   if (!stream || !userId) return;
+
+    //   const captureInterval = setInterval(() => captureAndUpload(), SCREENSHOT_INTERVAL);
+    //   intervalRef.current = captureInterval;
+
+    //   return () => {
+    //     clearInterval(captureInterval);
+    //     stream?.getTracks().forEach((t) => t.stop());
+    //   };
+    // }, [stream, userId]);
 
   // --- Permission denied toast alerts ---
-  useEffect(() => {
-    let toastInterval: NodeJS.Timeout;
-
-    if (permissionDenied) {
-      toast.error("⚠️ Screenshot permission denied. Please grant permission!");
-      toastInterval = setInterval(() => {
-        toast.error("⚠️ Screenshot permission denied. Please grant permission!");
-      }, PERMISSION_ALERT_INTERVAL);
-    }
-
-    return () => {
-      if (toastInterval) clearInterval(toastInterval);
-    };
-  }, [permissionDenied]);
-
   // --- Request screen share ---
   const requestScreenShare = async () => {
     try {
@@ -229,44 +243,59 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
 >
   <div
     style={{
-      background: "white",
-      borderRadius: "8px",
-      padding: "20px",
-      maxWidth: "450px",
+      background: "#fff",
+      borderRadius: "10px",
+      padding: "24px 28px",
+      maxWidth: "480px",
       textAlign: "left",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-      lineHeight: "1.5",
+      boxShadow: "0 4px 16px rgba(131, 19, 107, 0.5)",
+      lineHeight: "1.6",
+      fontFamily: "Inter, system-ui, sans-serif",
     }}
   >
-    <h4 style={{ marginBottom: "12px", textAlign: "center" }}>⚠️ Share Your Entire Screen</h4>
-    
-    <p style={{ fontSize: "14px", color: "#444" }}>
-      To allow Task Tracker to capture accurate screenshots of your work:
+    <h3 style={{ marginBottom: "14px", textAlign: "center", color: "#222" }}>
+      ⚠️ Screen Sharing Required
+    </h3>
+
+    <p style={{ fontSize: "15px", color: "#444", marginBottom: "10px" }}>
+      To help Task Tracker capture your work screenshots correctly, please follow these steps:
     </p>
-    
-    <ul style={{ fontSize: "14px", color: "#444", paddingLeft: "20px" }}>
-      <li>When prompted by your browser, select <strong>“Entire Screen”</strong>.</li>
-      <li>Do <strong>not</strong> select a specific window or browser tab, otherwise screenshots will be incomplete.</li>
-      <li>Task Tracker only captures screenshots for monitoring work activity—it does <strong>not</strong> record personal data outside the selected screen.</li>
-      <li>If you accidentally select the wrong option, stop sharing and click the button below to try again.</li>
+
+    <ul style={{ fontSize: "14px", color: "#333", paddingLeft: "20px", marginBottom: "12px" }}>
+      <li>
+        When prompted by your browser, <strong>must select “Entire Screen”</strong>.
+      </li>
+      <li>
+  <strong>Do not</strong> select a specific window or browser tab — this will prevent proper screenshot capture, 
+  and you <strong>won’t be able to use our services</strong> until “Entire Screen” is selected.
+</li>
+
+      <li>
+        Task Tracker only captures your shared screen during <strong>active work sessions</strong>. 
+        {/* It <strong>never records personal or private data</strong>. */}
+      </li>
     </ul>
 
-    <p style={{ fontSize: "14px", color: "#444", marginTop: "10px" }}>
-      After granting permission, screenshots will be taken automatically at regular intervals.
+    <p style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}>
+      Once permission is granted, screenshots will be taken automatically at safe, regular intervals.
     </p>
 
-    <div style={{ textAlign: "center", marginTop: "15px" }}>
+    <div style={{ textAlign: "center", marginTop: "20px" }}>
       <button
         onClick={retryPermission}
         style={{
           background: "#007bff",
-          color: "white",
+          color: "#fff",
           border: "none",
-          padding: "10px 16px",
-          borderRadius: "4px",
+          padding: "10px 18px",
+          borderRadius: "6px",
           cursor: "pointer",
-          fontWeight: "bold",
+          fontWeight: 600,
+          fontSize: "15px",
+          transition: "background 0.2s ease",
         }}
+        onMouseOver={(e) => (e.currentTarget.style.background = "#0069d9")}
+        onMouseOut={(e) => (e.currentTarget.style.background = "#007bff")}
       >
         Select Entire Screen
       </button>
