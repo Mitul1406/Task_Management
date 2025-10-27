@@ -89,6 +89,9 @@ const USER_TASK=gql`query tasksForUser($userId: ID!) {
       title
       estimatedTime
       totalTime
+      totalTime
+      overtime
+      savedTime
       isRunning
       startDate
       endDate
@@ -111,19 +114,16 @@ const USER_TASK=gql`query tasksForUser($userId: ID!) {
 `
 const GET_TASKS = gql`
   query tasks($projectId: ID!) {
-    tasks(projectId: $projectId) {
+  tasks(projectId: $projectId) {
     id
     title
-    createdAt
-    updatedAt
-    totalTime
-    isRunning
     estimatedTime
-    overtime
-    savedTime
+    totalTime
+    savedTime       # <-- use this instead of totalSaved
+    overtime        # <-- use this instead of totalOvertime
+    status
     startDate
     endDate
-    status
     runningTimer {
       id
       startTime
@@ -136,8 +136,16 @@ const GET_TASKS = gql`
       email
       role
     }
+    users {
+      id
+      username
+      email
+      role
+      totalTime
+    }
   }
-  }
+}
+
 `;
 
 const CREATE_PROJECT = gql`
@@ -189,8 +197,8 @@ const CREATE_TASK = gql`
 
 
 const START_TIMER = gql`
-  mutation startTimer($taskId: ID!) {
-    startTimer(taskId: $taskId) {
+  mutation startTimer($taskId: ID!, $userId: ID!) {
+    startTimer(taskId: $taskId, userId: $userId) {
       id
       startTime
     }
@@ -204,11 +212,11 @@ const DELETE_TASK = gql`
 `;
 
 const STOP_TIMER = gql`
-  mutation stopTimer($taskId: ID!) {
-    stopTimer(taskId: $taskId) {
-    totalDuration
-    overtime
-    savedTime
+  mutation stopTimer($taskId: ID!, $userId: ID!) {
+    stopTimer(taskId: $taskId, userId: $userId) {
+      totalDuration
+      overtime
+      savedTime
     }
   }
 `;
@@ -635,7 +643,7 @@ export const getTasksByProject = async (projectId: string) => {
   const res = await client.query({
     query: GET_TASKS,
     variables: { projectId },
-    fetchPolicy: "network-only",
+    fetchPolicy: "no-cache",
   });
   return (res as any).data.tasks;
 };
@@ -666,13 +674,33 @@ export const createTask = async (projectId: string, title: string) => {
 };
 
 export const startTimer = async (taskId: string) => {
-  const res = await client.mutate({ mutation: START_TIMER, variables: { taskId } });
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("No token found");
+
+  const decoded = jwtDecode<JwtPayload>(token);
+  const userId = decoded.id;
+
+  const res = await client.mutate({
+    mutation: START_TIMER,
+    variables: { taskId, userId },
+  });
+
   return (res as any).data.startTimer;
 };
 
 export const stopTimer = async (taskId: string) => {
-  const res = await client.mutate({ mutation: STOP_TIMER, variables: { taskId } });
-  return (res as any).data.stopTimer; // returns timer document
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("No token found");
+
+  const decoded = jwtDecode<JwtPayload>(token);
+  const userId = decoded.id;
+
+  const res = await client.mutate({
+    mutation: STOP_TIMER,
+    variables: { taskId, userId },
+  });
+
+  return (res as any).data.stopTimer; // returns timer info
 };
 
 export const deleteTask = async (id: string) => {
@@ -762,7 +790,7 @@ export const getDayWiseData = async ({
   const res = await client.query({
     query: GET_DAY_WISE_DATA,
     variables: { projectId, userIds, startDate, endDate },
-    fetchPolicy: "network-only",
+    fetchPolicy: "no-cache",
   });
 
   return (res as any).data.dayWiseData;
