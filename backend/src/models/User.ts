@@ -12,7 +12,7 @@ const userSchema:Schema=new Schema({
   username: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: false,default:"" },
-  role: { type: String, enum: ["admin", "user","superAdmin"], default: "user" },
+  role: { type: String, enum: ["teamLead","projectManager", "user","superAdmin"], default: "user" },
   otp:String,
   otpExpiry:String,
   isVerified:{type:Boolean,default:false},

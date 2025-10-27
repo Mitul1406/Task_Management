@@ -57,7 +57,7 @@ const AllUserTimeSheet: React.FC = () => {
 
         if (role === "superAdmin") {
           data = await getAllTimesheet(startDate, endDate);
-        } else if (role === "admin") {
+        } else if (role === "teamLead" || role === "projectManager") {
           const adminId = getCurrentUserId();
           if (!adminId) throw new Error("Admin ID not found");
           data = await getAdminUserTimesheet(adminId, startDate, endDate);
@@ -146,44 +146,47 @@ const AllUserTimeSheet: React.FC = () => {
 
   const allRows = Object.values(mergedTasks);
 
-  const seenEstimateKeys = new Set<string>();
-  const totalEstimated = allRows.reduce((sum: number, r: any) => {
-    const estKey = `${r.assignee}_${r.project}_${r.task}`;
-    if (seenEstimateKeys.has(estKey)) return sum;
-    seenEstimateKeys.add(estKey);
-    return sum + (r.estimated || 0);
-  }, 0);
+// --- Total calculations ---
+const seenEstimateKeys = new Set<string>();
+const totalEstimated = allRows.reduce((sum: number, r: any) => {
+  const estKey = `${r.project}_${r.task}`;
+  if (seenEstimateKeys.has(estKey)) return sum;
+  seenEstimateKeys.add(estKey);
+  return sum + (r.estimated || 0);
+}, 0);
 
-  const totalSpent = allRows.reduce((sum: number, r: any) => sum + (r.spent || 0), 0);
-  const totalSaved = totalEstimated - totalSpent;
-  const totalOvertime = allRows.reduce((sum: number, r: any) => sum + (r.overtime || 0), 0);
+const totalSpent = allRows.reduce((sum: number, r: any) => sum + (r.spent || 0), 0);
+const totalSaved = totalEstimated - totalSpent;
+const totalOvertime = allRows.reduce((sum: number, r: any) => sum + (r.overtime || 0), 0);
 
-  const userTotals: Record<string, any> = {};
-  allRows.forEach((r: any) => {
-    if (!userTotals[r.assignee]) {
-      userTotals[r.assignee] = {
-        assignee: r.assignee,
-        email: r.email,
-        totalEstimated: 0,
-        totalSpent: 0,
-        totalSaved: 0,
-        totalOvertime: 0,
-        _estKeys: new Set(),
-      };
-    }
+// --- Per-user totals ---
+const userTotals: Record<string, any> = {};
+allRows.forEach((r: any) => {
+  if (!userTotals[r.assignee]) {
+    userTotals[r.assignee] = {
+      assignee: r.assignee,
+      email: r.email,
+      totalEstimated: 0,
+      totalSpent: 0,
+      totalSaved: 0,
+      totalOvertime: 0,
+      _estKeys: new Set(),
+    };
+  }
 
-    const user = userTotals[r.assignee];
-    const estKey = `${r.assignee}_${r.project}_${r.task}`;
-    if (!user._estKeys.has(estKey)) {
-      user._estKeys.add(estKey);
-      user.totalEstimated += r.estimated || 0;
-    }
-    user.totalSpent += r.spent || 0;
-    user.totalSaved += r.saved || 0;
-    user.totalOvertime += r.overtime || 0;
-  });
+  const user = userTotals[r.assignee];
+  const estKey = `${r.project}_${r.task}`;
+  if (!user._estKeys.has(estKey)) {
+    user._estKeys.add(estKey);
+    user.totalEstimated += r.estimated || 0;
+  }
+  user.totalSpent += r.spent || 0;
+  user.totalSaved += r.saved || 0;
+  user.totalOvertime += r.overtime || 0;
+});
 
-  const userSummaryRows = Object.values(userTotals);
+const userSummaryRows = Object.values(userTotals);
+
 
   return (
     <div className="container-fluid mt-4 position-relative" style={{ padding: "0px 100px" }}>

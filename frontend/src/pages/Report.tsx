@@ -1,3 +1,6 @@
+
+
+
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getTasksByProject, getProjects } from "../services/api"; 
@@ -83,13 +86,53 @@ export default function Report() {
   const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
   const totalUsed = tasks.reduce((sum, t) => sum + (t.totalTime || 0), 0);
 
+  const tasksById = tasks.reduce((acc: Record<string, any>, task: any) => {
+    console.log("shsuhsus8x8sxs8x---->",task);
+    
+  acc[task.id] = {
+    ...task,
+    users: task.users.map((user: any) => ({
+      id: user.id,
+      username: user.username,
+      totalTime: user.totalTime ?? 0,
+    })),
+  };
+  return acc;
+}, {});
+console.log("-------task--->",tasksById);
+
   // Group by user
-  const userTasks = tasks.reduce((acc: any, task) => {
-    const user = task.assignedUser?.username || "Unassigned";
-    if (!acc[user]) acc[user] = [];
-    acc[user].push(task);
-    return acc;
-  }, {});
+const userTasks = tasks.reduce((acc: Record<string, any[]>, task: any) => {
+  if (!Array.isArray(task.users)) return acc;
+
+  task.users.forEach((user: any) => {
+    const userId = user?.id || user?.username || "unknown";
+    if (!acc[userId]) acc[userId] = [];
+    console.log("-susudyu=====>",user);
+    
+    acc[userId].push({
+      id: task.id,
+      title: task.title,
+      estimatedTime: task.estimatedTime || 0,
+      status: task.status,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      username: user.username,
+      userTime: user.totalTime ?? 0,
+      userOvertime: task.overtime ?? 0,
+      userSaved: task.savedTime ?? 0,
+    });
+  });
+
+  return acc;
+}, {});
+
+
+Object.entries(userTasks).forEach(([userId, tasks]) => {
+  console.log(userId, tasks);
+});
+
+
   const handleDownloadPDF=()=>{
     if(reportRef.current)
     {
@@ -157,12 +200,17 @@ return (
             <h5 className="mb-3">Worked Users</h5>
             <ul className="list-group list-group-flush">
               {Array.from(
-                new Set(tasks.map((t: any) => t.assignedUser?.username).filter(Boolean))
-              ).map((username, idx) => (
-                <li key={idx} className="list-group-item">
-                  👤 {username}
-                </li>
-              ))}
+    new Set(
+      tasks
+        .flatMap((t: any) => t.users.map((u: any) => u.username)) // get all usernames from task.users
+        .filter(Boolean) // remove null/undefined
+    )
+  ).map((username, idx) => (
+    <li key={idx} className="list-group-item">
+      👤 {username}
+    </li>
+  ))}
+
               {tasks.filter((t: any) => !t.assignedUser).length > 0 && (
                 <li className="list-group-item text-muted">
                   Unassigned Tasks Present
@@ -174,101 +222,86 @@ return (
       </div>
 
       {/* User Breakdown */}
-      <h4 className="mb-3">User Breakdown</h4>
-      {Object.entries(userTasks).map(([user, tasks]: any) => {
-        const est = tasks.reduce((s: number, t: Task) => s + (t.estimatedTime || 0), 0);
-        const used = tasks.reduce((s: number, t: Task) => s + (t.totalTime || 0), 0);
-        const overtime = tasks.reduce((s: number, t: Task) => s + ((t as any).overtime || 0), 0);
-        const saved = tasks.reduce((s: number, t: Task) => s + ((t as any).savedTime || 0), 0);
+ {/* User Breakdown */}
+<h4 className="mb-3">User Breakdown</h4>
+{Object.entries(userTasks).map(([userId, userTaskList]: any) => {
+    const username = userTaskList[0]?.username || "Unknown";
+  // Sum per-user values for all tasks
+  const est = userTaskList.reduce((sum: number, t: any) => sum + (t.estimatedTime || 0), 0);
+  const used = userTaskList.reduce((sum: number, t: any) => sum + (t.userTime || 0), 0);
+  const overtime = userTaskList.reduce((sum: number, t: any) => sum + (t.userOvertime || 0), 0);
+  const saved = userTaskList.reduce((sum: number, t: any) => sum + (t.userSaved || 0), 0);
 
-        return (
-          <div key={user} className="card mb-3 p-3 shadow-sm">
-            <h5>{user}</h5>
-            <p>
-              Estimated: {formatDuration(est)} | Used: {formatDuration(used)} <br />
-              <span className="text-danger">Overtime: {formatDuration(overtime)}</span> |{" "}
-              <span className="text-success">Saved: {formatDuration(saved)}</span>
-            </p>
+  return (
+    <div key={userId} className="card mb-3 p-3 shadow-sm">
+      <h5>{username}</h5>
+      <p>
+        Estimated: {formatDuration(est)} | Used: {formatDuration(used)} <br />
+        <span className="text-danger">Overtime: {formatDuration(overtime)}</span> |{" "}
+        <span className="text-success">Saved: {formatDuration(saved)}</span>
+      </p>
 
-<table
-  className="table table-sm align-middle"
-  style={{
-    width: "100%",
-    borderCollapse: "collapse",
-    tableLayout: "fixed",
-    border: "1px solid #dee2e6",
-  }}
->
-  <thead
-    className="table-light"
-    style={{
-      borderBottom: "2px solid #dee2e6",
-    }}
-  >
-    <tr>
-      <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Task</th>
-      <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Task Status</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Estimated</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Used</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Overtime</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Saved</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Start</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>End</th>
-    </tr>
-  </thead>
+      <table
+        className="table table-sm align-middle"
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          tableLayout: "fixed",
+          border: "1px solid #dee2e6",
+        }}
+      >
+        <thead className="table-light" style={{ borderBottom: "2px solid #dee2e6" }}>
+          <tr>
+            <th style={{ width: "20%", border: "1px solid #dee2e6" }}>Task</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Task Status</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Estimated</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Used</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Overtime</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Saved</th>
+            <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Start</th>
+            <th style={{ width: "10%", border: "1px solid #dee2e6" }}>End</th>
+          </tr>
+        </thead>
 
-  <tbody>
-    {tasks.map((t: Task) => (
-      <tr key={t.id}>
-        <td
-          className="text-wrap"
-          style={{
-            minWidth: "120px",
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-            border: "1px solid #dee2e6",
-          }}
-        >
-          {t.title}
-        </td>
-        <td>
-  <span
-    style={{
-      padding: "4px 8px",
-      borderRadius: "4px",
-      color: "#fff",
-      backgroundColor: statusMap[t.status]?.bgColor || "#6c757d", 
-      textAlign: "center",
-      display: "inline-block",
-    }}
-  >
-    {statusMap[t.status]?.label || t.status}
-  </span>
-</td>
+        <tbody>
+          {userTaskList.map((t: any) => (
+            <tr key={t.id}>
+              <td style={{ border: "1px solid #dee2e6", wordBreak: "break-word" }}>{t.title}</td>
+              <td>
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    color: "#fff",
+                    backgroundColor: statusMap[t.status]?.bgColor || "#6c757d",
+                    display: "inline-block",
+                  }}
+                >
+                  {statusMap[t.status]?.label || t.status}
+                </span>
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }}>
+                {formatDuration(t.estimatedTime || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }}>
+                {formatDuration(t.userTime || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }} className="text-danger">
+                {formatDuration(t.userOvertime || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }} className="text-success">
+                {formatDuration(t.userSaved || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }}>{t.startDate || "-"}</td>
+              <td style={{ border: "1px solid #dee2e6" }}>{t.endDate || "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+})}
 
-        <td style={{ border: "1px solid #dee2e6" }}>
-          {formatDuration(t.estimatedTime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }}>
-          {formatDuration(t.totalTime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }} className="text-danger">
-          {formatDuration((t as any).overtime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }} className="text-success">
-          {formatDuration((t as any).savedTime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }}>{t.startDate || "-"}</td>
-        <td style={{ border: "1px solid #dee2e6" }}>{t.endDate || "-"}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
-
-          </div>
-        );
-      })}
     </div>
     </div>
 

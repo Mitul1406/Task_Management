@@ -33,7 +33,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute allowedRoles={["teamLead","projectManager"]}>
                 <AdminDashboard />
               </ProtectedRoute>
             }
@@ -41,7 +41,7 @@ function App() {
           <Route
             path="/screenshots"
             element={
-              <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
+              <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
                 <ScreenShotView />
               </ProtectedRoute>
             }
@@ -65,7 +65,7 @@ function App() {
           <Route
              path="/project-report/:projectId"
              element={
-              <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>           
+              <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>           
              <Report />
              </ProtectedRoute>
              }
@@ -73,7 +73,7 @@ function App() {
           <Route
              path="/userView"
              element={
-             <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
+             <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
              <User />
              </ProtectedRoute>
              }
@@ -81,7 +81,7 @@ function App() {
           <Route
              path="/timesheet-report/:projectId"
              element={
-             <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
+             <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
              <TimeSheet />
              </ProtectedRoute>
              }
@@ -89,7 +89,7 @@ function App() {
           <Route
              path="/alluser-timesheet-report"
              element={
-             <ProtectedRoute allowedRoles={["admin", "superAdmin"]}>
+             <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
              <AllUserTimeSheet />
              {/* <ExampleTimeAdmin/> */}
              </ProtectedRoute>

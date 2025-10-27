@@ -71,7 +71,7 @@ const sendResetPasswordMail = async (email: string, token: string, username: str
 };
 export const authResolver = { 
     users: async () => {
-      const users = await User.find({role:"user"});
+      const users = await User.find({role:{$in:["teamLead","projectManager","user"]}});
       return users.map((u) => ({
         id: (u as any)._id.toString(),
         username: u.username,
@@ -203,35 +203,32 @@ forgotPassword: async ({ email }: { email: string }) => {
 },
 resetPassword: async ({ token, newPassword }: { token: string; newPassword: string }) => {
   try {
-    const user: any = await User.findOne({
-      resetToken: token,
-      resetTokenExpiry: { $gt: Date.now() },
-    });
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
+    const user:any = await User.findById(decoded.id);
 
     if (!user) {
-      return {
-        success: false,
-        message: "Invalid or expired token",
-      };
+      return { success: false, message: "User not found" };
     }
 
+    // 🔒 check token match + expiry
+    if (user.resetToken !== token || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return { success: false, message: "Invalid or expired token" };
+    }
+
+    // ✅ reset password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    user.resetToken = null;
-    user.resetTokenExpiry = null;
+
+    // 🔒 invalidate token so it can’t be reused
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
     await user.save();
 
-    return {
-      success: true,
-      message: "Password reset successfully",
-    };
+    return { success: true, message: "Password reset successfully" };
   } catch (err: any) {
     console.error("Error resetting password:", err);
-    return {
-      success: false,
-      message: "Something went wrong while resetting the password.",
-    };
+    return { success: false, message: "Invalid or expired token" };
   }
-},
+}
 
 };

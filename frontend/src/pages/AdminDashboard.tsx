@@ -99,6 +99,7 @@ const AdminDashboard: React.FC = () => {
   );
   const projectRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [id, setId] = useState<string>("");
+  const [role, setRole] = useState<string>("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [newTaskStartDate, setNewTaskStartDate] = useState<{
     [key: string]: string;
@@ -113,6 +114,7 @@ const AdminDashboard: React.FC = () => {
   const [assignedTasks, setAssignedTasks] = useState<any[]>([]);
   const intervalsRef = useRef<{ [taskId: string]: NodeJS.Timer }>({});
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [refreshTasks, setRefreshTasks] = useState(false);
   useEffect(() => {
   const fetchAssignedTasks = async () => {
     try {
@@ -123,14 +125,15 @@ const AdminDashboard: React.FC = () => {
     }
   };
   fetchAssignedTasks();
-}, [showTaskModal]);
+}, [showTaskModal,refreshTasks]);
 const assignedTaskIds = new Set(
   assignedTasks.flatMap(p => p.tasks?.map((t: { id: any; }) => t.id) || [])
 );
 
 const filteredProjects = projects.map(project => ({
   ...project,
-  tasks: project.tasks?.filter(task => !assignedTaskIds.has(task.id)) || []
+  tasks: project.tasks
+  // ?.filter(task => !assignedTaskIds.has(task.id)) || []
 }));
 
   const todayDate = () => new Date().toISOString().split("T")[0];
@@ -207,6 +210,7 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
     if (token) {
       const parsed = jwtDecode<User>(token);
       setId(parsed.id || "");
+      setRole(parsed.role||"")
       setUsername(parsed.username || "");
     }
   }, []);
@@ -408,6 +412,7 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
     setNewTaskMinutes((prev) => ({ ...prev, [projectId]: 0 }));
     setNewTaskSeconds((prev) => ({ ...prev, [projectId]: 0 }));
     setSelectedUser((prev) => ({ ...prev, [projectId]: "" }));
+    setRefreshTasks((prev) => !prev);
   };
 
   const handleUpdateTask = async (taskId: string, projectId: string) => {
@@ -467,6 +472,7 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
         endDate: updated.endDate,
       },
     }));
+    setRefreshTasks((prev) => !prev);
   };
 
   const handleDeleteTask = async (taskId: string, projectId: string) => {
@@ -486,6 +492,7 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
           : p
       )
     );
+    setRefreshTasks((prev) => !prev);
   };
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -594,7 +601,10 @@ This will also delete all its tasks.`
         </div>
       )}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Welcome Admin: {username}</h2>
+        <h2>Welcome {role === "teamLead"
+    ? "Team Leader"
+    : 
+    "Project Manager"} : {username}</h2>
         <div className="d-flex ms-auto">
           <button
             className="btn btn-sm btn-success me-2"
@@ -733,8 +743,8 @@ This will also delete all its tasks.`
                         <td>{task.title}</td>
                         <td>{formatDuration(task.estimatedTime || 0)}</td>
                         <td>{formatDuration((task.totalTime || 0) + (task.runningDuration || 0))}</td>
-                        <td>{formatDuration(Math.max((task.estimatedTime || 0) - ((task.totalTime || 0) + (task.runningDuration || 0)), 0))}</td>
-                        <td>{formatDuration(Math.max(((task.totalTime || 0) + (task.runningDuration || 0)) - (task.estimatedTime || 0), 0))}</td>
+                        <td>{formatDuration(task.savedTime)}</td>
+                        <td>{formatDuration(task.overtime)}</td>
                         <td>{formatDate(task.startDate)}</td>
                         <td>{formatDate(task.endDate)}</td>
                         <td>

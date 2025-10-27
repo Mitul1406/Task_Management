@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { verifyOtp, resendOtp } from "../services/api";
 import { toast } from "react-toastify";
 import {jwtDecode} from "jwt-decode";
+import { log } from "console";
 
 const OTP_LENGTH = 6;
 
@@ -30,7 +31,7 @@ const OtpVerification: React.FC = () => {
           localStorage.removeItem("token");
           return;
         }
-        if (decoded.role === "admin") navigate("/admin");
+        if ((decoded.role === "teamLead" || decoded.role === "projectManager")) navigate("/admin");
       else if(decoded.role === "superAdmin") navigate("/superAdmin")
         else navigate("/user");
       } catch {
@@ -84,7 +85,9 @@ const handleVerify = async () => {
       localStorage.setItem("token", res.token);
       localStorage.removeItem("otpEmail");
       toast.success(res.message);
-      if (res.user.role === "admin") navigate("/admin");
+      console.log(res.user.role);
+      
+      if (res.user.role === "teamLead" || res.user.role === "projectManager") navigate("/admin");
       else if(res.user.role === "superAdmin") navigate("/superAdmin")
       else navigate("/user");
     } else {

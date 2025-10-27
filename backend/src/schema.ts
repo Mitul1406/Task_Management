@@ -10,6 +10,14 @@ export const schema=buildSchema(`
         tasks:[Task]
         adminId:User
     }
+        type UserTime {
+  id: ID!
+  username: String!
+  email: String
+  role: String
+  totalTime: Int!
+}
+
     type Task {
     id: ID!
     projectId: ID!
@@ -27,12 +35,14 @@ export const schema=buildSchema(`
     startDate:String
     endDate: String
     status:String
+    users: [UserTime]
   }
    
 
     type Timer{
     id: ID!
     taskId: ID!
+    userId: ID! 
     startTime: String!
     endTime: String
     duration: Int
@@ -193,9 +203,9 @@ type UserDayWiseAdminResponse {
      updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      deleteTask(id: ID!): Boolean
      updateTaskStatus(taskId: ID!, status: String!): Task
- 
-     startTimer(taskId: ID!): Timer
-     stopTimer(taskId: ID!): StopTimerResponse!
+
+     startTimer(taskId: ID!, userId: ID!): Timer!
+     stopTimer(taskId: ID!, userId: ID!): StopTimerResponse!
 
      register(username: String!, email: String!, password: String!, role: String): User
      login(email: String!, password: String!): User

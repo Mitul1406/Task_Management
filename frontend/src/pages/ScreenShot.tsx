@@ -19,7 +19,7 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
   const [status, setStatus] = useState("Idle");
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
+  const [showWarning, setShowWarning] = useState(true); // show modal on load
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isFirefox = typeof navigator !== "undefined" && /firefox/i.test(navigator.userAgent);
@@ -36,42 +36,50 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
     }
   }, []);
 
-  // --- Start screen capture ---
+  // --- Start periodic screenshots ---
   useEffect(() => {
-    if (!userId) return;
-    requestScreenShare();
-  }, [userId]);
+  if (!stream || !userId) return;
 
-  // --- Periodic screenshot capture ---
-  useEffect(() => {
-    if (!stream || !userId) return;
+  const MIN_INTERVAL = 1 * 1000;   // 1 minute
+  const MAX_INTERVAL = 15 * 1000;  // 15 minutes
 
-    const captureInterval = setInterval(() => captureAndUpload(), SCREENSHOT_INTERVAL);
-    intervalRef.current = captureInterval;
+  function getRandomInterval() {
+    return Math.floor(Math.random() * (MAX_INTERVAL - MIN_INTERVAL + 1)) + MIN_INTERVAL;
+  }
 
-    return () => {
-      clearInterval(captureInterval);
-      stream?.getTracks().forEach((t) => t.stop());
-    };
-  }, [stream, userId]);
+  let timeoutId: NodeJS.Timeout | null = null;
 
-  // --- Permission toast alerts ---
-  useEffect(() => {
-    let toastInterval: NodeJS.Timeout;
+  const scheduleNextCapture = async () => {
+    await captureAndUpload(); // take a screenshot
+    const nextDelay = getRandomInterval();
+    timeoutId = setTimeout(scheduleNextCapture, nextDelay);
+  };
 
-    if (permissionDenied) {
-      toast.error("⚠️ Screenshot permission denied. Please grant permission!");
-      toastInterval = setInterval(() => {
-        toast.error("⚠️ Screenshot permission denied. Please grant permission!");
-      }, PERMISSION_ALERT_INTERVAL);
-    }
+  // start the first random capture
+  const initialDelay = getRandomInterval();
+  timeoutId = setTimeout(scheduleNextCapture, initialDelay);
 
-    return () => {
-      if (toastInterval) clearInterval(toastInterval);
-    };
-  }, [permissionDenied]);
+  // cleanup on unmount
+  return () => {
+    if (timeoutId) clearTimeout(timeoutId);
+    stream?.getTracks().forEach((t) => t.stop());
+  };
+}, [stream, userId]);
 
-  // --- Ask for screen share ---
+    // useEffect(() => {
+    //   if (!stream || !userId) return;
+
+    //   const captureInterval = setInterval(() => captureAndUpload(), SCREENSHOT_INTERVAL);
+    //   intervalRef.current = captureInterval;
+
+    //   return () => {
+    //     clearInterval(captureInterval);
+    //     stream?.getTracks().forEach((t) => t.stop());
+    //   };
+    // }, [stream, userId]);
+
+  // --- Permission denied toast alerts ---
+  // --- Request screen share ---
   const requestScreenShare = async () => {
     try {
       setStatus("Requesting permission...");
@@ -87,35 +95,31 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
 
       let isFullScreen = false;
       if (settings.displaySurface) {
-        // Chrome / Edge
         isFullScreen = settings.displaySurface === "monitor";
       } else if (isFirefox) {
-        // Firefox fallback
         const label = track.label?.toLowerCase() || "";
         isFullScreen = label.includes("screen") || label.includes("entire") || label.includes("monitor");
       } else {
-        // Other browsers fallback
         const label = track.label?.toLowerCase() || "";
         isFullScreen = label.includes("screen") || label.includes("entire");
       }
 
       if (!isFullScreen) {
-        setShowWarning(true);
-        setStatus(isFirefox ? "Please share entire screen (Firefox users: select 'Entire Screen')" : "Please share entire screen");
+        setShowWarning(true); // show modal if not full screen
         mediaStream.getTracks().forEach((t) => t.stop());
-        setPermissionDenied(true);
         return;
       }
 
       setStream(mediaStream);
       setStatus("Sharing...");
       setPermissionDenied(false);
+      setShowWarning(false); // hide modal once full-screen granted
 
       track.onended = () => {
         setStatus("Stopped");
         setPermissionDenied(true);
-        clearInterval(intervalRef.current!);
         setStream(null);
+        clearInterval(intervalRef.current!);
       };
     } catch (err) {
       console.error("Permission denied", err);
@@ -125,11 +129,11 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
     }
   };
 
-  // --- Retry permission ---
+  // --- Retry button handler ---
   const retryPermission = async () => {
     setPermissionDenied(false);
     setShowWarning(false);
-    setStatus("Retrying...");
+    setStatus("Requesting permission...");
     await requestScreenShare();
   };
 
@@ -170,9 +174,9 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
           const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/upload-screenshot`, {
             method: "POST",
             body: formData,
-            headers:{
-              Authorization:`Bearer ${token}`
-            }
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           });
           if (!res.ok) throw new Error("Upload failed");
           setStatus(`Uploaded at ${new Date().toLocaleTimeString()}`);
@@ -183,7 +187,6 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
       }, "image/webp", 0.9);
     };
 
-    // Firefox support: use requestVideoFrameCallback if available
     if ((video as any).requestVideoFrameCallback) {
       (video as any).requestVideoFrameCallback(() => drawFrame());
     } else {
@@ -225,51 +228,81 @@ export default function AutoScreenshot({ onPermissionDenied }: AutoScreenshotPro
       {/* Warning Modal */}
       {(showWarning || permissionDenied) && (
         <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(0,0,0,0.6)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 2000,
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "8px",
-              padding: "20px",
-              maxWidth: "400px",
-              textAlign: "center",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-            }}
-          >
-            <h4 style={{ marginBottom: "10px" }}>⚠️ Share Entire Screen</h4>
-            <p style={{ fontSize: "14px", color: "#444" }}>
-              You’ve selected a window or browser tab instead of your entire screen.  
-              To capture screenshots correctly, please stop sharing and reselect  
-              <strong> “Entire Screen” </strong> when prompted.
-            </p>
-            <button
-              onClick={retryPermission}
-              style={{
-                marginTop: "10px",
-                background: "#007bff",
-                color: "white",
-                border: "none",
-                padding: "8px 12px",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Re-select Entire Screen
-            </button>
-          </div>
-        </div>
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    background: "rgba(0,0,0,0.6)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2000,
+  }}
+>
+  <div
+    style={{
+      background: "#fff",
+      borderRadius: "10px",
+      padding: "24px 28px",
+      maxWidth: "480px",
+      textAlign: "left",
+      boxShadow: "0 4px 16px rgba(131, 19, 107, 0.5)",
+      lineHeight: "1.6",
+      fontFamily: "Inter, system-ui, sans-serif",
+    }}
+  >
+    <h3 style={{ marginBottom: "14px", textAlign: "center", color: "#222" }}>
+      ⚠️ Screen Sharing Required
+    </h3>
+
+    <p style={{ fontSize: "15px", color: "#444", marginBottom: "10px" }}>
+      To help Task Tracker capture your work screenshots correctly, please follow these steps:
+    </p>
+
+    <ul style={{ fontSize: "14px", color: "#333", paddingLeft: "20px", marginBottom: "12px" }}>
+      <li>
+        When prompted by your browser, <strong>must select “Entire Screen”</strong>.
+      </li>
+      <li>
+  <strong>Do not</strong> select a specific window or browser tab — this will prevent proper screenshot capture, 
+  and you <strong>won’t be able to use our services</strong> until “Entire Screen” is selected.
+</li>
+
+      <li>
+        Task Tracker only captures your shared screen during <strong>active work sessions</strong>. 
+        {/* It <strong>never records personal or private data</strong>. */}
+      </li>
+    </ul>
+
+    <p style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}>
+      Once permission is granted, screenshots will be taken automatically at safe, regular intervals.
+    </p>
+
+    <div style={{ textAlign: "center", marginTop: "20px" }}>
+      <button
+        onClick={retryPermission}
+        style={{
+          background: "#007bff",
+          color: "#fff",
+          border: "none",
+          padding: "10px 18px",
+          borderRadius: "6px",
+          cursor: "pointer",
+          fontWeight: 600,
+          fontSize: "15px",
+          transition: "background 0.2s ease",
+        }}
+        onMouseOver={(e) => (e.currentTarget.style.background = "#0069d9")}
+        onMouseOut={(e) => (e.currentTarget.style.background = "#007bff")}
+      >
+        Select Entire Screen
+      </button>
+    </div>
+  </div>
+</div>
+
       )}
     </>
   );

@@ -177,20 +177,20 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   return data.projects.map((proj) => {
     const taskTotalsMap: Record<string, TaskTotals> = {};
 
-    // Initialize tasks with unique estimatedTime
+    // Initialize task totals with base estimated time
     proj.tasks.forEach((t) => {
       taskTotalsMap[t.id] = {
         taskId: t.id,
         title: t.title,
         totalTime: 0,
-        totalEstimated: t.estimatedTime, // unique
+        totalEstimated: t.estimatedTime,
         totalSaved: 0,
         totalOvertime: 0,
-        status:(t as any).status,
-      }as any;
+        status: (t as any).status,
+      } as any;
     });
 
-    // Sum daily data for tasks
+    // Add up all day-wise time and overtime
     data.dayWise.forEach((day) => {
       day.tasks.forEach((task) => {
         const t = taskTotalsMap[task.taskId];
@@ -201,26 +201,28 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
       });
     });
 
-    // Recalculate savedTime per task as estimated - totalTime
+    // Compute saved time for each task
     Object.values(taskTotalsMap).forEach((t) => {
       t.totalSaved = Math.max(0, t.totalEstimated - t.totalTime);
     });
 
-    // Calculate project totals by summing task totals
+    // --- 🧮 FIX: derive project totals ---
     const tasks = Object.values(taskTotalsMap);
-    const projectTotalTime = tasks.reduce((sum, t) => sum + t.totalTime, 0);
     const projectTotalEstimated = tasks.reduce((sum, t) => sum + t.totalEstimated, 0);
-    const projectTotalSaved = tasks.reduce((sum, t) => sum + t.totalSaved, 0);
+    const projectTotalTime = tasks.reduce((sum, t) => sum + t.totalTime, 0);
     const projectTotalOvertime = tasks.reduce((sum, t) => sum + t.totalOvertime, 0);
+
+    // ✅ Saved time should be based on remaining total (not sum of individual saves)
+    const projectTotalSaved = Math.max(0, projectTotalEstimated - projectTotalTime);
 
     return {
       projectId: proj.id,
       projectName: proj.name,
-      tasks,
-      totalTime: projectTotalTime,
       totalEstimated: projectTotalEstimated,
+      totalTime: projectTotalTime,
       totalSaved: projectTotalSaved,
       totalOvertime: projectTotalOvertime,
+      tasks,
     };
   });
 };
@@ -336,7 +338,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   </div>
 </div>
 
-{projectTotals.map((proj) => (
+{/* {projectTotals.map((proj) => (
   <div key={proj.projectId} className="card p-3 shadow-sm mb-4">
     <h5 className="mb-2">{proj.projectName}</h5>
     <div className="mb-2">
@@ -465,7 +467,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
 
   </div>
   
-))}
+))} */}
 
 <h2 className='mb-3'>
         Date Wise Breakdown

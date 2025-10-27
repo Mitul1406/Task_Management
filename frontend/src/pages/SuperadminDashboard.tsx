@@ -148,7 +148,7 @@ const formatDate = (val: any) => {
   }, []);
 
   const fetchUsers = async () => {
-    const u = await getAllUsers();
+    const u = await getUsers();
     setUsers(u);
   };
 
