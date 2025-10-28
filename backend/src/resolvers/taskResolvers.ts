@@ -440,11 +440,6 @@ userDayWise: async ({
 
   const tasks = await Task.find({ _id: { $in: allTaskIds } }).lean();
 
-  // ✅ Get all timers for these tasks (for all users)
-  const allTimersForTasks = await Timer.find({
-    taskId: { $in: allTaskIds },
-  }).lean();
-
   // --- task info map ---
   const taskInfoMap: Record<string, any> = {};
   for (const t of tasks) {
@@ -458,20 +453,12 @@ userDayWise: async ({
     };
   }
 
-  // --- total worked per task (across all users) ---
-  const totalWorkedByTask: Record<string, number> = {};
-  for (const t of allTimersForTasks) {
-    const taskId = t.taskId?.toString();
-    if (!taskId) continue;
-    totalWorkedByTask[taskId] = (totalWorkedByTask[taskId] || 0) + (t.duration || 0);
-  }
-
   // --- worked per task per date (for this user) ---
   const workedByTaskByDate: Record<string, Record<string, number>> = {};
   for (const t of timers) {
     if (!t.taskId) continue;
     const taskId = t.taskId.toString();
-    const dayKey:any = new Date(t.startTime).toISOString().split("T")[0];
+    const dayKey: any = new Date(t.startTime).toISOString().split("T")[0];
     if (!workedByTaskByDate[taskId]) workedByTaskByDate[taskId] = {};
     workedByTaskByDate[taskId][dayKey] =
       (workedByTaskByDate[taskId][dayKey] || 0) + (t.duration || 0);
@@ -493,9 +480,12 @@ userDayWise: async ({
     };
   }
 
+  // --- cumulative tracker for each task ---
+  const cumulativeWorked: Record<string, number> = {};
+
   // --- build day-wise ---
   const dayWiseData = dates.map((date) => {
-    const dayKey:any = date.toISOString().split("T")[0];
+    const dayKey: any = date.toISOString().split("T")[0];
     const dayTasks: any[] = [];
 
     for (const task of tasks) {
@@ -506,23 +496,34 @@ userDayWise: async ({
       const workedToday = workedByTaskByDate[taskId]?.[dayKey] || 0;
       if (workedToday === 0) continue;
 
-      // ✅ Total work (all users)
-      const totalWorked = totalWorkedByTask[taskId] || 0;
+      const estimate = info.estimatedTime || 0;
+      const prevWorked = cumulativeWorked[taskId] || 0;
+      const newTotal = prevWorked + workedToday;
 
-      // ✅ Calculate shared saved / overtime
-      const savedTime = totalWorked < info.estimatedTime
-        ? info.estimatedTime - totalWorked
-        : 0;
-      const overtime = totalWorked > info.estimatedTime
-        ? totalWorked - info.estimatedTime
-        : 0;
+      let overtime = 0;
+      let savedTime = 0;
+
+      if (prevWorked >= estimate) {
+        // Already exceeded earlier → all new work is overtime
+        overtime = workedToday;
+      } else if (newTotal > estimate) {
+        // Crossed estimate today
+        overtime = newTotal - estimate;
+        savedTime = 0;
+      } else {
+        // Still within estimate
+        savedTime = estimate - newTotal;
+      }
+
+      // Update cumulative tracker
+      cumulativeWorked[taskId] = newTotal;
 
       const newTask = {
         taskId,
         id: taskId,
         title: info.title,
-        time: workedToday, // this user's time
-        estimatedTime: info.estimatedTime,
+        time: workedToday,
+        estimatedTime: estimate,
         savedTime,
         overtime,
         startDate: info.startDate,
@@ -550,7 +551,6 @@ userDayWise: async ({
     dayWise: dayWiseData,
   };
 },
-
 
 updateTaskStatus: async ({ taskId, status }: { taskId: string; status: string }) => {
 
