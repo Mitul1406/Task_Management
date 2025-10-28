@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { login } from "../services/api"; 
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 interface JwtPayload {
   id: string;
   role: string;
@@ -17,6 +17,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -57,7 +58,6 @@ const Login: React.FC = () => {
     
     try {
       const user = await login(form.email, form.password);
-      console.log("[Login] API Response:", user);
 
       if (!user) throw new Error("Login failed");
 
@@ -65,7 +65,6 @@ const Login: React.FC = () => {
         toast.info("OTP sent to your email");
         console.log(`[Login] OTP required for email: ${form.email}`);
         
-        // Save email for OTP page
         localStorage.setItem("otpEmail", form.email);
 
         navigate("/otp-verification", { state: { email: form.email } });
@@ -108,19 +107,36 @@ const Login: React.FC = () => {
             />
           </div>
 
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              className="form-control"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
+  <div className="mb-3" style={{ position: "relative" }}>
+      <label htmlFor="password" className="form-label">
+        Password
+      </label>
+      <input
+        type={showPassword ? "text" : "password"}
+        id="password"
+        name="password"
+        value={form.password}
+        onChange={handleChange}
+        className="form-control"
+        placeholder="Enter your password"
+        required
+        style={{ paddingRight: "40px" }} // space for the icon
+      />
+      <span
+        onClick={() => setShowPassword((prev) => !prev)}
+        style={{
+          position: "absolute",
+          right: "15px",
+          top: "70%",
+          transform: "translateY(-50%)",
+          cursor: "pointer",
+          color: "#666",
+        }}
+      >
+        {showPassword ? <FaEyeSlash /> : <FaEye />}
+      </span>
+    </div>
+
           <div className="mb-3 text-end">
   <Link to="/forgot-password" className="small">
     Forgot Password?

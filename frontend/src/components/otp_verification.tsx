@@ -1,17 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { verifyOtp, resendOtp } from "../services/api";
 import { toast } from "react-toastify";
 import {jwtDecode} from "jwt-decode";
-import { log } from "console";
 
 const OTP_LENGTH = 6;
 
 const OtpVerification: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as { email?: string };
-  const email = state?.email || localStorage.getItem("otpEmail") || "";
+  const email = localStorage.getItem("otpEmail") || "";
 
   const [otpValues, setOtpValues] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -20,7 +17,12 @@ const OtpVerification: React.FC = () => {
 
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  // Redirect if token exists
+  useEffect(() => {
+    if (!email) {
+      navigate("/login");
+    }
+  }, [email, navigate]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -134,6 +136,23 @@ const handleVerify = async () => {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  e.preventDefault();
+  const pastedData = e.clipboardData.getData("text").trim();
+
+  if (!/^\d+$/.test(pastedData)) return; 
+
+  const newValues = [...otpValues];
+  pastedData.split("").forEach((char, index) => {
+    if (index < newValues.length) newValues[index] = char;
+  });
+
+  setOtpValues(newValues);
+
+  const nextIndex = pastedData.length >= otpValues.length ? otpValues.length - 1 : pastedData.length;
+  inputRefs.current[nextIndex]?.focus();
+};
+
   const handleBackToLogin = () => {
     localStorage.removeItem("otpEmail");
     navigate("/login");
@@ -159,6 +178,7 @@ const handleVerify = async () => {
               style={{ width: "45px", height: "45px", fontSize: "20px" }}
               maxLength={1}
               ref={(el) => {inputRefs.current[idx] = el}}
+              onPaste={(e) => handlePaste(e)}
             />
           ))}
         </div>
