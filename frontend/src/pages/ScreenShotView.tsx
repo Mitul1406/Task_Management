@@ -178,7 +178,7 @@ export default function ScreenShotView() {
       <h3 className="mb-3">User Screenshots</h3>
 
       {/* Filters */}
-      <div className="mb-4 d-flex flex-wrap align-items-center gap-3">
+      <div className="mb-4 d-flex flex-wrap align-items-center gap-3 position-relative">
         {!currentUserId &&
           ["teamLead","projectManager", "superAdmin"].includes(userRole) &&
           users.length > 0 && (
@@ -226,7 +226,9 @@ export default function ScreenShotView() {
 
         {/* Toggle Select Mode */}
         {["teamLead","projectManager", "superAdmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
-          <button className="btn btn-outline-primary ms-auto" onClick={toggleSelectMode}>
+          <button className="btn btn-outline-primary ms-auto position-absolute"
+          style={{ top: "0", right: "0" }}
+          onClick={toggleSelectMode}>
             {
             ( selectMode ? "Exit Select Mode" : "Select Screenshots")}
           </button>
@@ -234,19 +236,45 @@ export default function ScreenShotView() {
       </div>
 
       {/* Bulk delete */}
-      {selectMode && selectedScreenshots.length > 0 && (
-        <div className="mb-3">
-          <button
-            className="btn btn-danger me-2"
-            onClick={() => confirmDelete(selectedScreenshots)}
-          >
-            Delete Selected ({selectedScreenshots.length})
-          </button>
-          <button className="btn btn-secondary" onClick={() => setSelectedScreenshots([])}>
-            Clear Selection
-          </button>
-        </div>
-      )}
+      {selectMode && (
+  <div className="mb-3 d-flex flex-wrap align-items-center gap-2">
+    <button
+      className="btn btn-outline-success"
+      style={{minWidth:"120px"}}
+      onClick={() => {
+        if (selectedScreenshots.length === filteredScreenshots.length) {
+          setSelectedScreenshots([]); 
+        } else {
+          setSelectedScreenshots(filteredScreenshots.map((s) => s.id)); // Select all
+        }
+      }}
+    >
+      {selectedScreenshots.length === filteredScreenshots.length
+        ? "Unselect All"
+        : "Select All"}
+    </button>
+
+    {/* Delete Selected */}
+    <button
+      className="btn btn-danger"
+      style={{minWidth:"180px"}}
+      disabled={selectedScreenshots.length === 0}
+      onClick={() => confirmDelete(selectedScreenshots)}
+    >
+      Delete Selected ({selectedScreenshots.length})
+    </button>
+
+    {/* Clear Selection */}
+    <button
+      className="btn btn-secondary"
+      onClick={() => setSelectedScreenshots([])}
+      disabled={selectedScreenshots.length === 0}
+    >
+      Clear Selection
+    </button>
+  </div>
+)}
+
 
       {/* Screenshots */}
       {loading ? (
