@@ -156,25 +156,32 @@ deleteUser: async ({ id }: { id: string }) => {
 
 
 changePassword: async (
-      { id, oldPassword, newPassword }: { id: string; oldPassword: string; newPassword: string }
-    ) => {
-      try {
+  { id, oldPassword, newPassword }: { id: string; oldPassword: string; newPassword: string }
+) => {
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return { success: false, message: "User not found" };
+    }
 
-        const user = await User.findById(id);
-        if (!user) throw new Error("User not found");
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return { success: false, message: "Incorrect old password" };
+    }
 
-        const isMatch = await bcrypt.compare(oldPassword, user.password);
-        if (!isMatch) throw new Error("Incorrect old password");
+    if (oldPassword === newPassword) {
+      return { success: false, message: "New password cannot be same as old password" };
+    }
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
 
-        await user.save();
-
-        return { message: "Password updated successfully" };
-      } catch (err: any) {
-        throw new Error(err.message || "Failed to change password");
-      }
+    return { success: true, message: "Password updated successfully" };
+  } catch (err: any) {
+    console.error("Change password error:", err);
+    return { success: false, message: "Failed to change password" };
+  }
 },
 
 

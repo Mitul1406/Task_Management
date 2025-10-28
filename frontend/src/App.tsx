@@ -128,7 +128,20 @@ function App() {
       </Router>
 
       {/* Toast container */}
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored" 
+        toastClassName="custom-toast"
+        className="custom-toast-body"
+      />
     </>
   );
 }
