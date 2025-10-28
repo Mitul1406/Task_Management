@@ -174,7 +174,7 @@ const UserDashboard: React.FC = () => {
     setProjects(refreshed);
   }, []);
 
-  const handleStartStopTimer = async (task: Task, projectId: string) => {
+const handleStartStopTimer = async (task: Task, projectId: string) => {
   if (task.isRunning) {
     await stopTimer(task.id);
     clearInterval(intervalsRef.current[task.id]);
@@ -185,12 +185,20 @@ const UserDashboard: React.FC = () => {
     return;
   }
 
-  const granted = await screenshotRef.current?.requestScreenShare?.();
+  // ✅ Check if permission already granted
+  const alreadyGranted = screenshotRef.current?.hasPermission;
+  let granted = alreadyGranted;
+
+  if (!alreadyGranted) {
+    granted = await screenshotRef.current?.requestScreenShare?.();
+  }
+
   if (!granted) {
     toast.error("You must share your ENTIRE SCREEN to start a task.");
     return;
   }
 
+  // ✅ Start the task
   await startTimer(task.id);
   const updatedTask = await updateTaskStatus(task.id, "in_progress");
 
@@ -214,6 +222,7 @@ const UserDashboard: React.FC = () => {
     )
   );
 
+  // Timer update logic
   intervalsRef.current[task.id] = setInterval(() => {
     setProjects((prev) =>
       prev.map((project) =>

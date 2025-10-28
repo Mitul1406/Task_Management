@@ -1,7 +1,6 @@
 import React, {
   useEffect,
   useState,
-  useRef,
   useImperativeHandle,
   forwardRef,
 } from "react";
@@ -18,6 +17,8 @@ interface AutoScreenshotProps {
 
 export interface AutoScreenshotRef {
   requestScreenShare: () => Promise<boolean>;
+  hasPermission: boolean;
+  stopScreenShare: () => void;
 }
 
 const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
@@ -25,14 +26,11 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
     const [userId, setUserId] = useState<string | null>(null);
     const [status, setStatus] = useState("Idle");
     const [stream, setStream] = useState<MediaStream | null>(null);
-    const [permissionDenied, setPermissionDenied] = useState(false);
-    const [showWarning, setShowWarning] = useState(false);
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const [showInstructionModal, setShowInstructionModal] = useState(false);
+    const [internalResolve, setInternalResolve] =
+      useState<((granted: boolean) => void) | null>(null);
 
-    const isFirefox =
-      typeof navigator !== "undefined" && /firefox/i.test(navigator.userAgent);
-
-    // --- Decode user ID from token ---
+    // --- Decode Token ---
     useEffect(() => {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -44,41 +42,48 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       }
     }, []);
 
-    // --- Start periodic screenshots ---
+    // --- Periodic Screenshot Capture ---
     useEffect(() => {
       if (!stream || !userId) return;
 
-      const MIN_INTERVAL = 1 * 1000; // 1 min
-      const MAX_INTERVAL = 15 * 1000; // 15 mins
+      const MIN_INTERVAL = 1000;
+      const MAX_INTERVAL = 15000;
 
-      function getRandomInterval() {
-        return Math.floor(Math.random() * (MAX_INTERVAL - MIN_INTERVAL + 1)) + MIN_INTERVAL;
+      function randomInterval() {
+        return (
+          Math.floor(Math.random() * (MAX_INTERVAL - MIN_INTERVAL + 1)) +
+          MIN_INTERVAL
+        );
       }
 
-      let timeoutId: NodeJS.Timeout | null = null;
+      let timeoutId: NodeJS.Timeout;
 
-      const scheduleNextCapture = async () => {
+      const schedule = async () => {
         await captureAndUpload();
-        const nextDelay = getRandomInterval();
-        timeoutId = setTimeout(scheduleNextCapture, nextDelay);
+        timeoutId = setTimeout(schedule, randomInterval());
       };
 
-      const initialDelay = getRandomInterval();
-      timeoutId = setTimeout(scheduleNextCapture, initialDelay);
+      timeoutId = setTimeout(schedule, randomInterval());
 
-      return () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        stream?.getTracks().forEach((t) => t.stop());
-      };
+      return () => clearTimeout(timeoutId);
     }, [stream, userId]);
 
-    // --- Screen share request ---
-    const requestScreenShare = async (): Promise<boolean> => {
-      if (stream) {
-        console.log("✅ Screen share already active");
-        return true;
-      }
+    // --- Request Screen Share from Parent ---
+    const requestScreenShare = (): Promise<boolean> => {
+      return new Promise((resolve) => {
+        // ✅ If already sharing, skip modal
+        if (stream) {
+          resolve(true);
+          return;
+        }
+        setInternalResolve(() => resolve);
+        setShowInstructionModal(true);
+      });
+    };
 
+    // --- Handle Confirm Permission ---
+    const handleConfirmPermission = async () => {
+      setShowInstructionModal(false);
       try {
         setStatus("Requesting permission...");
 
@@ -91,132 +96,95 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
           displaySurface?: "monitor" | "window" | "browser" | "application";
         };
 
-        let isFullScreen = false;
-        if (settings.displaySurface) {
-          isFullScreen = settings.displaySurface === "monitor";
-        } else if (isFirefox) {
-          const label = track.label?.toLowerCase() || "";
-          isFullScreen =
-            label.includes("screen") ||
-            label.includes("entire") ||
-            label.includes("monitor");
-        } else {
-          const label = track.label?.toLowerCase() || "";
-          isFullScreen = label.includes("screen") || label.includes("entire");
-        }
+        const label = track.label?.toLowerCase() || "";
+        const isFullScreen =
+          settings.displaySurface === "monitor" ||
+          label.includes("screen") ||
+          label.includes("entire") ||
+          label.includes("monitor");
 
         if (!isFullScreen) {
-          setShowWarning(true);
           mediaStream.getTracks().forEach((t) => t.stop());
+          setStatus("Permission denied (not entire screen)");
           onPermissionDenied?.();
-          return false;
+          internalResolve?.(false);
+          setShowInstructionModal(true); // 🔁 Show modal again
+          return;
         }
 
         setStream(mediaStream);
         setStatus("Sharing...");
-        setPermissionDenied(false);
-        setShowWarning(false);
+        internalResolve?.(true);
 
-        // 🛑 Stop timer when user stops sharing manually
+        // --- Handle user manually stopping sharing ---
         track.onended = () => {
-          console.log("🛑 Screen sharing stopped by user");
           setStatus("Stopped");
-          setPermissionDenied(true);
           setStream(null);
-          clearInterval(intervalRef.current!);
           onPermissionDenied?.();
+          setShowInstructionModal(true); // 🔁 Show modal again
         };
-
-        return true;
       } catch (err) {
         console.error("Permission denied", err);
         setStatus("Permission denied");
-        setPermissionDenied(true);
         onPermissionDenied?.();
-        return false;
+        internalResolve?.(false);
+        setShowInstructionModal(true); // 🔁 Show modal again
       }
     };
 
-    // --- Allow parent components to trigger ---
-    useImperativeHandle(ref, () => ({
-      requestScreenShare,
-    }));
-
-    // --- Screenshot capture and upload ---
+    // --- Capture & Upload Screenshot ---
     const captureAndUpload = async () => {
       if (!stream || !userId) return;
 
       const video = document.createElement("video");
       video.srcObject = stream;
-      video.muted = true;
-      video.playsInline = true;
-      video.autoplay = true;
-
-      await new Promise<void>((resolve) => {
-        video.onloadedmetadata = async () => {
-          try {
-            await video.play();
-          } catch {}
-          resolve();
-        };
-      });
+      await video.play();
 
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 1920;
-      canvas.height = video.videoHeight || 1080;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         const formData = new FormData();
-        formData.append("screenshot", blob, "screenshot.webp");
+        formData.append("screenshot", blob);
         formData.append("userId", userId);
 
         try {
           const token = localStorage.getItem("token");
-          const res = await fetch(
-            `${process.env.REACT_APP_BACKEND_URL}/upload-screenshot`,
-            {
-              method: "POST",
-              body: formData,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          if (!res.ok) throw new Error("Upload failed");
+          await fetch(`${process.env.REACT_APP_BACKEND_URL}/upload-screenshot`, {
+            method: "POST",
+            body: formData,
+            headers: { Authorization: `Bearer ${token}` },
+          });
           setStatus(`Uploaded at ${new Date().toLocaleTimeString()}`);
-        } catch (err) {
-          console.error("Upload failed", err);
+        } catch {
           setStatus("Upload failed");
         }
       }, "image/webp", 0.9);
     };
 
+    // --- Expose functions to parent ---
+    useImperativeHandle(ref, () => ({
+      requestScreenShare,
+      hasPermission: !!stream,
+      stopScreenShare: () => {
+        if (stream) {
+          stream.getTracks().forEach((t) => t.stop());
+          setStream(null);
+          setStatus("Stopped");
+          setShowInstructionModal(true); // 🔁 Show modal again when stopped manually
+        }
+      },
+    }));
+
     return (
       <>
-        {/* Small status badge */}
-        <div
-          style={{
-            position: "fixed",
-            bottom: "10px",
-            right: "10px",
-            fontSize: "12px",
-            zIndex: 1050,
-            background: "rgba(255,255,255,0.9)",
-            padding: "6px 8px",
-            borderRadius: "6px",
-            boxShadow: "0 0 5px rgba(0,0,0,0.2)",
-          }}
-        >
-          {status}
-        </div>
-
-        {/* Permission modal */}
-        {(showWarning || permissionDenied) && (
+        {/* ✅ Instruction Modal */}
+        {showInstructionModal && (
           <div
   style={{
     position: "fixed",
@@ -246,11 +214,9 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
     <h3 style={{ marginBottom: "14px", textAlign: "center", color: "#222" }}>
       ⚠️ Screen Sharing Required
     </h3>
-
     <p style={{ fontSize: "15px", color: "#444", marginBottom: "10px" }}>
       To help Task Tracker capture your work screenshots correctly, please follow these steps:
     </p>
-
     <ul
       style={{
         fontSize: "14px",
@@ -260,36 +226,24 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       }}
     >
       <li>
-        When prompted by your browser, <strong>must select “Entire Screen”</strong>.
+        When prompted by your browser, <strong>you must select “Entire Screen”</strong>.
       </li>
       <li>
-        <strong>Do not</strong> select a specific window or browser tab — this will prevent proper screenshot
-        capture, and you <strong>won’t be able to use our services</strong> until “Entire Screen” is selected.
+        <strong>Do not</strong> select a specific window or browser tab — this will prevent proper screenshot capture, and you{" "}
+        <strong>won’t be able to use our services</strong> until “Entire Screen” is selected.
       </li>
+      <li>Task Tracker only captures your shared screen during <strong>active work sessions</strong>.</li>
       <li>
-        Task Tracker only captures your shared screen during <strong>active work sessions</strong>.
+        If you <strong>stop screen sharing</strong>, your running task timer will be{" "}
+        <strong>automatically stopped</strong> for tracking accuracy.
       </li>
-    
-
-    {/* ⚠️ New warning message added here */}
-    <li
-    >
-      If you  <strong>stop screen sharing</strong>,
-      your running task timer will be <strong>automatically stopped</strong> for tracking accuracy.
-    </li>
     </ul>
-
     <p style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}>
       Once permission is granted, screenshots will be taken automatically at safe, regular intervals.
     </p>
-
     <div style={{ textAlign: "center", marginTop: "20px" }}>
       <button
-       onClick={() => {
-    // hide modal, then actually trigger browser permission
-    setShowWarning(true);
-    requestScreenShare();
-  }}
+        onClick={handleConfirmPermission}
         style={{
           background: "#007bff",
           color: "#fff",
@@ -311,6 +265,23 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
 </div>
 
         )}
+
+        {/* ✅ Status Badge */}
+        <div
+          style={{
+            position: "fixed",
+            bottom: "10px",
+            right: "10px",
+            background: "#fff",
+            padding: "6px 8px",
+            borderRadius: "6px",
+            fontSize: "12px",
+            boxShadow: "0 0 5px rgba(0,0,0,0.2)",
+            zIndex: 1050,
+          }}
+        >
+          {status}
+        </div>
       </>
     );
   }
