@@ -18,7 +18,7 @@ interface User {
 
 interface JwtPayload {
   id: string;
-  role: "admin" | "superadmin" | "user";
+  role: "projectManager"|"teamLead" | "superAdmin" | "user";
 }
 
 export default function ScreenShotView() {
@@ -32,7 +32,7 @@ export default function ScreenShotView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedScreenshots, setSelectedScreenshots] = useState<string[]>([]);
-  const [userRole, setUserRole] = useState<"admin" | "superadmin" | "user">("user");
+  const [userRole, setUserRole] = useState<"projectManager"|"teamLead" | "superAdmin" | "user">("user");
 
   const [selectMode, setSelectMode] = useState(false);
 
@@ -65,7 +65,7 @@ export default function ScreenShotView() {
   // Fetch users if admin
   useEffect(() => {
     if (currentUserId) return;
-    if (!["admin", "superadmin"].includes(userRole)) return;
+    if (!["teamLead","projectManager", "superAdmin"].includes(userRole)) return;
 
     const fetchUsers = async () => {
       try {
@@ -145,7 +145,7 @@ export default function ScreenShotView() {
 
   // Execute delete
   const deleteScreenshots = async (ids: string[]) => {
-    if (!["admin", "superadmin"].includes(userRole) || ids.length === 0) return;
+    if (!["projectManager","teamLead","superAdmin"].includes(userRole) || ids.length === 0) return;
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/screenshots`, {
@@ -180,7 +180,7 @@ export default function ScreenShotView() {
       {/* Filters */}
       <div className="mb-4 d-flex flex-wrap align-items-center gap-3">
         {!currentUserId &&
-          ["admin", "superadmin"].includes(userRole) &&
+          ["teamLead","projectManager", "superAdmin"].includes(userRole) &&
           users.length > 0 && (
             <div>
               <label className="form-label">Select User</label>
@@ -225,7 +225,7 @@ export default function ScreenShotView() {
         </div>
 
         {/* Toggle Select Mode */}
-        {["admin", "superadmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
+        {["teamLead","projectManager", "superAdmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
           <button className="btn btn-outline-primary ms-auto" onClick={toggleSelectMode}>
             {
             ( selectMode ? "Exit Select Mode" : "Select Screenshots")}
@@ -260,7 +260,7 @@ export default function ScreenShotView() {
           {filteredScreenshots.map((shot) => (
             <div key={shot.id} className="col-12 col-md-4 mb-3">
               <div className="card h-100 position-relative">
-                {selectMode && ["admin", "superadmin"].includes(userRole) && (
+                {selectMode && ["teamLead","projectManager", "superAdmin"].includes(userRole) && (
                   <input
                     type="checkbox"
                     className="position-absolute top-0 start-0 m-2"
@@ -275,7 +275,7 @@ export default function ScreenShotView() {
                   style={{ maxHeight: "200px", objectFit: "cover", cursor: "pointer" }}
                   onClick={() => openModal(`${process.env.REACT_APP_BACKEND_URL}${shot.url}`)}
                 />
-                {!selectMode && ["admin", "superadmin"].includes(userRole) && (
+                {!selectMode && ["teamLead","projectManager", "superAdmin"].includes(userRole) && (
                   <button
                     className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
                     onClick={() => confirmDelete([shot.id])}
