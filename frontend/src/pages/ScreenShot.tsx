@@ -185,86 +185,112 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       <>
         {/* ✅ Instruction Modal */}
         {showInstructionModal && (
-          <div
-  style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    background: "rgba(0,0,0,0.6)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 2000,
-  }}
->
   <div
     style={{
-      background: "#fff",
-      borderRadius: "10px",
-      padding: "24px 28px",
-      maxWidth: "480px",
-      textAlign: "left",
-      boxShadow: "0 4px 16px rgba(131, 19, 107, 0.5)",
-      lineHeight: "1.6",
-      fontFamily: "Inter, system-ui, sans-serif",
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      background: "rgba(0,0,0,0.6)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 2000,
     }}
   >
-    <h3 style={{ marginBottom: "14px", textAlign: "center", color: "#222" }}>
-      ⚠️ Screen Sharing Required
-    </h3>
-    <p style={{ fontSize: "15px", color: "#444", marginBottom: "10px" }}>
-      To help Task Tracker capture your work screenshots correctly, please follow these steps:
-    </p>
-    <ul
+    <div
       style={{
-        fontSize: "14px",
-        color: "#333",
-        paddingLeft: "20px",
-        marginBottom: "12px",
+        background: "#fff",
+        borderRadius: "10px",
+        padding: "24px 28px",
+        maxWidth: "480px",
+        width: "90%",
+        textAlign: "left",
+        boxShadow: "0 4px 16px rgba(131, 19, 107, 0.5)",
+        lineHeight: "1.6",
+        fontFamily: "Inter, system-ui, sans-serif",
+        position: "relative", // 🔹 Needed for absolute X positioning
       }}
     >
-      <li>
-        When prompted by your browser, <strong>you must select “Entire Screen”</strong>.
-      </li>
-      <li>
-        <strong>Do not</strong> select a specific window or browser tab — this will prevent proper screenshot capture, and you{" "}
-        <strong>won’t be able to use our services</strong> until “Entire Screen” is selected.
-      </li>
-      <li>Task Tracker only captures your shared screen during <strong>active work sessions</strong>.</li>
-      <li>
-        If you <strong>stop screen sharing</strong>, your running task timer will be{" "}
-        <strong>automatically stopped</strong> for tracking accuracy.
-      </li>
-    </ul>
-    <p style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}>
-      Once permission is granted, screenshots will be taken automatically at safe, regular intervals.
-    </p>
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
+      {/* 🔹 Close (X) Button */}
       <button
-        onClick={handleConfirmPermission}
+        onClick={() => setShowInstructionModal(false)}
         style={{
-          background: "#007bff",
-          color: "#fff",
+          position: "absolute",
+          top: "1px",
+          right: "7px",
+          background: "transparent",
           border: "none",
-          padding: "10px 18px",
-          borderRadius: "6px",
+          fontSize: "35px",
+          fontWeight: "bold",
+          color: "#666",
           cursor: "pointer",
-          fontWeight: 600,
-          fontSize: "15px",
-          transition: "background 0.2s ease",
+          lineHeight: "1",
         }}
-        onMouseOver={(e) => (e.currentTarget.style.background = "#0069d9")}
-        onMouseOut={(e) => (e.currentTarget.style.background = "#007bff")}
+        onMouseOver={(e) => (e.currentTarget.style.color = "#000")}
+        onMouseOut={(e) => (e.currentTarget.style.color = "#666")}
+        aria-label="Close"
       >
-        Select Entire Screen
+        ×
       </button>
+
+      <h3 style={{ marginBottom: "14px", textAlign: "center", color: "#222" }}>
+        ⚠️ Screen Sharing Required
+      </h3>
+      <p style={{ fontSize: "15px", color: "#444", marginBottom: "10px" }}>
+        To help Task Tracker capture your work screenshots correctly, please follow these steps:
+      </p>
+      <ul
+        style={{
+          fontSize: "14px",
+          color: "#333",
+          paddingLeft: "20px",
+          marginBottom: "12px",
+        }}
+      >
+        <li>
+          When prompted by your browser, <strong>you must select “Entire Screen”</strong>.
+        </li>
+        <li>
+          <strong>Do not</strong> select a specific window or browser tab — this will prevent proper screenshot capture, and you{" "}
+          <strong>won’t be able to use our services</strong> until “Entire Screen” is selected.
+        </li>
+        <li>
+          Task Tracker only captures your shared screen during <strong>active work sessions</strong>.
+        </li>
+        <li>
+          If you <strong>stop screen sharing</strong>, your running task timer will be{" "}
+          <strong>automatically stopped</strong> for tracking accuracy.
+        </li>
+      </ul>
+      <p style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}>
+        Once permission is granted, screenshots will be taken automatically at safe, regular intervals.
+      </p>
+      <div style={{ textAlign: "center", marginTop: "20px" }}>
+        <button
+          onClick={handleConfirmPermission}
+          style={{
+            background: "#007bff",
+            color: "#fff",
+            border: "none",
+            padding: "10px 18px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "15px",
+            transition: "background 0.2s ease",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#0069d9")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#007bff")}
+        >
+          Select Entire Screen
+        </button>
+      </div>
     </div>
   </div>
-</div>
+)}
 
-        )}
 
         {/* ✅ Status Badge */}
         <div
