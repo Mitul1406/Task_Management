@@ -292,7 +292,15 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
       hasPermission = true;
     }
 
-    await startTimer(task.id);
+    const res = await startTimer(task.id);
+  const result = res?.data?.startTimer;
+  console.log(result);
+  
+  // ✅ Handle logical failure from backend
+  if (result && result.success === false) {
+    toast.error(result.message || "Failed to start timer.");
+    return;
+  }
     const updatedTask = await updateTaskStatus(task.id, "in_progress");
 
     // ✅ Update UI instantly
@@ -842,6 +850,7 @@ const handleScreenShareStopped = useCallback(async () => {
                         <td>
                           <button
                             className={`btn btn-sm ${task.isRunning ? "btn-danger" : "btn-success"} me-2`}
+                            // disabled={task.endDate>todayDate}
                             onClick={() => handleStartStopTimerAssigned(task, project.id)}
                           >
                             {task.isRunning ? "Stop Timer" : "Start Timer"}

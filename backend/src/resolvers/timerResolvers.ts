@@ -3,9 +3,22 @@ import { Task } from "../models/Task.js";
 
 export const timerResolver = {
   startTimer: async ({ taskId, userId }: { taskId: string; userId: string }) => {
-    // Check if there’s a running timer for the same task & same user
+    const task:any=await Task.findById(taskId)
+    const today:any=new Date().toISOString().split("T")[0]
+    const endDate:any=new Date(task.endDate).toISOString().split("T")[0]
+    
+    if(endDate<today){
+      return{
+        success:false,
+        message:"You can't start the timer because the task's end date has already passed."}
+    }
+    
     const runningTimer = await Timer.findOne({ taskId, userId, endTime: null });
-    if (runningTimer) throw new Error("Timer already running for this task by this user");
+    if (runningTimer) {
+      return{
+        success:false,
+        message:"Timer already running for this task by this user"}
+      }
 
     const timer = new Timer({
       taskId,
@@ -14,7 +27,10 @@ export const timerResolver = {
     });
 
     await timer.save();
-    return timer;
+    return {
+      success:true,
+      message:"Timer started..."
+    };
   },
 
   stopTimer: async ({ taskId, userId }: { taskId: string; userId: string }) => {

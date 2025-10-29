@@ -1,10 +1,11 @@
 
 
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getTasksByProject, getProjects } from "../services/api"; 
+import { getTasksByProject, getProjects, getUsers } from "../services/api"; 
 import html2pdf from "html2pdf.js";
+import { jwtDecode } from "jwt-decode";
 interface Task {
   status: string;
   id: string;
@@ -49,23 +50,43 @@ export default function Report() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null)
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setStartDate(today);
+    setEndDate(today);
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const allUsers = await getUsers();
+        setUsers(allUsers);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+    };
+    fetchUsers();
+  }, []);
   const formatDate = (val: any) => {
   if (!val) return "";
-  // handle case where val is already ISO string like "2025-10-03"
   if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
   const n = Number(val);
   if (isNaN(n)) return "";
   return new Date(n).toISOString().split("T")[0];
 };
+
   useEffect(() => {
     const loadReport = async () => {
       try {
-        // Get project details
         const allProjects = await getProjects();
         const proj = allProjects.find((p: Project) => p.id === projectId);
         setProject(proj);
 
-        // Get tasks for project
         if (projectId) {
           const taskList = await getTasksByProject(projectId);
           setTasks(taskList);
@@ -79,12 +100,58 @@ export default function Report() {
 
     loadReport();
   }, [projectId]);
+const filteredTasks = useMemo(() => {
+  if (!tasks || tasks.length === 0) return [];
+
+  return tasks.filter((task: any) => {
+    const taskStart = new Date(task.startDate);
+    const taskEnd = new Date(task.endDate);
+
+    const startOk = !startDate || new Date(startDate) <= taskEnd;
+    const endOk = !endDate || new Date(endDate) >= taskStart;
+
+    const userOk =
+      !selectedUser || // ✅ Show all when user not selected
+      selectedUser === "all" ||
+      task.users?.some((u: any) => u.id === selectedUser);
+
+    return startOk && endOk && userOk;
+  });
+}, [tasks, selectedUser, startDate, endDate]);
+
+const userTasks = useMemo(() => {
+  return filteredTasks.reduce((acc: Record<string, any[]>, task: any) => {
+    if (!Array.isArray(task.users)) return acc;
+
+    task.users.forEach((user: any) => {
+      const userId = user?.id || user?.username || "unknown";
+      if (!acc[userId]) acc[userId] = [];
+
+      acc[userId].push({
+        id: task.id,
+        title: task.title,
+        estimatedTime: task.estimatedTime || 0,
+        status: task.status,
+        startDate: task.startDate,
+        endDate: task.endDate,
+        username: user.username,
+        userTime: user.totalTime ?? 0,
+        userOvertime: task.overtime ?? 0,
+        userSaved: task.savedTime ?? 0,
+      });
+    });
+
+    return acc;
+  }, {});
+}, [filteredTasks]);
 
   if (loading) return <div>Loading report...</div>;
   if (!project) return <div>Project not found</div>;
 
-  const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
-  const totalUsed = tasks.reduce((sum, t) => sum + (t.totalTime || 0), 0);
+  const totalEstimated = filteredTasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
+  const totalUsed = filteredTasks.reduce((sum, t) => sum + (t.totalTime || 0), 0);
+  const totalOvertime = filteredTasks.reduce((sum, t) => sum + ((t as any).overtime || 0), 0);
+  const totalSaved = filteredTasks.reduce((sum, t) => sum + ((t as any).savedTime || 0), 0);
 
   const tasksById = tasks.reduce((acc: Record<string, any>, task: any) => {
     console.log("shsuhsus8x8sxs8x---->",task);
@@ -99,33 +166,7 @@ export default function Report() {
   };
   return acc;
 }, {});
-console.log("-------task--->",tasksById);
 
-  // Group by user
-const userTasks = tasks.reduce((acc: Record<string, any[]>, task: any) => {
-  if (!Array.isArray(task.users)) return acc;
-
-  task.users.forEach((user: any) => {
-    const userId = user?.id || user?.username || "unknown";
-    if (!acc[userId]) acc[userId] = [];
-    console.log("-susudyu=====>",user);
-    
-    acc[userId].push({
-      id: task.id,
-      title: task.title,
-      estimatedTime: task.estimatedTime || 0,
-      status: task.status,
-      startDate: task.startDate,
-      endDate: task.endDate,
-      username: user.username,
-      userTime: user.totalTime ?? 0,
-      userOvertime: task.overtime ?? 0,
-      userSaved: task.savedTime ?? 0,
-    });
-  });
-
-  return acc;
-}, {});
 
 
 Object.entries(userTasks).forEach(([userId, tasks]) => {
@@ -150,22 +191,86 @@ Object.entries(userTasks).forEach(([userId, tasks]) => {
 return (
   <>
   <div className="mt-4 position-relative">
-      <div className="d-flex justify-content-end mb-3">
-    <button className="btn btn-primary" onClick={handleDownloadPDF} style={{position:"absolute",top:"25px",right:"150px"}}>
-      📄 Download PDF
-    </button>
+  <div className="d-flex justify-content-end align-items-center position-relative mb-3 flex-wrap gap-2">
+      {/* --- Filters Section --- */}
+      <div
+        className="d-flex align-items-center flex-wrap gap-3 me-auto"
+        style={{ position: "absolute", top: "25px", right: "140px" }}
+      >
+        {/* User Filter */}
+        <div className="d-flex flex-column">
+          <label htmlFor="userSelect" className="form-label mb-1 fw-semibold">
+            User
+          </label>
+          <select
+            id="userSelect"
+            className="form-select form-select-sm"
+            style={{ minWidth: "180px" }}
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+          >
+            <option value="">Select User</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.username}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Start Date */}
+        <div className="d-flex flex-column">
+          <label htmlFor="startDate" className="form-label mb-1 fw-semibold">
+            Start Date
+          </label>
+          <input
+            type="date"
+            id="startDate"
+            className="form-control form-control-sm"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            style={{ minWidth: "150px" }}
+          />
+        </div>
+
+        {/* End Date */}
+        <div className="d-flex flex-column">
+          <label htmlFor="endDate" className="form-label mb-1 fw-semibold">
+            End Date
+          </label>
+          <input
+            type="date"
+            id="endDate"
+            className="form-control form-control-sm"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            style={{ minWidth: "150px" }}
+          />
+        </div>
+
+      {/* --- Download Button --- */}
+      
+        <div className="d-flex flex-column mt-3">
+        <button
+          className="btn btn-primary"
+          onClick={handleDownloadPDF}
+        >
+          📄 Download PDF
+        </button>
+        </div>
+      </div>
   </div>
     <div className="container mt-4" ref={reportRef}>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center">
         <div>
           <h2 className="mb-0">{project.name} - Report</h2>
           <small className="text-muted">
             Report Period:{" "}
             {(project as any).createdAt
-              ? formatDate((project as any).createdAt)
+              ? formatDate(startDate)
               : "-"}{" "}
-            → {formatDate(new Date())}
+            → {formatDate(endDate)}
           </small>
         </div>
         
@@ -185,11 +290,11 @@ return (
             <p><strong>Total Used:</strong> {formatDuration(totalUsed)}</p>
             <p className="text-danger">
               <strong>Total Overtime:</strong>{" "}
-              {formatDuration(tasks.reduce((s, t) => s + ((t as any).overtime || 0), 0))}
+              {formatDuration(totalOvertime)}
             </p>
             <p className="text-success">
               <strong>Total Saved:</strong>{" "}
-              {formatDuration(tasks.reduce((s, t) => s + ((t as any).savedTime || 0), 0))}
+              {formatDuration(totalSaved)}
             </p>
           </div>
         </div>
@@ -202,8 +307,8 @@ return (
               {Array.from(
     new Set(
       tasks
-        .flatMap((t: any) => t.users.map((u: any) => u.username)) // get all usernames from task.users
-        .filter(Boolean) // remove null/undefined
+        .flatMap((t: any) => t.users.map((u: any) => u.username)) 
+        .filter(Boolean) 
     )
   ).map((username, idx) => (
     <li key={idx} className="list-group-item">
