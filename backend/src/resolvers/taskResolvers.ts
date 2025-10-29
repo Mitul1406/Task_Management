@@ -301,6 +301,7 @@ dayWiseData: async ({
   const start = new Date(startDate);
   const end = new Date(endDate);
 
+  // ✅ Build date range
   const dates: Date[] = [];
   const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
@@ -311,7 +312,7 @@ dayWiseData: async ({
 
   const uniqueUserIds = [...new Set(userIds)];
 
-  // ✅ Fetch all tasks in the project
+  // ✅ Fetch all tasks in this project
   const tasks = await Task.find({
     projectId: new mongoose.Types.ObjectId(projectId),
   }).lean();
@@ -332,6 +333,9 @@ dayWiseData: async ({
       (workedMap[taskId][userId][dayKey] || 0) + (t.duration || 0);
   }
 
+  // ✅ Track cumulative worked time for each task (across all users)
+  const cumulativeWorked: Record<string, number> = {};
+
   // ✅ Build final data per day
   const dayWiseData = dates.map((date) => {
     const dayKey: any = date.toISOString().split("T")[0];
@@ -346,33 +350,38 @@ dayWiseData: async ({
       const taskTimers = userTasks
         .map((task) => {
           const taskId = task._id.toString();
+          const estimated = task.estimatedTime || 0;
+          const prevWorked = cumulativeWorked[taskId] || 0;
 
-          // 🧮 total worked by ALL users on this task today
+          // 🧍‍♂️ This user’s time today
+          const workedToday = workedMap[taskId]?.[userId]?.[dayKey] || 0;
+
+          // 🧮 Total work done by *all* users today on this task
           const totalWorkedToday = Object.values(workedMap[taskId] || {}).reduce(
             (sum, userMap) => sum + (userMap?.[dayKey] || 0),
             0
           );
 
-          const estimated = task.estimatedTime || 0;
+          // 🧮 Update total (for all users)
+          const newTotal = prevWorked + totalWorkedToday;
 
-          // 🧮 total worked by all users before this day
-          const totalWorkedBefore = Object.values(workedMap[taskId] || {}).reduce(
-            (sum, userMap) =>
-              sum +
-              Object.entries(userMap)
-                .filter(([d]) => d < dayKey)
-                .reduce((s, [, v]) => s + (v || 0), 0),
-            0
-          );
+          let overtime = 0;
+          let savedTime = 0;
 
-          const totalWorked = totalWorkedBefore + totalWorkedToday;
+          if (prevWorked >= estimated) {
+            // Already exceeded before → all today's work = overtime
+            overtime = totalWorkedToday;
+          } else if (newTotal > estimated) {
+            // Crosses estimate today
+            overtime = newTotal - estimated;
+            savedTime = 0;
+          } else {
+            // Still within estimate
+            savedTime = estimated - newTotal;
+          }
 
-          // ✅ main-level savedTime and overtime (for task)
-          const savedTime = Math.max(estimated - totalWorked, 0);
-          const overtime = Math.max(totalWorked - estimated, 0);
-
-          // 🧍 this user’s specific work today
-          const workedToday = workedMap[taskId]?.[userId]?.[dayKey] || 0;
+          // Update cumulative tracker
+          cumulativeWorked[taskId] = newTotal;
 
           return {
             taskId,
@@ -384,7 +393,7 @@ dayWiseData: async ({
             status: task.status,
           };
         })
-        // 🚫 Remove tasks where the user has 0 time on this day
+        // 🚫 Skip tasks where user didn’t work today
         .filter((task) => task.time > 0);
 
       const totalTime = taskTimers.reduce((sum, t) => sum + (t.time || 0), 0);
@@ -402,6 +411,7 @@ dayWiseData: async ({
 
   return dayWiseData;
 },
+
 
 userDayWise: async ({
   userId,
