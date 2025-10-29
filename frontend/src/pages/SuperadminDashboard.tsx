@@ -337,28 +337,28 @@ const handleUpdateTask = async (taskId: string, projectId: string) => {
       )
     );
   };
- const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      await changePassword(id, oldPassword, newPassword);
-      toast.success("Password changed successfully");
-      setOldPassword("");
-      setNewPassword("");
-      setShowPasswordForm(false);
-    } catch (err: any) {
-      console.error("Change password error:", err);
-      const errorMessage =
-      err?.networkError?.result?.errors?.[0]?.message ||
-      err?.graphQLErrors?.[0]?.message ||
-      err?.message ||
-      "Failed to change password";
+  const handlePasswordChange = async (e: React.FormEvent) => {
+   e.preventDefault();
+   setLoading(true);
+   try {
+     const res = await changePassword(id, oldPassword, newPassword);
+ 
+     if (res.success) {
+       toast.success(res.message);
+       setOldPassword("");
+       setNewPassword("");
+       setShowPasswordForm(false);
+     } else {
+       toast.error(res.message);
+     }
+   } catch (err) {
+     console.error("Unexpected error:", err);
+     toast.error("Something went wrong. Please try again.");
+   } finally {
+     setLoading(false);
+   }
+ };
 
-    toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
   const handleDeleteProject = async (id: string) => {
     const project = projects.find((p) => p.id === id);
     const confirmDelete = window.confirm(

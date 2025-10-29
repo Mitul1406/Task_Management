@@ -159,8 +159,16 @@ const handleVerify = async () => {
   };
 
   return (
+ 
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
+      
       <div className="card shadow-lg p-4" style={{ maxWidth: "400px", width: "100%" }}>
+               <form
+  onSubmit={(e) => {
+    e.preventDefault();
+    handleVerify();
+  }}
+>
         <h2 className="text-center mb-3">OTP Verification</h2>
         <p className="text-center text-muted mb-4">
           Enter the OTP sent to <strong>{email}</strong>
@@ -183,13 +191,13 @@ const handleVerify = async () => {
           ))}
         </div>
 
-        <button
-          className="btn btn-primary w-100 py-2 mb-2"
-          onClick={handleVerify}
-          disabled={verifyLoading}
-        >
-          {verifyLoading ? "Verifying..." : "Verify OTP"}
-        </button>
+    
+  {/* your inputs here */}
+  <button type="submit" className="btn btn-primary w-100 py-2 mb-2" disabled={verifyLoading}>
+    {verifyLoading ? "Verifying..." : "Verify OTP"}
+  </button>
+</form>
+
 
         <button
           className="btn btn-outline-secondary w-100 py-2"

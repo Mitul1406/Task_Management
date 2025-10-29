@@ -145,8 +145,7 @@ const AllUserTimeSheet: React.FC = () => {
   });
 
   const allRows = Object.values(mergedTasks);
-
-// --- Total calculations ---
+  
 const seenEstimateKeys = new Set<string>();
 const totalEstimated = allRows.reduce((sum: number, r: any) => {
   const estKey = `${r.project}_${r.task}`;
@@ -156,10 +155,9 @@ const totalEstimated = allRows.reduce((sum: number, r: any) => {
 }, 0);
 
 const totalSpent = allRows.reduce((sum: number, r: any) => sum + (r.spent || 0), 0);
-const totalSaved = totalEstimated - totalSpent;
+const totalSaved = allRows.reduce((sum: number, r: any) => sum + (r.saved || 0), 0);
 const totalOvertime = allRows.reduce((sum: number, r: any) => sum + (r.overtime || 0), 0);
 
-// --- Per-user totals ---
 const userTotals: Record<string, any> = {};
 allRows.forEach((r: any) => {
   if (!userTotals[r.assignee]) {
@@ -228,7 +226,7 @@ const userSummaryRows = Object.values(userTotals);
         <div className="row mb-4">
           {/* Overall Totals */}
           <div className="col-md-5 mb-3">
-            <div className="card p-4 shadow-sm border-0 h-100">
+            <div className="card p-4 shadow-sm h-100">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="fw-bold mb-0">Overall Totals</h5>
                 <button

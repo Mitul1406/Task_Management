@@ -62,6 +62,10 @@ export const schema=buildSchema(`
       type DeleteResponse {
     message: String!
   }
+    type ChangePasswordResponse {
+  success: Boolean!
+  message: String!
+}
     type StopTimerResponse {
   totalDuration: Int!
   overtime: Int!
@@ -197,7 +201,7 @@ type UserDayWiseAdminResponse {
      createUser(username: String!, email: String!, role: String): CreateUserResponse!
      updateUser(id: ID!, username: String, email: String, role: String): CreateUserResponse!
      deleteUser(id: ID!): DeleteResponse!
-     changePassword(id: ID!, oldPassword: String!, newPassword: String!): DeleteResponse!
+     changePassword(id: ID!, oldPassword: String!, newPassword: String!): ChangePasswordResponse!
 
      createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task

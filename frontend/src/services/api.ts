@@ -470,6 +470,7 @@ const DELETE_USER = gql`
 const CHANGE_PASSWORD = gql`
   mutation changePassword($id: ID!, $oldPassword: String!, $newPassword: String!) {
     changePassword(id: $id, oldPassword: $oldPassword, newPassword: $newPassword) {
+      success
       message
     }
   }
