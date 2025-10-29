@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   createProject,
   deleteProject,
@@ -21,6 +21,7 @@ import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import CreateTaskModal from "../components/CreateTaskModal";
+import AutoScreenshot from "./ScreenShot";
 // import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
@@ -79,6 +80,7 @@ const AdminDashboard: React.FC = () => {
     {}
   );
   const [username, setUsername] = useState("");
+  const screenshotRef = useRef<any>(null);
   const [taskEdits, setTaskEdits] = useState<{
     [taskId: string]: {
       endDate: string;
@@ -251,49 +253,55 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
     setExpandedProject((prev) => (prev === id ? null : id));
   };
 const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
-  if (task.isRunning) {
-    // Stop the timer
-    await stopTimer(task.id);
-    clearInterval(intervalsRef.current[task.id]);
-    delete intervalsRef.current[task.id];
+  try {
+    // 🛑 STOP TIMER
+    if (task.isRunning) {
+      await stopTimer(task.id);
 
-    // Calculate final times
-    const updatedTotalTime = (task.totalTime || 0) + (task.runningDuration || 0);
-    const savedTime = Math.max((task.estimatedTime || 0) - updatedTotalTime, 0);
-    const overtime = Math.max(updatedTotalTime - (task.estimatedTime || 0), 0);
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
 
-    setAssignedTasks((prev) =>
-      prev.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              tasks: p.tasks.map((t: { id: any; }) =>
-                t.id === task.id
-                  ? {
-                      ...t,
-                      isRunning: false,
-                      runningDuration: 0,
-                      totalTime: updatedTotalTime,
-                      savedTime,
-                      overtime,
-                    }
-                  : t
-              ),
-            }
-          : p
-      )
-    );
-  } else {
-    // Start the timer
+      // 🔹 Update UI instantly
+      setAssignedTasks((prev) =>
+        prev.map((project: any) =>
+          project.id === projectId
+            ? {
+                ...project,
+                tasks: project.tasks.map((t: any) =>
+                  t.id === task.id
+                    ? { ...t, isRunning: false, totalTime: (t.totalTime || 0) + (t.runningDuration || 0), runningDuration: 0 }
+                    : t
+                ),
+              }
+            : project
+        )
+      );
+
+      return;
+    }
+
+    // 🟡 START TIMER
+    let hasPermission = screenshotRef.current?.hasPermission;
+
+    if (!hasPermission) {
+      const granted = await screenshotRef.current?.requestScreenShare?.();
+      if (!granted) {
+        toast.error("You must share your ENTIRE SCREEN to start a task.");
+        return;
+      }
+      hasPermission = true;
+    }
+
     await startTimer(task.id);
     const updatedTask = await updateTaskStatus(task.id, "in_progress");
 
+    // ✅ Update UI instantly
     setAssignedTasks((prev) =>
-      prev.map((p) =>
-        p.id === projectId
+      prev.map((project: any) =>
+        project.id === projectId
           ? {
-              ...p,
-              tasks: p.tasks.map((t: { id: any; }) =>
+              ...project,
+              tasks: project.tasks.map((t: any) =>
                 t.id === task.id
                   ? {
                       ...t,
@@ -304,27 +312,34 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
                   : t
               ),
             }
-          : p
+          : project
       )
     );
 
-    // Start live interval
+    // 🕒 Start local timer counter (UI auto updates)
     intervalsRef.current[task.id] = setInterval(() => {
       setAssignedTasks((prev) =>
-        prev.map((p) =>
-          p.id === projectId
+        prev.map((project: any) =>
+          project.id === projectId
             ? {
-                ...p,
-                tasks: p.tasks.map((t: { id: any; runningDuration: any; }) =>
+                ...project,
+                tasks: project.tasks.map((t: any) =>
                   t.id === task.id
-                    ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+                    ? {
+                        ...t,
+                        runningDuration:
+                          (t.runningDuration || 0) + 1,
+                      }
                     : t
                 ),
               }
-            : p
+            : project
         )
       );
     }, 1000);
+  } catch (error) {
+    console.error("Error in handleStartStopTimerAssigned:", error);
+    toast.error("Something went wrong while starting/stopping timer.");
   }
 };
 
@@ -545,10 +560,74 @@ This will also delete all its tasks.`
 
     return parts.length > 0 ? parts.join(" ") : "-";
   };
+   const projectsRef:any = useRef(projects);
+    useEffect(() => {
+      projectsRef.current = projects;
+    }, [projects]);
+    const assignedTasksRef = useRef<any[]>([]);
+useEffect(() => {
+  assignedTasksRef.current = assignedTasks;
+}, [assignedTasks]);
+const handleScreenShareStopped = useCallback(async () => {
+  console.log("🛑 Screen sharing stopped — cleaning up timers");
+
+  const runningTasks = assignedTasksRef.current
+    ?.flatMap((project: any) =>
+      project.tasks
+        .filter((task: any) => task.isRunning)
+        .map((task: any) => ({ ...task, projectId: project.id }))
+    ) || [];
+
+
+  if (runningTasks.length === 0) {
+    console.log("ℹ️ No running tasks detected at screen stop.");
+    return;
+  }
+
+  for (const task of runningTasks) {
+    try {
+      await stopTimer(task.id);
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
+      toast.warn(`Timer stopped because screen sharing was ended.`);
+
+      // ✅ Update UI instantly
+      setAssignedTasks((prev) =>
+        prev.map((project: any) =>
+          project.id === task.projectId
+            ? {
+                ...project,
+                tasks: project.tasks.map((t: any) =>
+                  t.id === task.id
+                    ? {
+                        ...t,
+                        isRunning: false,
+                        totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+                        runningDuration: 0,
+                      }
+                    : t
+                ),
+              }
+            : project
+        )
+      );
+    } catch (err) {
+      console.error(`❌ Failed to stop timer for task ${task.id}`, err);
+    }
+  }
+
+  // ✅ Refresh after delay for backend sync
+  setTimeout(async () => {
+    const refreshed = await getUserTasks();
+    setAssignedTasks(refreshed);
+  }, 1000);
+}, []);
+
 
   return (
     <div className="container mt-4">
       {/* <AutoScreenshot/> */}
+      <AutoScreenshot ref={screenshotRef} onPermissionDenied={handleScreenShareStopped} />
       {showPasswordForm && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
