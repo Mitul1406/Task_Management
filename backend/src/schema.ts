@@ -188,7 +188,7 @@ type UserDayWiseAdminResponse {
     endDate: String!
   ): UserDayWise!
 
-  userDayWiseAdmin(startDate: String!, endDate: String!): UserDayWiseAdminResponse!
+  userDayWiseAdmin(startDate: String!, endDate: String!,userId:ID): UserDayWiseAdminResponse!
   userDayWiseAdminUser(adminId:String!,startDate: String!, endDate: String!): UserDayWiseAdminResponse!
   screenshotsByUser(userId: ID!): [Screenshot!]!
     }

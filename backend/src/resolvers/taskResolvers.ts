@@ -717,12 +717,21 @@ updateTaskStatus: async ({ taskId, status }: { taskId: string; status: string })
 //   return { users: result };
 // },
 
-userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endDate: string | Date }) => {
+userDayWiseAdmin: async ({
+  startDate,
+  endDate,
+  userId,
+}: {
+  startDate: string | Date;
+  endDate: string | Date;
+  userId?: string; // 👈 optional (if not provided, you can still handle all)
+}) => {
   const start = new Date(startDate);
   start.setUTCHours(0, 0, 0, 0);
   const end = new Date(endDate);
   end.setUTCHours(23, 59, 59, 999);
 
+  // --- Generate all dates between start and end ---
   const dates: Date[] = [];
   const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
@@ -731,8 +740,10 @@ userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endD
     current.setUTCDate(current.getUTCDate() + 1);
   }
 
-  // ✅ Get all users (non-admin or all if needed)
-  const users = await User.find().lean();
+  // ✅ Fetch either the selected user or all users
+  const userFilter = userId ? { _id: userId } : {}; // 👈 filter condition
+  const users = await User.find(userFilter).lean();
+
   const result: any[] = [];
 
   for (const user of users) {
@@ -746,10 +757,10 @@ userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endD
       startTime: { $gte: start, $lte: end },
     }).lean();
 
-    // --- Collect all task IDs the user worked on (either assigned or contributed) ---
+    // --- Collect all task IDs the user worked on (assigned or contributed) ---
     const workedTaskIds = [...new Set([...assignedTaskIds, ...userTimers.map((t) => t.taskId.toString())])];
 
-    // --- Get task details for all these taskIds ---
+    // --- Get details for all relevant tasks ---
     const allTasks = await Task.find({ _id: { $in: workedTaskIds } }).lean();
     const taskInfoMap: Record<string, any> = {};
     for (const task of allTasks) {
@@ -763,24 +774,23 @@ userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endD
       };
     }
 
-    // --- Get all timers for these tasks (by *anyone*) in this period ---
+    // --- Get all timers for these tasks (by anyone) in this date range ---
     const allTimers = await Timer.find({
       taskId: { $in: workedTaskIds.map((id) => new Types.ObjectId(id)) },
       startTime: { $gte: start, $lte: end },
     }).lean();
 
-    // --- Group worked time by (taskId -> userId -> date) ---
+    // --- Group work by (taskId -> userId -> date) ---
     const workedByTaskUserDate: Record<string, Record<string, Record<string, number>>> = {};
-
     for (const timer of allTimers) {
       const taskId = timer.taskId.toString();
-      const userId = timer.userId.toString();
+      const uId = timer.userId.toString();
       const dayKey:any = new Date(timer.startTime).toISOString().split("T")[0];
 
       if (!workedByTaskUserDate[taskId]) workedByTaskUserDate[taskId] = {};
-      if (!workedByTaskUserDate[taskId][userId]) workedByTaskUserDate[taskId][userId] = {};
-      workedByTaskUserDate[taskId][userId][dayKey] =
-        (workedByTaskUserDate[taskId][userId][dayKey] || 0) + (timer.duration || 0);
+      if (!workedByTaskUserDate[taskId][uId]) workedByTaskUserDate[taskId][uId] = {};
+      workedByTaskUserDate[taskId][uId][dayKey] =
+        (workedByTaskUserDate[taskId][uId][dayKey] || 0) + (timer.duration || 0);
     }
 
     // --- Build day-wise summary ---
@@ -794,17 +804,14 @@ userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endD
         const info = taskInfoMap[taskId];
         if (!info) continue;
 
-        // Sum all users' worked time for this task on this date
         const allUserWorkForDay = Object.values(workedByTaskUserDate[taskId] || {}).reduce(
           (sum, userWork) => sum + (userWork[dayKey] || 0),
           0
         );
 
-        // Only include if current user worked
         const workedToday = workedByTaskUserDate[taskId]?.[user._id.toString()]?.[dayKey] || 0;
         if (workedToday === 0) continue;
 
-        // Calculate previous total worked before today (by anyone)
         const totalWorkedBefore = Object.values(workedByTaskUserDate[taskId] || {}).reduce(
           (sum, userWork) =>
             sum +
@@ -818,7 +825,6 @@ userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endD
         const overtime = Math.max(allUserWorkForDay - remainingEstimated, 0);
         const savedTime = Math.max(info.estimatedTime - (totalWorkedBefore + allUserWorkForDay), 0);
 
-        // --- Project setup ---
         if (!projectMap[info.projectId]) {
           projectMap[info.projectId] = {
             id: info.projectId,
@@ -828,7 +834,6 @@ userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endD
           };
         }
 
-        // --- Add this task record ---
         const newTask = {
           taskId,
           id: taskId,
@@ -867,26 +872,18 @@ userDayWiseAdmin:async ({ startDate, endDate }: { startDate: string | Date; endD
       }
     }
 
-    // --- Push user result ---
-    const userProjects = Object.values(projectMap).map((p: any) => ({
-      ...p,
-      tasks: p.tasks.map((t: any) => ({ ...t })),
-    }));
-
     result.push({
       id: user._id.toString(),
       username: user.username,
       email: user.email,
-      projects: userProjects,
-      dayWise: dayWiseData.map((d) => ({
-        ...d,
-        tasks: d.tasks.map((t) => ({ ...t })),
-      })),
+      projects: Object.values(projectMap),
+      dayWise: dayWiseData,
     });
   }
 
   return { users: result };
 },
+
 userDayWiseAdminUser: async ({
   adminId,
   startDate,

@@ -369,8 +369,8 @@ query GetUserDayWiseAdminUser($adminId: String!, $startDate: String!, $endDate: 
   
 `
 const ALL_TIMESHEET=gql`
-query GetUserDayWiseAdmin($startDate: String!, $endDate: String!) {
-  userDayWiseAdmin(startDate: $startDate, endDate: $endDate) {
+query GetUserDayWiseAdmin($startDate: String!, $endDate: String!,$userId: ID) {
+  userDayWiseAdmin(startDate: $startDate, endDate: $endDate,userId: $userId) {
     users {
       id
       username
@@ -824,10 +824,14 @@ export const updateTaskStatus = async (taskId: string, status: string) => {
   return (res as any).data.updateTaskStatus;
 };
 
-export const getAllTimesheet = async (startDate: string, endDate: string) => {
+export const getAllTimesheet = async (
+  startDate: string,
+  endDate: string,
+  userId?: string // 👈 added optional user filter
+) => {
   const res = await client.query({
     query: ALL_TIMESHEET,
-    variables: { startDate, endDate },
+    variables: { startDate, endDate, userId }, // 👈 send userId to backend if given
     fetchPolicy: "network-only",
   });
 
@@ -851,10 +855,8 @@ export const getAllTimesheet = async (startDate: string, endDate: string) => {
       ...d,
       tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
         ...t,
-        // normalize numeric timestamps if present
         startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
         endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
-        // force unique key per user, per day
         _uniqueKey: `${u.id || userIndex}-day${dIndex}-task${tIndex}`,
       })),
     }));
@@ -867,7 +869,8 @@ export const getAllTimesheet = async (startDate: string, endDate: string) => {
   });
 
   return safeUsers;
-}
+};
+
 
 export const getAdminUserTimesheet = async (
   adminId: string,

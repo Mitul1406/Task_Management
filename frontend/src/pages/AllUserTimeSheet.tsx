@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import html2pdf from "html2pdf.js";
-import { getAllTimesheet, getAdminUserTimesheet } from "../services/api";
+import { getAllTimesheet, getAdminUserTimesheet, getUsers } from "../services/api";
 import {jwtDecode} from "jwt-decode";
 
 const statusMap: Record<string, { label: string; bgColor: string }> = {
@@ -22,7 +22,6 @@ const formatTime = (seconds: number) => {
   return parts.length > 0 ? parts.join(" ") : "-";
 };
 
-// --- Helpers to get current user's role and ID ---
 const getCurrentUserRole = (): string | null => {
   const token = localStorage.getItem("token");
   if (!token) return null;
@@ -42,25 +41,28 @@ const AllUserTimeSheet: React.FC = () => {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [users, setUsers] = useState<any[]>([]);
+  const [users1, setUsers1] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
   const [showUserTotals, setShowUserTotals] = useState(false);
+  const [selectedUserName, setSelectedUserName] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        const role = getCurrentUserRole(); // superAdmin or admin
+        const role = getCurrentUserRole(); 
         let data: any[] = [];
 
         if (role === "superAdmin") {
-          data = await getAllTimesheet(startDate, endDate);
+          data = await getAllTimesheet(startDate, endDate,selectedUser||undefined);
         } else if (role === "teamLead" || role === "projectManager") {
           const adminId = getCurrentUserId();
           if (!adminId) throw new Error("Admin ID not found");
-          data = await getAdminUserTimesheet(adminId, startDate, endDate);
+          data = await getAllTimesheet(startDate, endDate,selectedUser||undefined);
         } else {
           throw new Error("Unauthorized role");
         }
@@ -74,8 +76,19 @@ const AllUserTimeSheet: React.FC = () => {
     };
 
     fetchData();
-  }, [startDate, endDate]);
+  }, [startDate, endDate,selectedUser]);
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getUsers();
+        setUsers1(data);
+      } catch (err) {
+        console.error("Failed to load users", err);
+      }
+    };
+    fetchUsers();
+  }, []);
   const totalHours = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -185,11 +198,32 @@ allRows.forEach((r: any) => {
 
 const userSummaryRows = Object.values(userTotals);
 
+const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const userId = e.target.value;
+  setSelectedUser(userId);
 
+  const foundUser = users1.find((u: any) => u.id === userId);
+  setSelectedUserName(foundUser ? foundUser.username : "");
+};
   return (
     <div className="container-fluid mt-4 position-relative" style={{ padding: "0px 100px" }}>
       {/* Filter Controls */}
       <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"100px", justifyContent: "flex-end" }}>
+        <div>
+        <label className="form-label mb-1">User</label>
+        <select
+          className="form-select form-select-sm"
+          value={selectedUser}
+          onChange={(e) => handleUserChange(e)}
+        >
+          <option value="">Select User</option>
+          {users1.map((user: any) => (
+            <option key={user.id} value={user.id}>
+              {user.username}
+            </option>
+          ))}
+        </select>
+      </div>
         <div>
           <label className="form-label mb-1">Start Date</label>
           <input
@@ -216,7 +250,13 @@ const userSummaryRows = Object.values(userTotals);
 
       {/* PDF Content */}
       <div ref={pdfRef}>
-        <h4 className="fw-bold text-left mb-2">Timesheet Summary</h4>
+        <h4 className="fw-bold text-left mb-2">Timesheet Summary{selectedUserName ? (
+    <span style={{ fontWeight: "600", color: "#0d6efd", marginLeft: "8px" }}>
+      — {selectedUserName}
+    </span>
+  ) : (
+    ""
+  )}</h4>
         <div>
           <p>
             Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
@@ -250,7 +290,7 @@ const userSummaryRows = Object.values(userTotals);
           {/* User Totals */}
           {showUserTotals && (
             <div className="col-md-7 mb-3">
-              <div className="card p-4 shadow-sm border-0 h-100">
+              <div className="card p-4 shadow-sm h-100">
                 <h5 className="fw-bold mb-3">👤 User-wise Totals</h5>
                 <div className="row">
                   {userSummaryRows.map((u: any, i: number) => (
