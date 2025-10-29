@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   getTasksByProject,
   getProjects,
   getDayWiseData,
+  getUsers,
 } from "../services/api";
 import html2pdf from "html2pdf.js";
 interface Task {
@@ -58,13 +59,30 @@ const formatDuration = (seconds: number) => {
 // After importing everything and existing code...
 
 export default function TimeSheet() {
+  
+  const today = new Date().toISOString().split("T")[0];
   const { projectId } = useParams();
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [dayWise, setDayWise] = useState<DayWiseData[]>([]);
   const [loading, setLoading] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null);
-
+  const [startDateFilter, setStartDateFilter] = useState<string>(today);
+  const [endDateFilter, setEndDateFilter] = useState<string>(today);
+  const [users1, setUsers1] = useState<any[]>([]); // all users for dropdown
+  const [selectedUser, setSelectedUser] = useState<string>("all");
+  
+    useEffect(() => {
+      const fetchUsers = async () => {
+        try {
+          const data = await getUsers();
+          setUsers1(data);
+        } catch (err) {
+          console.error("Failed to load users", err);
+        }
+      };
+      fetchUsers();
+    }, []);
   const formatDate = (val: any) => {
     if (!val) return "";
     if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
@@ -73,46 +91,56 @@ export default function TimeSheet() {
     return new Date(n).toISOString().split("T")[0];
   };
 
-  useEffect(() => {
-    const loadReport = async () => {
-      try {
-        const allProjects = await getProjects();
-        const proj = allProjects.find((p: Project) => p.id === projectId);
-        setProject(proj);
+useEffect(() => {
+  const loadReport = async () => {
+    try {
+      setLoading(true);
+      const allProjects = await getProjects();
+      const proj = allProjects.find((p: Project) => p.id === projectId);
+      setProject(proj);
 
-        if (projectId && proj) {
-          const taskList = await getTasksByProject(projectId);
-          setTasks(taskList);
+      if (projectId && proj) {
+        const taskList = await getTasksByProject(projectId);
+        setTasks(taskList);
 
-          const userIds = taskList
-            .map((t: any) => t.assignedUser?.id)
-            .filter((id: any): id is string => !!id);
-          if (userIds.length === 0) {
-            console.log("No assigned users found for tasks");
-            return [];
-          }
-          const startDate = (proj as any).createdAt || new Date();
-          const endDate = new Date();
+        // 🧠 Collect all users from tasks
+        const allUserIds = taskList
+          .map((t: any) => t.assignedUser?.id)
+          .filter((id: any): id is string => !!id);
 
-          const dayWiseData = await getDayWiseData({
-            projectId,
-            userIds,
-            startDate: formatDate(startDate),
-            endDate: formatDate(endDate),
-          });
-          console.log(dayWiseData);
-
-          setDayWise(dayWiseData);
+        if (allUserIds.length === 0) {
+          console.log("No assigned users found for tasks");
+          return;
         }
-      } catch (err) {
-        console.error("Failed to load report:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    loadReport();
-  }, [projectId]);
+        // 📆 Get filters
+        const start = startDateFilter || proj.createdAt || new Date();
+        const end = endDateFilter || new Date();
+
+        // 👇 Smart user filtering
+        const finalUserIds =
+          selectedUser && selectedUser !== "all"
+            ? [selectedUser] // only one user
+            : allUserIds; // all users
+
+        const data = await getDayWiseData({
+          projectId,
+          userIds: finalUserIds, 
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+        });
+
+        setDayWise(data);
+      }
+    } catch (err) {
+      console.error("Failed to load report:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadReport();
+}, [projectId, startDateFilter, endDateFilter, selectedUser]);
 
   const handleDownloadPDF = () => {
     if (reportRef.current) {
@@ -131,40 +159,157 @@ export default function TimeSheet() {
   if (loading) return <div>Loading report...</div>;
   if (!project) return <div>Project not found</div>;
 
-  const totalEstimated = tasks.reduce(
-    (sum, t) => sum + (t.estimatedTime || 0),
-    0
-  );
-  const totalUsed = tasks.reduce((sum, t) => sum + (t.totalTime || 0), 0);
+
 
   // Group by user for summary cards
   const userTasks = tasks.reduce((acc: any, task) => {
-    const user = task.assignedUser?.username || "Unassigned";
+  const user = task.assignedUser?.username || "Unassigned";
+  const userId = task.assignedUser?.id;
+
+  // 🟡 Check if this user has any "worked" day in dayWise
+  const hasWorked = dayWise?.some((day: any) =>
+    day.users.some(
+      (u: any) => u.userId === userId && u.time > 0 && u.status !== "Not Worked"
+    )
+  );
+
+  // 🟢 Only include user tasks if they actually worked
+  if (hasWorked) {
     if (!acc[user]) acc[user] = [];
     acc[user].push(task);
-    return acc;
-  }, {});
+  }
+
+  return acc;
+}, {});
+
+let totalEstimated = 0;
+let totalUsed = 0;
+let totalSaved = 0;
+let totalOvertime = 0;
+
+if (userTasks && Object.keys(userTasks).length > 0) {
+  Object.values(userTasks).forEach((tasks: any) => {
+    // Build userDayWise just like you do for individual user cards
+    const userDayWise = dayWise
+      .map((day) => {
+        const userData = day.users.find((u: any) =>
+          tasks.some((t: any) => t.assignedUser?.id === u.userId)
+        );
+        if (!userData || userData.status === "Not Worked") return null;
+
+        const uniqueTasks = Array.from(
+          new Set((userData as any).tasks.map((t: any) => t.title))
+        ).map((title) =>
+          (userData as any).tasks.find((t: any) => t.title === title)
+        );
+
+        return {
+          date: day.date,
+          status: userData.status,
+          time: userData.time,
+          tasks: uniqueTasks,
+        };
+      })
+      .filter(Boolean);
+
+    // Sum up from the filtered userDayWise
+    totalEstimated += userDayWise.reduce(
+      (total, day: any) =>
+        total +
+        day.tasks.reduce((sum: number, t: any) => sum + (t.estimatedTime || 0), 0),
+      0
+    );
+
+    totalUsed += userDayWise.reduce(
+      (total, day: any) =>
+        total + day.tasks.reduce((sum: number, t: any) => sum + (t.time || 0), 0),
+      0
+    );
+
+    totalSaved += userDayWise.reduce(
+      (total, day: any) =>
+        total + day.tasks.reduce((sum: number, t: any) => sum + (t.savedTime || 0), 0),
+      0
+    );
+
+    totalOvertime += userDayWise.reduce(
+      (total, day: any) =>
+        total + day.tasks.reduce((sum: number, t: any) => sum + (t.overtime || 0), 0),
+      0
+    );
+  });
+}
+
 
   return (
     <div className="mt-4 position-relative">
-      <div className="d-flex justify-content-end mb-3">
-        <button
-          className="btn btn-primary"
-          onClick={handleDownloadPDF}
-          style={{ position: "absolute", top: "25px", right: "150px" }}
-        >
-          📄 Download PDF
-        </button>
-      </div>
+      <div
+  className="d-flex align-items-end gap-3 mb-4 flex-wrap"
+  style={{
+    position: "absolute",
+    right: "145px",
+    top: "20px",
+    justifyContent: "flex-end",
+  }}
+>
+  {/* 🔹 User Filter */}
+  <div>
+    <label className="form-label mb-1">User</label>
+    <select
+      className="form-select form-select-sm"
+      value={selectedUser}
+      onChange={(e) => setSelectedUser(e.target.value)}
+      style={{ width: "180px" }}
+    >
+      <option value="all">All Users</option>
+      {users1.map((user: any) => (
+        <option key={user.id} value={user.id}>
+          {user.username}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* 🔹 Start Date Filter */}
+  <div>
+    <label className="form-label mb-1">Start Date</label>
+    <input
+      type="date"
+      className="form-control form-control-sm"
+      value={startDateFilter}
+      onChange={(e) => setStartDateFilter(e.target.value)}
+      style={{ width: "150px" }}
+    />
+  </div>
+
+  {/* 🔹 End Date Filter */}
+  <div>
+    <label className="form-label mb-1">End Date</label>
+    <input
+      type="date"
+      className="form-control form-control-sm"
+      min={startDateFilter}
+      value={endDateFilter}
+      onChange={(e) => setEndDateFilter(e.target.value)}
+      style={{ width: "150px" }}
+    />
+  </div>
+
+  {/* 🔹 Download PDF Button */}
+  <button className="btn btn-primary btn-sm" onClick={handleDownloadPDF}>
+    📄 Download PDF
+  </button>
+</div>
+
 
       <div className="container mt-4" ref={reportRef}>
         {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="d-flex justify-content-between align-items-center">
           <div>
             <h2 className="mb-0">{project.name} -Timesheet Report</h2>
             <small className="text-muted">
-              Report Period: {formatDate((project as any).createdAt)} →{" "}
-              {formatDate(new Date())}
+              Report Period: {formatDate(startDateFilter)} →{" "}
+              {formatDate(endDateFilter)}
             </small>
           </div>
         </div>
@@ -187,15 +332,13 @@ export default function TimeSheet() {
               </p>
               <p className="text-danger">
                 <strong>Total Overtime:</strong>{" "}
-                {formatDuration(
-                  tasks.reduce((s, t) => s + ((t as any).overtime || 0), 0)
-                )}
+                {
+                  formatDuration(totalOvertime)
+                }
               </p>
               <p className="text-success">
                 <strong>Total Saved:</strong>{" "}
-                {formatDuration(
-                  tasks.reduce((s, t) => s + ((t as any).savedTime || 0), 0)
-                )}
+                {formatDuration(totalSaved)}
               </p>
             </div>
           </div>
@@ -291,22 +434,6 @@ export default function TimeSheet() {
         {/* User Breakdown Cards */}
         <h4 className="mb-3">User Breakdown</h4>
         {Object.entries(userTasks).map(([user, tasks]: any) => {
-          const est = tasks.reduce(
-            (s: number, t: Task) => s + (t.estimatedTime || 0),
-            0
-          );
-          const used = tasks.reduce(
-            (s: number, t: Task) => s + (t.totalTime || 0),
-            0
-          );
-          const overtime = tasks.reduce(
-            (s: number, t: Task) => s + ((t as any).overtime || 0),
-            0
-          );
-          const saved = tasks.reduce(
-            (s: number, t: Task) => s + ((t as any).savedTime || 0),
-            0
-          );
 
           const userDayWise = dayWise
             .map((day) => {
@@ -329,6 +456,25 @@ export default function TimeSheet() {
               };
             })
             .filter(Boolean);
+
+          const est = userDayWise.reduce((total, day: any) => {
+  return (
+    total +
+    day.tasks.reduce((sum: number, t: any) => sum + (t.estimatedTime || 0), 0)
+  );
+}, 0);
+
+const used = userDayWise.reduce((total, day: any) => {
+  return total + day.tasks.reduce((sum: number, t: any) => sum + (t.time || 0), 0);
+}, 0);
+
+const overtime = userDayWise.reduce((total, day: any) => {
+  return total + day.tasks.reduce((sum: number, t: any) => sum + (t.overtime || 0), 0);
+}, 0);
+
+const saved = userDayWise.reduce((total, day: any) => {
+  return total + day.tasks.reduce((sum: number, t: any) => sum + (t.savedTime || 0), 0);
+}, 0);
 
           return (
             <div key={user} className="card mb-3 p-3 shadow-sm">

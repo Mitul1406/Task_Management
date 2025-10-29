@@ -290,7 +290,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
           {/* User Totals */}
           {showUserTotals && (
             <div className="col-md-7 mb-3">
-              <div className="card p-4 shadow-sm border-0 h-100">
+              <div className="card p-4 shadow-sm h-100">
                 <h5 className="fw-bold mb-3">👤 User-wise Totals</h5>
                 <div className="row">
                   {userSummaryRows.map((u: any, i: number) => (
