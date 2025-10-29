@@ -54,7 +54,7 @@ const AllUserTimeSheet: React.FC = () => {
       try {
         setLoading(true);
 
-        const role = getCurrentUserRole(); // superAdmin or admin
+        const role = getCurrentUserRole(); 
         let data: any[] = [];
 
         if (role === "superAdmin") {
@@ -62,7 +62,7 @@ const AllUserTimeSheet: React.FC = () => {
         } else if (role === "teamLead" || role === "projectManager") {
           const adminId = getCurrentUserId();
           if (!adminId) throw new Error("Admin ID not found");
-          data = await getAdminUserTimesheet(adminId, startDate, endDate);
+          data = await getAllTimesheet(startDate, endDate,selectedUser||undefined);
         } else {
           throw new Error("Unauthorized role");
         }
