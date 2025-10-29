@@ -299,7 +299,7 @@ if (userTasks && Object.keys(userTasks).length > 0) {
   <button className="btn btn-primary btn-sm" onClick={handleDownloadPDF}>
     📄 Download PDF
   </button>
-</div>
+      </div>
 
 
       <div className="container mt-4" ref={reportRef}>
