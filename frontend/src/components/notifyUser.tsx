@@ -1,16 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 const NotificationPermissionBanner: React.FC = () => {
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [supported, setSupported] = useState(true);
-
+  const [showModal, setShowModal] = useState(false);
+  const flag=useRef(true);
+  
   useEffect(() => {
     if (!("Notification" in window)) {
       setSupported(false);
       return;
     }
-    setPermission(Notification.permission);
+
+    const current = Notification.permission;
+    if(current === "granted" && flag)
+    {
+      toast.success("Notifications already enabled")
+      notifyUser("Notifications Enabled!", "You’ll now receive alerts when timers or tasks change.");
+      flag.current=false;
+    }
+    setPermission(current);
+
+    // show modal only if permission not granted
+    if (current !== "granted") {
+      setShowModal(true);
+    }
   }, []);
 
   const requestPermission = async () => {
@@ -20,7 +35,8 @@ const NotificationPermissionBanner: React.FC = () => {
     }
 
     if (Notification.permission === "granted") {
-      toast.success("✅ Notifications already enabled");
+      // toast.success("✅ Notifications already enabled");
+      setShowModal(false);
       return;
     }
 
@@ -29,10 +45,9 @@ const NotificationPermissionBanner: React.FC = () => {
       setPermission(result);
 
       if (result === "granted") {
-        new Notification("✅ Notifications Enabled!", {
-          body: "You’ll now receive alerts when timers or tasks change.",
-        });
+        notifyUser("Notifications Enabled!","You’ll now receive alerts when timers or tasks change.");
         toast.success("Notifications enabled successfully!");
+        setShowModal(false);
       } else if (result === "denied") {
         toast.warn("Notifications are blocked. Please enable them manually below 👇");
       }
@@ -42,7 +57,6 @@ const NotificationPermissionBanner: React.FC = () => {
     }
   };
 
-  /** 🔍 Browser-specific instructions */
   const renderInstructions = () => {
     const ua = navigator.userAgent.toLowerCase();
     if (ua.includes("chrome")) {
@@ -74,61 +88,89 @@ const NotificationPermissionBanner: React.FC = () => {
     }
   };
 
-  if (!supported) {
-    return (
-      <div
-        style={{
-          background: "#ffeaea",
-          padding: "12px 16px",
-          textAlign: "center",
-          borderBottom: "1px solid #ffcccc",
-        }}
-      >
-        ❌ Your browser does not support notifications.
-      </div>
-    );
-  }
-
-  if (permission === "granted") return null;
+  if (!supported || permission === "granted" || !showModal) return null;
 
   return (
     <div
       style={{
-        background: "#fff8d6",
-        borderBottom: "1px solid #ffe58f",
-        padding: "12px 16px",
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0, 0, 0, 0.55)",
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
-        gap: "10px",
-        fontFamily: "Inter, sans-serif",
+        justifyContent: "center",
+        zIndex: 9999,
       }}
     >
-      <span style={{ textAlign: "center" }}>
-        🔔 Enable notifications to get instant alerts.
-      </span>
-
-      <button
-        onClick={requestPermission}
+      <div
         style={{
-          background: "#007bff",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          padding: "6px 12px",
-          cursor: "pointer",
-          fontWeight: 500,
+          background: "#fff",
+          borderRadius: "10px",
+          padding: "24px",
+          width: "90%",
+          maxWidth: "420px",
+          textAlign: "center",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+          fontFamily: "Inter, sans-serif",
         }}
       >
-        Enable Notifications
-      </button>
+        <h5 style={{ marginBottom: 12 }}>🔔 Enable Notifications</h5>
+        <p style={{ fontSize: 15, color: "#333" }}>
+          Allow browser notifications to receive instant alerts when tasks or timers update.
+        </p>
 
-      {permission === "denied" && (
-        <div style={{ marginTop: 8, fontSize: 13, color: "#444", textAlign: "center" }}>
-          <div style={{ marginBottom: 4 }}>🔒 Notifications are blocked. Please enable them manually:</div>
-          {renderInstructions()}
-        </div>
-      )}
+        <button
+          onClick={requestPermission}
+          style={{
+            background: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "8px 14px",
+            cursor: "pointer",
+            fontWeight: 500,
+            marginTop: 10,
+          }}
+        >
+          Enable Notifications
+        </button>
+
+        {permission === "denied" && (
+          <div
+            style={{
+              marginTop: 15,
+              fontSize: 13,
+              color: "#555",
+              textAlign: "center",
+              background: "#fff8d6",
+              padding: "10px",
+              borderRadius: "6px",
+            }}
+          >
+            <div style={{ marginBottom: 6 }}>
+              🔒 Notifications are blocked. Please enable them manually:
+            </div>
+            {renderInstructions()}
+          </div>
+        )}
+
+        <button
+          onClick={() => setShowModal(false)}
+          className="ms-2"
+          style={{
+            background: "#666",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "8px 14px",
+            cursor: "pointer",
+            fontWeight: 500,
+            marginTop: 10,
+          }}
+        >
+          Maybe Later
+        </button>
+      </div>
     </div>
   );
 };

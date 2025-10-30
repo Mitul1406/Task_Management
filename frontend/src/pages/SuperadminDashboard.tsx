@@ -11,15 +11,13 @@ import {
   getUsers,
   getTasksByProject,
   updateTaskStatus,
-  changePassword,
-  getAdminProjects,
-  getAllUsers,
+  changePassword
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
-import AutoScreenshot from "./ScreenShot";
+// import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
   endDate: string | number | Date;
