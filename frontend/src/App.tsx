@@ -25,7 +25,6 @@ import SuperAdminDashboard from "./pages/SuperadminDashboard";
 function App() {
   return (
     <>
-      
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -138,6 +137,7 @@ function App() {
   toastClassName="toast-item"
   className="toast-container"
   progressClassName="toast-progress"
+  closeButton={false}
 />
 
     </>

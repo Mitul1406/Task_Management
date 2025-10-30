@@ -22,6 +22,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import CreateTaskModal from "../components/CreateTaskModal";
 import AutoScreenshot from "./ScreenShot";
+import NotificationPermissionBanner, { notifyUser } from "../components/notifyUser";
 // import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
@@ -117,6 +118,41 @@ const AdminDashboard: React.FC = () => {
   const intervalsRef = useRef<{ [taskId: string]: NodeJS.Timer }>({});
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [refreshTasks, setRefreshTasks] = useState(false);
+
+  // Stop timers if tab/window closes
+    useEffect(() => {
+  const handleBeforeUnload = async () => {
+    // ✅ Combine running tasks from both "projects" and "assignedTasks"
+    const runningTasks = [
+      ...projects.flatMap((project: any) =>
+        project.tasks.map((t: any) => ({ ...t, projectId: project.id }))
+      ),
+      ...assignedTasks.flatMap((project: any) =>
+        project.tasks.map((t: any) => ({ ...t, projectId: project.id }))
+      ),
+    ].filter((task) => task.isRunning);
+    for (const task of runningTasks) {
+      try {
+        await stopTimer(task.id);
+        clearInterval(intervalsRef.current[task.id]);
+        delete intervalsRef.current[task.id];
+        toast.warn(`Timer stopped because the page was reloaded or closed.`);
+
+        notifyUser(
+          "Timer Stopped",
+          "Your timer stopped because the page was refreshed or closed."
+        );
+      } catch (err) {
+        console.error("Error stopping timer before unload:", err);
+      }
+    }
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+}, [projects, assignedTasks]);
+
+
   useEffect(() => {
   const fetchAssignedTasks = async () => {
     try {
@@ -587,9 +623,8 @@ const handleScreenShareStopped = useCallback(async () => {
       await stopTimer(task.id);
       clearInterval(intervalsRef.current[task.id]);
       delete intervalsRef.current[task.id];
-      toast.warn(`Timer stopped because screen sharing was ended.`);
-
-      // ✅ Update UI instantly
+      // toast.warn(`Timer stopped because screen sharing was ended.`);
+      notifyUser("Timer Stopped","Your timer stopped because screen sharing was ended.Visit website now.")
       setAssignedTasks((prev) =>
         prev.map((project: any) =>
           project.id === task.projectId
@@ -624,6 +659,7 @@ const handleScreenShareStopped = useCallback(async () => {
 
   return (
     <div className="container mt-4">
+      <NotificationPermissionBanner/>
       {/* <AutoScreenshot/> */}
       <AutoScreenshot ref={screenshotRef} onPermissionDenied={handleScreenShareStopped} />
       {showPasswordForm && (
