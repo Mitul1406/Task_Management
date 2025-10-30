@@ -21,9 +21,7 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      console.log(`[Register] Attempting registration for email: ${form.email} at ${new Date().toISOString()}`);
       const res = await register(form.email, form.password, form.username);
-      console.log("[Register] API Response:", res);
 
       if (!res) throw new Error("Registration failed");
 
@@ -32,7 +30,6 @@ const Register: React.FC = () => {
       // Save email for OTP page
       localStorage.setItem("otpEmail", form.email);
 
-      console.log(`[Register] Navigating to OTP verification for email: ${form.email}`);
       navigate("/otp-verification", { state: { email: form.email } });
 
     } catch (err: any) {
@@ -40,7 +37,6 @@ const Register: React.FC = () => {
       toast.error(err.message || "Registration failed");
     } finally {
       setLoading(false);
-      console.log(`[Register] Registration attempt finished for ${form.email} at ${new Date().toISOString()}`);
     }
   };
 

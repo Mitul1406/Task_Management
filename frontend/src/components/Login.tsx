@@ -37,11 +37,9 @@ const Login: React.FC = () => {
         const decoded = jwtDecode<JwtPayload>(token);
         const now = Date.now() / 1000;
         if (decoded.exp && decoded.exp < now) {
-          console.log(`[Login] Token expired: ${token}`);
           localStorage.removeItem("token");
           return;
         }
-        console.log(`[Login] Token valid, redirecting to ${decoded.role} dashboard`);
         navigateTo(decoded.role);
       } catch (err) {
         console.error("[Login] Invalid token", err);
@@ -54,7 +52,6 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
-    console.log(`[Login] Attempting login for email: ${form.email} at ${new Date().toISOString()}`);
     
     try {
       const user = await login(form.email, form.password);
@@ -63,7 +60,6 @@ const Login: React.FC = () => {
 
       if (!user.isVerified) {
         toast.info("OTP sent to your email");
-        console.log(`[Login] OTP required for email: ${form.email}`);
         
         localStorage.setItem("otpEmail", form.email);
 
@@ -76,7 +72,6 @@ const Login: React.FC = () => {
         localStorage.removeItem("otpEmail");
         toast.success(user.message);
 
-        console.log(`[Login] Login successful for ${form.email}. Navigating to ${user.role}`);
         navigateTo(user.role);
       }
     } catch (err: any) {
@@ -84,7 +79,6 @@ const Login: React.FC = () => {
       toast.error(err.message || "Login failed"); // <-- show error as toast
     } finally {
       setLoading(false);
-      console.log(`[Login] Login attempt finished for ${form.email} at ${new Date().toISOString()}`);
     }
   };
 

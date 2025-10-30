@@ -213,28 +213,6 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
         position: "relative", // 🔹 Needed for absolute X positioning
       }}
     >
-      {/* 🔹 Close (X) Button */}
-      <button
-        onClick={() => setShowInstructionModal(false)}
-        style={{
-          position: "absolute",
-          top: "1px",
-          right: "7px",
-          background: "transparent",
-          border: "none",
-          fontSize: "35px",
-          fontWeight: "bold",
-          color: "#666",
-          cursor: "pointer",
-          lineHeight: "1",
-        }}
-        onMouseOver={(e) => (e.currentTarget.style.color = "#000")}
-        onMouseOut={(e) => (e.currentTarget.style.color = "#666")}
-        aria-label="Close"
-      >
-        ×
-      </button>
-
       <h3 style={{ marginBottom: "14px", textAlign: "center", color: "#222" }}>
         ⚠️ Screen Sharing Required
       </h3>
@@ -286,6 +264,27 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
         >
           Select Entire Screen
         </button>
+
+        <button
+        onClick={() => setShowInstructionModal(false)}
+        style={{
+            background: "#64686bff",
+            color: "#fff",
+            border: "none",
+            padding: "10px 18px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "15px",
+            transition: "background 0.2s ease",
+          }}
+        onMouseOver={(e) => (e.currentTarget.style.color = "#FFF")}
+        onMouseOut={(e) => (e.currentTarget.style.color = "#FFF")}
+        aria-label="Close"
+        className="ms-2"
+      >
+        Close
+      </button>
       </div>
     </div>
   </div>

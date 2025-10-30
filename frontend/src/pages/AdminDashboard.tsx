@@ -292,8 +292,8 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
       hasPermission = true;
     }
 
-    await startTimer(task.id);
-    const updatedTask = await updateTaskStatus(task.id, "in_progress");
+   await startTimer(task.id);
+   const updatedTask = await updateTaskStatus(task.id, "in_progress");
 
     // ✅ Update UI instantly
     setAssignedTasks((prev) =>
@@ -569,7 +569,6 @@ useEffect(() => {
   assignedTasksRef.current = assignedTasks;
 }, [assignedTasks]);
 const handleScreenShareStopped = useCallback(async () => {
-  console.log("🛑 Screen sharing stopped — cleaning up timers");
 
   const runningTasks = assignedTasksRef.current
     ?.flatMap((project: any) =>
@@ -580,7 +579,6 @@ const handleScreenShareStopped = useCallback(async () => {
 
 
   if (runningTasks.length === 0) {
-    console.log("ℹ️ No running tasks detected at screen stop.");
     return;
   }
 
@@ -842,6 +840,7 @@ const handleScreenShareStopped = useCallback(async () => {
                         <td>
                           <button
                             className={`btn btn-sm ${task.isRunning ? "btn-danger" : "btn-success"} me-2`}
+                            disabled={task.endDate<todayDate}
                             onClick={() => handleStartStopTimerAssigned(task, project.id)}
                           >
                             {task.isRunning ? "Stop Timer" : "Start Timer"}

@@ -87,7 +87,6 @@ const handleVerify = async () => {
       localStorage.setItem("token", res.token);
       localStorage.removeItem("otpEmail");
       toast.success(res.message);
-      console.log(res.user.role);
       
       if (res.user.role === "teamLead" || res.user.role === "projectManager") navigate("/admin");
       else if(res.user.role === "superAdmin") navigate("/superAdmin")
