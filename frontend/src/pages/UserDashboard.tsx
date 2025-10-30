@@ -149,7 +149,6 @@ const UserDashboard: React.FC = () => {
   }, [projects]);
 
   const handleScreenShareStopped = useCallback(async () => {
-    console.log("🛑 Screen sharing stopped — cleaning up timers");
 
     const runningTasks = projectsRef.current.flatMap((project) =>
       project.tasks

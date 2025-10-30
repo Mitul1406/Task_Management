@@ -50,7 +50,6 @@ createUser: async (
 ) => {
   try {
     const existing = await User.findOne({ email });
-    console.log();
     
     if (existing) {
       return {

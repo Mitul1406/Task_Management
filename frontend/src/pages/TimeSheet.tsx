@@ -109,7 +109,6 @@ useEffect(() => {
           .filter((id: any): id is string => !!id);
 
         if (allUserIds.length === 0) {
-          console.log("No assigned users found for tasks");
           return;
         }
 

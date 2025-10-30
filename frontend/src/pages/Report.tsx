@@ -154,7 +154,6 @@ const userTasks = useMemo(() => {
   const totalSaved = filteredTasks.reduce((sum, t) => sum + ((t as any).savedTime || 0), 0);
 
   const tasksById = tasks.reduce((acc: Record<string, any>, task: any) => {
-    console.log("shsuhsus8x8sxs8x---->",task);
     
   acc[task.id] = {
     ...task,
@@ -166,13 +165,6 @@ const userTasks = useMemo(() => {
   };
   return acc;
 }, {});
-
-
-
-Object.entries(userTasks).forEach(([userId, tasks]) => {
-  console.log(userId, tasks);
-});
-
 
   const handleDownloadPDF=()=>{
     if(reportRef.current)

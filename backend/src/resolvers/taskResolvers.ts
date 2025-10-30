@@ -135,15 +135,6 @@ tasks: async ({
     })
   );
 
-  console.log(
-    "✅ Task summary:",
-    results.map((t) => ({
-      title: t.title,
-      totalWorked: t.totalTime,
-      users: t.users.map((u: any) => `${u.username}(${u.totalTime})`),
-    }))
-  );
-
   return results;
 },
 

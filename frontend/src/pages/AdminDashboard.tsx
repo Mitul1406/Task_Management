@@ -569,7 +569,6 @@ useEffect(() => {
   assignedTasksRef.current = assignedTasks;
 }, [assignedTasks]);
 const handleScreenShareStopped = useCallback(async () => {
-  console.log("🛑 Screen sharing stopped — cleaning up timers");
 
   const runningTasks = assignedTasksRef.current
     ?.flatMap((project: any) =>
@@ -580,7 +579,6 @@ const handleScreenShareStopped = useCallback(async () => {
 
 
   if (runningTasks.length === 0) {
-    console.log("ℹ️ No running tasks detected at screen stop.");
     return;
   }
 
