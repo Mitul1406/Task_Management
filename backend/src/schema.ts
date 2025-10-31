@@ -40,12 +40,14 @@ export const schema=buildSchema(`
    
 
     type Timer{
-    id: ID!
-    taskId: ID!
-    userId: ID! 
-    startTime: String!
+    id: ID
+    taskId: ID
+    userId: ID
+    startTime: String
     endTime: String
     duration: Int
+    success: Boolean
+    message: String
     }
     
     type User {
@@ -153,7 +155,7 @@ type UserDayWiseAdminResponse {
   createdAt: String!
 }
 
-    type AuthResponse {
+type AuthResponse {
   success: Boolean!
   message: String!
 }

@@ -206,7 +206,13 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
   }
 
   // ✅ Start the task
-  await startTimer(task.id);
+  const res=await startTimer(task.id);
+     if(!res.success)
+     {
+      const msg=res.message
+      toast.error(msg)
+      return
+     }
   const updatedTask = await updateTaskStatus(task.id, "in_progress");
 
   setProjects((prev) =>

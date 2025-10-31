@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getUsers, createUser, updateUser, deleteUser } from "../services/api";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 interface User {
   id: string;
@@ -116,7 +115,6 @@ function UserPage() {
 
   return (
     <div className="container mt-4">
-      <ToastContainer />
       <h2 className="mb-3 text-center">User Management</h2>
 
       {/* 🧾 Add/Edit Form */}

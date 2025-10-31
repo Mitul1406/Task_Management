@@ -328,7 +328,14 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
       hasPermission = true;
     }
 
-   await startTimer(task.id);
+   const res=await startTimer(task.id);
+   console.log("----->",res)
+   if(!res.success)
+   {
+    const msg=res.message
+    toast.error(msg)
+    return
+   }
    const updatedTask = await updateTaskStatus(task.id, "in_progress");
 
     // ✅ Update UI instantly
@@ -876,7 +883,15 @@ const handleScreenShareStopped = useCallback(async () => {
                         <td>
                           <button
                             className={`btn btn-sm ${task.isRunning ? "btn-danger" : "btn-success"} me-2`}
-                            disabled={task.endDate<todayDate}
+                            disabled={(() => {
+                        if (!(task as any).endDate) return false;
+                        const endDate = new Date(
+                          parseInt((task as any).endDate, 10)
+                        );
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return endDate < today || task.status === "done";
+                      })()}
                             onClick={() => handleStartStopTimerAssigned(task, project.id)}
                           >
                             {task.isRunning ? "Stop Timer" : "Start Timer"}

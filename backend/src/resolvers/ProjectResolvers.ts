@@ -1,3 +1,4 @@
+import type { Types } from "mongoose"
 import {Project} from "../models/Project.js"
 import {Task} from "../models/Task.js"
 import { Timer } from "../models/Timer.js"
@@ -9,9 +10,23 @@ export const projectResolver ={
     project:async({id}:{id:string})=>{
         return await Project.findById(id)
     },
-    adminsprojects:async(args: { userId: string })=>{
-        return await Project.find({ adminId: args.userId });
-    },
+  adminsprojects: async (args: { userId: string }) => {
+  const projects = await Project.find({ adminId: args.userId });
+
+  const sharedProject = await Project.findOne({ name: "Shared Tasks" });
+
+  if (
+    sharedProject &&
+    !projects.some((p) =>
+      (p._id as Types.ObjectId).equals(sharedProject._id as Types.ObjectId)
+    )
+  ) {
+    projects.push(sharedProject);
+  }
+
+  return projects;
+},
+
     createProject: async (
     { name, description }: { name: string; description?: string },
     context: any

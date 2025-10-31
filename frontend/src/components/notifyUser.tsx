@@ -62,29 +62,29 @@ const NotificationPermissionBanner: React.FC = () => {
     if (ua.includes("chrome")) {
       return (
         <p style={{ margin: 0 }}>
-          <b>Chrome:</b> Click the <b>🔒</b> icon → <b>Site settings</b> → <b>Notifications → Allow</b>.
+          <b>Chrome:</b> Click the <b>🔒</b> icon → <b>Site settings</b> → <b>Notifications → Allow , Please reload the page after doing this.</b>.
         </p>
       );
     } else if (ua.includes("edge")) {
       return (
         <p style={{ margin: 0 }}>
-          <b>Edge:</b> Click the <b>🔒</b> icon → <b>Permissions for this site</b> → <b>Notifications → Allow</b>.
+          <b>Edge:</b> Click the <b>🔒</b> icon → <b>Permissions for this site</b> → <b>Notifications → Allow, Please reload the page after doing this.</b>.
         </p>
       );
     } else if (ua.includes("firefox")) {
       return (
         <p style={{ margin: 0 }}>
-          <b>Firefox:</b> Go to <b>Settings → Privacy & Security → Permissions → Notifications → Settings</b>.
+          <b>Firefox:</b> Go to <b>Settings → Privacy & Security → Permissions → Notifications → Settings , Please reload the page after doing this.</b>.
         </p>
       );
     } else if (ua.includes("safari")) {
       return (
         <p style={{ margin: 0 }}>
-          <b>Safari:</b> Go to <b>Preferences → Websites → Notifications → Allow this site</b>.
+          <b>Safari:</b> Go to <b>Preferences → Websites → Notifications → Allow this site , Please reload the page after doing this.</b>.
         </p>
       );
     } else {
-      return <p style={{ margin: 0 }}>Open your browser settings and allow notifications for this site.</p>;
+      return <p style={{ margin: 0 }}>Open your browser settings and allow notifications for this site , Please reload the page after doing this.</p>;
     }
   };
 
@@ -177,16 +177,26 @@ const NotificationPermissionBanner: React.FC = () => {
 
 export default NotificationPermissionBanner;
 
-export const notifyUser = (title: string, body?: string) => {
+export const notifyUser = (title: string, body?: string, url?: string) => {
   if ("Notification" in window) {
     if (Notification.permission === "granted") {
-      new Notification(title, {
+      const notification = new Notification(title, {
         body: body || "",
         icon: "/favicon.png",
       });
+
+      notification.onclick = (event) => {
+        event.preventDefault(); 
+
+        if (url) {
+          window.focus();
+          window.open(url, "_self");
+        }
+      };
     } else {
       console.warn("Notification not permitted:", Notification.permission);
     }
   }
 };
+
 

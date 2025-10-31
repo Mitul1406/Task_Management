@@ -5,6 +5,7 @@ import React, {
   forwardRef,
 } from "react";
 import { jwtDecode } from "jwt-decode";
+import { notifyUser } from "../components/notifyUser";
 
 interface TokenPayload {
   id?: string;
@@ -106,6 +107,7 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
         if (!isFullScreen) {
           mediaStream.getTracks().forEach((t) => t.stop());
           setStatus("Permission denied (not entire screen)");
+          notifyUser("Please Provide Entire Screen Permission","Need to select the entire screen permission to proceed furthur.")
           onPermissionDenied?.();
           internalResolve?.(false);
           setShowInstructionModal(true); // 🔁 Show modal again
@@ -241,6 +243,11 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
           If you <strong>stop screen sharing</strong>, your running task timer will be{" "}
           <strong>automatically stopped</strong> for tracking accuracy.
         </li>
+        <li>
+         Please <strong>allow browser notifications</strong> for this website so you can
+         receive <strong>system-level alerts</strong> — for example, when your task starts
+         or stops automatically.{" "}
+         </li>
       </ul>
       <p style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}>
         Once permission is granted, screenshots will be taken automatically at safe, regular intervals.
