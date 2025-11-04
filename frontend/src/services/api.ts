@@ -199,8 +199,10 @@ const CREATE_TASK = gql`
 const START_TIMER = gql`
   mutation startTimer($taskId: ID!, $userId: ID!) {
     startTimer(taskId: $taskId, userId: $userId) {
-      id
+      id 
       startTime
+      success
+      message
     }
   }
 `;

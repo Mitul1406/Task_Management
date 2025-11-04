@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { resetPassword } from "../services/api";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const ResetPassword: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -12,6 +13,9 @@ const ResetPassword: React.FC = () => {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [isTokenValid, setIsTokenValid] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
      useEffect(() => {
       const token = localStorage.getItem("token");
       if (token) {
@@ -80,28 +84,58 @@ const ResetPassword: React.FC = () => {
       <div className="card shadow-lg p-4" style={{ maxWidth: "400px", width: "100%" }}>
         <h3 className="text-center mb-4">Reset Password</h3>
         <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label>New Password</label>
-            <input
-              type="password"
-              className="form-control"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter new password"
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <label>Confirm Password</label>
-            <input
-              type="password"
-              className="form-control"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Confirm new password"
-              required
-            />
-          </div>
+          <div className="mb-3" style={{ position: "relative" }}>
+        <label className="form-label">New Password</label>
+        <input
+          type={showPassword ? "text" : "password"}
+          className="form-control"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter new password"
+          required
+          style={{ paddingRight: "40px" }} // space for the icon
+        />
+        <span
+          onClick={() => setShowPassword((prev) => !prev)}
+          style={{
+            position: "absolute",
+            right: "15px",
+            top: "70%",
+            transform: "translateY(-50%)",
+            cursor: "pointer",
+            color: "#666",
+          }}
+        >
+          {showPassword ? <FaEyeSlash /> : <FaEye />}
+        </span>
+      </div>
+
+      {/* Confirm Password */}
+      <div className="mb-3" style={{ position: "relative" }}>
+        <label className="form-label">Confirm Password</label>
+        <input
+          type={showConfirm ? "text" : "password"}
+          className="form-control"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Confirm new password"
+          required
+          style={{ paddingRight: "40px" }}
+        />
+        <span
+          onClick={() => setShowConfirm((prev) => !prev)}
+          style={{
+            position: "absolute",
+            right: "15px",
+            top: "70%",
+            transform: "translateY(-50%)",
+            cursor: "pointer",
+            color: "#666",
+          }}
+        >
+          {showConfirm ? <FaEyeSlash /> : <FaEye />}
+        </span>
+      </div>
           <button type="submit" className="btn btn-success w-100" disabled={loading}>
             {loading ? "Resetting..." : "Reset Password"}
           </button>

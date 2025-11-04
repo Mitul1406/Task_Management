@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import AutoScreenshot from "./ScreenShot";
 import CreateTaskModal from "../components/CreateTaskModal";
+import NotificationPermissionBanner, { notifyUser } from "../components/notifyUser";
 
 interface Task {
   status: string;
@@ -108,6 +109,12 @@ const UserDashboard: React.FC = () => {
           await stopTimer(task.id);
           clearInterval(intervalsRef.current[task.id]);
           delete intervalsRef.current[task.id];
+          // toast.warn(`Timer stopped because the page was reloaded or closed.`);
+
+        notifyUser(
+          "Timer Stopped",
+          "Your timer stopped because the page was refreshed or closed."
+        );
         } catch (err) {
           console.error("Error stopping timer before unload:", err);
         }
@@ -164,6 +171,7 @@ const UserDashboard: React.FC = () => {
         clearInterval(intervalsRef.current[task.id]);
         delete intervalsRef.current[task.id];
         toast.warn(`Timer stopped because screen sharing was ended.`);
+        notifyUser("Timer Stopped","Your timer stopped because screen sharing was ended.Visit website now.")
       } catch (err) {
         console.error(`Failed to stop timer for task ${task.id}`, err);
       }
@@ -198,7 +206,13 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
   }
 
   // ✅ Start the task
-  await startTimer(task.id);
+  const res=await startTimer(task.id);
+     if(!res.success)
+     {
+      const msg=res.message
+      toast.error(msg)
+      return
+     }
   const updatedTask = await updateTaskStatus(task.id, "in_progress");
 
   setProjects((prev) =>
@@ -303,6 +317,7 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
 
   return (
     <div className="container mt-4">
+      <NotificationPermissionBanner/>
       {/* 👇 now ref is passed to AutoScreenshot */}
       <AutoScreenshot ref={screenshotRef} onPermissionDenied={handleScreenShareStopped} />
 
