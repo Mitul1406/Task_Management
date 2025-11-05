@@ -158,9 +158,14 @@ const UserPage: React.FC = () => {
       value={roleFilter}
       onChange={(e) => setRoleFilter(e.target.value)}
     >
-      <option value="">All Roles</option>
+      {loggedInRole === "teamLead" ? (
       <option value="user">Employee</option>
-      <option value="teamLead">Team Lead</option>
+    ) : (
+      <>
+        <option value="user">Employee</option>
+        <option value="teamLead">Team Lead</option>
+      </>
+    )}
     </select>
   </div>
 </div>

@@ -208,7 +208,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   return (
     <div className="container-fluid mt-4 position-relative" style={{ padding: "10px 30px" }}>
       {/* Filter Controls */}
-      <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"100px", justifyContent: "flex-end" }}>
+      <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"20px", justifyContent: "flex-end" }}>
         <div>
         <label className="form-label mb-1">User</label>
         <select
@@ -317,7 +317,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         <div className="table-responsive">
           <table
             className="table table-bordered table-sm align-middle text-left"
-            style={{ border: "1px solid #000", fontSize: "13px", minWidth: "1100px" }}
+            style={{ border: "1px solid #000", fontSize: "13px", minWidth: "1100px",overflow:"auto" }}
           >
             <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
               <tr>

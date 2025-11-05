@@ -24,6 +24,10 @@ import SuperAdminDashboard from "./pages/SuperadminDashboard";
 import Layout from "./components/Layout";
 import SuperAdminProject from "./components/superAdmin/Projects";
 import SuperAdminTask from "./components/superAdmin/Task";
+import ProjectTl from "./components/teamLead/ProjectTl";
+import TaskTl from "./components/teamLead/TaskTl";
+import TlTask from "./components/teamLead/TlTask";
+import TaskEmp from "./components/Employee/TaskEmp";
 
 function App() {
   return (
@@ -146,6 +150,35 @@ function App() {
             <ProtectedRoute allowedRoles={["superAdmin"]}>
                 <Layout>
             <SuperAdminTask />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          {/* TeamLead */}
+          <Route path="/projectsTl" element={
+            <ProtectedRoute allowedRoles={["teamLead"]}>
+            <Layout>
+            <ProjectTl />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          <Route path="/taskTl/:id" element={
+            <ProtectedRoute allowedRoles={["teamLead"]}>
+                <Layout>
+            <TaskTl />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          <Route path="/tlTask" element={
+            <ProtectedRoute allowedRoles={["teamLead"]}>
+                <Layout>
+            <TlTask />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          <Route path="/empTask" element={
+            <ProtectedRoute allowedRoles={["user"]}>
+                <Layout>
+            <TaskEmp />
             </Layout>
             </ProtectedRoute>
             } />

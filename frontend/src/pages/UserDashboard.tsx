@@ -396,7 +396,7 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
           >
             Create Your Own Task
           </button>
-          <CreateTaskModal show={showTaskModal} onClose={() => setShowTaskModal(false)} />
+          <CreateTaskModal show={showTaskModal} onClose={() => setShowTaskModal(false)} fetchUserTask={()=>{}} />
 
           {/* <button
             className="btn btn-sm btn-warning me-2"

@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getTasksByProject, getProjects, getUsers } from "../services/api"; 
 import html2pdf from "html2pdf.js";
-import { jwtDecode } from "jwt-decode";
 interface Task {
   status: string;
   id: string;

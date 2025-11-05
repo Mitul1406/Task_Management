@@ -52,16 +52,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
 
   const teamLeadLinks = [
     { label: "Dashboard", icon: <FaTachometerAlt />, path: "/admin" },
+    { label: "Your Task", icon: <FaTasks />, path: "/tlTask" },
     { label: "Users", icon: <FaUsers />, path: "/userView" },
     // { label: "Project Task", icon: <FaTasks />, path: "/admin" },
     { label: "View User Timesheet", icon: <FaClock />, path: "/alluser-timesheet-report" },
     { label: "View User Screenshot", icon: <FaCamera />, path: "/screenshots" },
+    { label: "Projects", icon: <FaTasks />, path: "/projectsTl" },
+    
   ];
 
   const userLinks = [
     { label: "Dashboard", icon: <FaTachometerAlt />, path: "/user" },
+    { label: "Your Tasks", icon: <FaTasks />, path: "/empTask" },
     { label: "My Timesheet", icon: <FaClock />, path: "/user-timesheet-report/"+id },
-    { label: "My Tasks", icon: <FaTasks />, path: "/my-tasks" },
     { label: "View Screenshot", icon: <FaCamera />, path: "/screenshots/"+id },
   ];
 

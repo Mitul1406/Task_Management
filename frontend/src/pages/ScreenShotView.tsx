@@ -324,32 +324,71 @@ export default function ScreenShotView() {
 
       {/* View Modal */}
       {modalOpen && (
-        <div
-          className="modal fade show"
-          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+  <>
+    <div
+      onClick={closeModal}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backdropFilter: "blur(6px)",
+        zIndex: 1050,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          background: "#fff",
+          borderRadius: "10px",
+          padding: "10px",
+          maxWidth: "90vw",
+          maxHeight: "90vh",
+          boxShadow: "0 5px 25px rgba(0,0,0,0.5)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
           onClick={closeModal}
+          style={{
+            position: "absolute",
+            top: "8px",
+            right: "8px",
+            background: "rgba(0,0,0,0.6)",
+            color: "#fff",
+            border: "none",
+            borderRadius: "50%",
+            width: "32px",
+            height: "32px",
+            fontSize: "18px",
+            cursor: "pointer",
+          }}
         >
-          <div
-            className="modal-dialog modal-dialog-centered modal-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Screenshot</h5>
-                <button type="button" className="btn-close" onClick={closeModal}></button>
-              </div>
-              <div className="modal-body text-center">
-                <img
-                  src={currentImage}
-                  alt="Screenshot"
-                  className="img-fluid"
-                  style={{ maxHeight: "90vh", width: "100%", objectFit: "contain" }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          ✕
+        </button>
+
+        <img
+          src={currentImage}
+          alt="Screenshot"
+          style={{
+            maxWidth: "85vw",
+            maxHeight: "85vh",
+            objectFit: "contain",
+            borderRadius: "8px",
+            display: "block",
+            margin: "auto",
+          }}
+        />
+      </div>
+    </div>
+  </>
+)}
+
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
