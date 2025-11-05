@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import { getUserDayWise } from '../services/api';
+import { jwtDecode } from 'jwt-decode';
 
 interface DayWiseTask {
   taskId: string;
@@ -82,7 +83,8 @@ const UserTimeSheet: React.FC = () => {
 const today = new Date().toISOString().split("T")[0];
 const [startDate, setStartDate] = useState<string>(today);
 const [endDate, setEndDate] = useState<string>(today);
-  const sheetRef = useRef<HTMLDivElement>(null);
+const sheetRef = useRef<HTMLDivElement>(null);
+const [username,setUsername]=useState("")
 useEffect(() => {
   const fetchData = async () => {
     try {
@@ -112,7 +114,13 @@ useEffect(() => {
   fetchData();
 }, [userId, startDate, endDate]);
 
-  
+  useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const parsed = jwtDecode<any>(token);
+          setUsername(parsed.username || "");
+        }
+      }, []);
 // const calculateProjectTotals = (data: UserDayWiseResponse): ProjectTotals[] => {
 //   const totalsMap: Record<string, ProjectTotals> = {};
 
@@ -310,7 +318,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
         Download PDF
       </button></div>
     <div className="container mt-4" ref={sheetRef}>
-      <h2>User Timesheet</h2>
+      <h2>{username} Timesheet</h2>
       <p>
         Date Range: <strong>{startDate}</strong> to{' '}
         <strong>{endDate}</strong>

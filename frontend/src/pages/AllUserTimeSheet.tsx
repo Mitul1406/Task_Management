@@ -206,7 +206,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   setSelectedUserName(foundUser ? foundUser.username : "");
 };
   return (
-    <div className="container-fluid mt-4 position-relative" style={{ padding: "0px 100px" }}>
+    <div className="container-fluid mt-4 position-relative" style={{ padding: "10px 30px" }}>
       {/* Filter Controls */}
       <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"100px", justifyContent: "flex-end" }}>
         <div>

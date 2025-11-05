@@ -373,9 +373,9 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
 
       {/* Dashboard header */}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Welcome: {username}</h2>
+        {/* <h2>Welcome: {username}</h2> */}
         <div className="d-flex ms-auto">
-          <button
+          {/* <button
             className="btn btn-sm btn-success me-2"
             onClick={() => window.open(`/user-timesheet-report/${id}`, "_blank")}
           >
@@ -388,7 +388,7 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
             onClick={() => window.open(`/screenshots/${id}`, "_blank")}
           >
             View ScreenShot
-          </button>
+          </button> */}
 
           <button
             className="btn btn-primary btn-sm me-2"
@@ -398,14 +398,14 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
           </button>
           <CreateTaskModal show={showTaskModal} onClose={() => setShowTaskModal(false)} />
 
-          <button
+          {/* <button
             className="btn btn-sm btn-warning me-2"
             onClick={() => setShowPasswordForm(true)}
           >
             Change Password
-          </button>
+          </button> */}
 
-          <button
+          {/* <button
             className="btn btn-danger"
             onClick={() => {
               logout();
@@ -415,7 +415,7 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
             }}
           >
             Logout
-          </button>
+          </button> */}
         </div>
       </div>
 

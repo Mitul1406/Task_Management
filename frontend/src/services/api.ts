@@ -731,13 +731,7 @@ export const createTaskAdmin = async (
 };
 
 export const updateTaskAdmin = async (
-  id: string,
-  title?: string,
-  estimatedTime?: number,
-  assignedUserId?: string,
-  startDate?: string,
-  endDate?: string
-) => {
+id: string, title?: string, estimatedTime?: number, assignedUserId?: string, startDate?: string, endDate?: string, status?: string) => {
   const res = await client.mutate({
     mutation: UPDATE_TASK,
     variables: { id, title, estimatedTime, assignedUserId,startDate,endDate },

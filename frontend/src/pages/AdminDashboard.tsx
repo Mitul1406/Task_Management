@@ -720,7 +720,7 @@ const handleScreenShareStopped = useCallback(async () => {
           </div>
         </div>
       )}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      {/* <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Welcome {role === "teamLead"
     ? "Team Leader"
     : 
@@ -767,7 +767,7 @@ const handleScreenShareStopped = useCallback(async () => {
             Logout
           </button>
         </div>
-      </div>
+      </div> */}
 
       <h1 className="text-center">Task Tracker</h1>
 

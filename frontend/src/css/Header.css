@@ -1,0 +1,81 @@
+/* src/components/Header.css */
+.app-header {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1030; /* stays above content */
+}
+
+.password-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.password-popup-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 350px;
+}
+
+.user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-icon {
+  cursor: pointer;
+  color: #333;
+  transition: color 0.2s ease;
+}
+
+.user-icon:hover {
+  color: #0d6efd;
+}
+
+/* Popup Menu */
+.user-popup {
+  position: absolute;
+  right: 0;
+  top: 120%;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 6px 0;
+  display: none;
+  min-width: 160px;
+  z-index: 10;
+  background-color: #e6dae6;
+}
+
+.user-menu:hover .user-popup {
+  display: block;
+}
+
+.user-popup button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.user-popup button:hover {
+  background-color: #f8f9fa;
+}
+
+.logout-btn {
+  color: #dc3545;
+}
+

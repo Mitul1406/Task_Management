@@ -187,7 +187,7 @@ return (
       {/* --- Filters Section --- */}
       <div
         className="d-flex align-items-center flex-wrap gap-3 me-auto"
-        style={{ position: "absolute", top: "25px", right: "140px" }}
+        style={{ position: "absolute", top: "0px", right: "0px" }}
       >
         {/* User Filter */}
         <div className="d-flex flex-column">
@@ -252,7 +252,7 @@ return (
         </div>
       </div>
   </div>
-    <div className="container mt-4" ref={reportRef}>
+    <div className="container position-absolute top-0" ref={reportRef}>
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center">
         <div>

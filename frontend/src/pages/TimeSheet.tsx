@@ -246,8 +246,8 @@ if (userTasks && Object.keys(userTasks).length > 0) {
   className="d-flex align-items-end gap-3 mb-4 flex-wrap"
   style={{
     position: "absolute",
-    right: "145px",
-    top: "20px",
+    right: "0px",
+    top: "0px",
     justifyContent: "flex-end",
   }}
 >

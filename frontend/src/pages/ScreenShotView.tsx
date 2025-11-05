@@ -225,7 +225,7 @@ export default function ScreenShotView() {
         </div>
 
         {/* Toggle Select Mode */}
-        {["teamLead","projectManager", "superAdmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
+        {["superAdmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
           <button className="btn btn-outline-primary ms-auto position-absolute"
           style={{ top: "0", right: "0" }}
           onClick={toggleSelectMode}>
@@ -288,7 +288,7 @@ export default function ScreenShotView() {
           {filteredScreenshots.map((shot) => (
             <div key={shot.id} className="col-12 col-md-4 mb-3">
               <div className="card h-100 position-relative">
-                {selectMode && ["teamLead","projectManager", "superAdmin"].includes(userRole) && (
+                {selectMode && ["superAdmin"].includes(userRole) && (
                   <input
                     type="checkbox"
                     className="position-absolute top-0 start-0 m-2"
@@ -303,7 +303,7 @@ export default function ScreenShotView() {
                   style={{ maxHeight: "200px", objectFit: "cover", cursor: "pointer" }}
                   onClick={() => openModal(`${process.env.REACT_APP_BACKEND_URL}${shot.url}`)}
                 />
-                {!selectMode && ["teamLead","projectManager", "superAdmin"].includes(userRole) && (
+                {!selectMode && ["superAdmin"].includes(userRole) && (
                   <button
                     className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
                     onClick={() => confirmDelete([shot.id])}
