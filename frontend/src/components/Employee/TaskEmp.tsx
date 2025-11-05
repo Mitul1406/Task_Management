@@ -12,6 +12,7 @@ import {
 import AutoScreenshot, { AutoScreenshotRef } from "../../pages/ScreenShot";
 import NotificationPermissionBanner, { notifyUser } from "../notifyUser";
 import CreateTaskModal from "../CreateTaskModal";
+import StopPermissionModal from "../StopPermissionModel";
 
 const TaskEmp: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
@@ -23,7 +24,8 @@ const TaskEmp: React.FC = () => {
   const intervalsRef = useRef<{ [key: string]: any }>({});
   const screenshotRef = useRef<AutoScreenshotRef>(null);
   const projectsRef = useRef<any[]>([]);
-  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);  
+  const [showStopPermissionModal, setShowStopPermissionModal] = useState(false);
   const [filterStartDate, setFilterStartDate] = useState(
     () => new Date().toISOString().split("T")[0]
   );
@@ -130,52 +132,12 @@ const TaskEmp: React.FC = () => {
   };
 
   const handleStartStopTimer = async (task: any, projectId: string) => {
-    try {
-      if (task.isRunning) {
-        await stopTimer(task.id);
-        clearInterval(intervalsRef.current[task.id]);
-        delete intervalsRef.current[task.id];
-
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === projectId
-              ? {
-                  ...p,
-                  tasks: p.tasks.map((t: any) =>
-                    t.id === task.id
-                      ? {
-                          ...t,
-                          isRunning: false,
-                          totalTime:
-                            (t.totalTime || 0) + (t.runningDuration || 0),
-                          runningDuration: 0,
-                        }
-                      : t
-                  ),
-                }
-              : p
-          )
-        );
-        return;
-      }
-
-      let hasPermission = screenshotRef.current?.hasPermission;
-      if (!hasPermission) {
-        const granted = await screenshotRef.current?.requestScreenShare?.();
-        if (!granted) {
-          toast.error("You must share your ENTIRE SCREEN to start a task.");
-          return;
-        }
-        hasPermission = true;
-      }
-
-      const res = await startTimer(task.id);
-      if (!res.success) {
-        toast.error(res.message || "Failed to start timer");
-        return;
-      }
-
-      const updatedTask = await updateTaskStatus(task.id, "in_progress");
+  try {
+    if (task.isRunning) {
+      // Stop timer
+      await stopTimer(task.id);
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
 
       setProjects((prev) =>
         prev.map((p) =>
@@ -186,9 +148,10 @@ const TaskEmp: React.FC = () => {
                   t.id === task.id
                     ? {
                         ...t,
-                        isRunning: true,
+                        isRunning: false,
+                        totalTime:
+                          (t.totalTime || 0) + (t.runningDuration || 0),
                         runningDuration: 0,
-                        status: updatedTask.status,
                       }
                     : t
                 ),
@@ -197,27 +160,83 @@ const TaskEmp: React.FC = () => {
         )
       );
 
-      intervalsRef.current[task.id] = setInterval(() => {
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === projectId
-              ? {
-                  ...p,
-                  tasks: p.tasks.map((t: any) =>
-                    t.id === task.id
-                      ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
-                      : t
-                  ),
-                }
-              : p
-          )
-        );
-      }, 1000);
-    } catch (error) {
-      console.error("Error in handleStartStopTimer:", error);
-      toast.error("Something went wrong while starting/stopping timer.");
+      const allStopped = projects.some((p) =>
+        p.tasks.some((t: any) => t.isRunning && t.id !== task.id)
+      );
+
+      if (!allStopped) {
+        setShowStopPermissionModal(true);
+      }
+
+      return;
     }
-  };
+
+    let hasPermission = screenshotRef.current?.hasPermission;
+
+    if (!hasPermission) {
+      const granted = await screenshotRef.current?.requestScreenShare?.();
+      if (!granted) {
+        toast.error("You must share your ENTIRE SCREEN to start a task.");
+        return;
+      }
+      hasPermission = true;
+
+        };
+    
+
+    // Start timer in backend
+    const res = await startTimer(task.id);
+    if (!res.success) {
+      toast.error(res.message || "Failed to start timer");
+      return;
+    }
+
+    const updatedTask = await updateTaskStatus(task.id, "in_progress");
+
+    // Update local state
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              tasks: p.tasks.map((t: any) =>
+                t.id === task.id
+                  ? {
+                      ...t,
+                      isRunning: true,
+                      runningDuration: 0,
+                      status: updatedTask.status,
+                    }
+                  : t
+              ),
+            }
+          : p
+      )
+    );
+
+    // Timer interval
+    intervalsRef.current[task.id] = setInterval(() => {
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                tasks: p.tasks.map((t: any) =>
+                  t.id === task.id
+                    ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+                    : t
+                ),
+              }
+            : p
+        )
+      );
+    }, 1000);
+  } catch (error) {
+    console.error("Error in handleStartStopTimer:", error);
+    toast.error("Something went wrong while starting/stopping timer.");
+  }
+};
+
   const normalizeDate = (val: any) => {
     if (!val) return null;
 
@@ -321,7 +340,7 @@ const TaskEmp: React.FC = () => {
   {/* === Filters Section === */}
   <div className="d-flex align-items-end gap-3 flex-wrap mb-3">
     <div>
-      <label className="form-label mb-0">Select Project:</label>
+      <label className="form-label fw-bold">Select Project:</label>
       <select
         className="form-select"
         style={{ width: "200px" }}
@@ -338,7 +357,7 @@ const TaskEmp: React.FC = () => {
     </div>
 
     <div>
-      <label className="form-label mb-0">Start Date:</label>
+      <label className="form-label fw-bold">Start Date:</label>
       <input
         type="date"
         className="form-control"
@@ -349,7 +368,7 @@ const TaskEmp: React.FC = () => {
     </div>
 
     <div>
-      <label className="form-label mb-0">End Date:</label>
+      <label className="form-label fw-bold">End Date:</label>
       <input
         type="date"
         className="form-control"
@@ -463,6 +482,15 @@ const TaskEmp: React.FC = () => {
 </div>
 
       )}
+
+      <StopPermissionModal
+  show={showStopPermissionModal}
+  onConfirm={() => {
+    screenshotRef.current?.stopScreenShare();
+    setShowStopPermissionModal(false);
+  }}
+  onCancel={() => setShowStopPermissionModal(false)}
+/>
     </div>
   );
 };

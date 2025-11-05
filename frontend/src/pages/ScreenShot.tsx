@@ -178,7 +178,7 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
           stream.getTracks().forEach((t) => t.stop());
           setStream(null);
           setStatus("Stopped");
-          setShowInstructionModal(true); // 🔁 Show modal again when stopped manually
+          setShowInstructionModal(true);
         }
       },
     }));
@@ -199,6 +199,7 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       justifyContent: "center",
       alignItems: "center",
       zIndex: 2000,
+      overflow:"auto"
     }}
   >
     <div
@@ -252,26 +253,7 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       <p style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}>
         Once permission is granted, screenshots will be taken automatically at safe, regular intervals.
       </p>
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <button
-          onClick={handleConfirmPermission}
-          style={{
-            background: "#007bff",
-            color: "#fff",
-            border: "none",
-            padding: "10px 18px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: "15px",
-            transition: "background 0.2s ease",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#0069d9")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#007bff")}
-        >
-          Select Entire Screen
-        </button>
-
+      <div className="d-flex justify-content-between" style={{marginTop: "20px" }}>
         <button
         onClick={() => setShowInstructionModal(false)}
         style={{
@@ -292,6 +274,24 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       >
         Close
       </button>
+        <button
+          onClick={handleConfirmPermission}
+          style={{
+            background: "#007bff",
+            color: "#fff",
+            border: "none",
+            padding: "10px 18px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: "15px",
+            transition: "background 0.2s ease",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#0069d9")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#007bff")}
+        >
+          Select Entire Screen
+        </button>
       </div>
     </div>
   </div>
