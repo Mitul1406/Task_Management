@@ -31,7 +31,7 @@ const TlTask: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const tasksPerPage = 10;
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
-
+  const [statusFilter, setStatusFilter] = useState("all");
   const intervalsRef = useRef<{ [key: string]: any }>({});
   const screenshotRef = useRef<AutoScreenshotRef>(null);
   const projectsRef = useRef<any[]>([]);
@@ -296,17 +296,30 @@ const TlTask: React.FC = () => {
     const end:any = normalizeDate(filterEndDate);
     const taskStart = normalizeDate(task.startDate);
     const taskEnd = normalizeDate(task.endDate);
+    const statusMatch =
+    statusFilter === "all"
+      ? true
+      : task.status?.toLowerCase() === statusFilter.toLowerCase();
+
     return (
-      projectMatch &&
+      projectMatch &&statusMatch&&
       taskStart &&
       taskEnd &&
       taskStart <= end &&
       taskEnd >= start
     );
   });
-   console.log("-->",filteredTasks);
+
+useEffect(() => {
+  if (!focusedTaskId || filteredTasks.length === 0) return;
+
+  const index = filteredTasks.findIndex((t) => t.id === focusedTaskId);
+  if (index !== -1) {
+    const pageNumber = Math.floor(index / tasksPerPage) + 1;
+    setCurrentPage(pageNumber);
+  }
+}, [focusedTaskId, filteredTasks, tasksPerPage]);
    
-  // 🔹 Pagination logic
   const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
   const startIndex = (currentPage - 1) * tasksPerPage;
   const paginatedTasks = filteredTasks.slice(
@@ -314,7 +327,6 @@ const TlTask: React.FC = () => {
     startIndex + tasksPerPage
   );
 
-  // 🔹 Scroll to focused task if provided
   useEffect(() => {
     if (focusedTaskId) {
       setTimeout(() => {
@@ -342,7 +354,7 @@ const TlTask: React.FC = () => {
           className="btn btn-primary"
           onClick={() => setShowTaskModal(true)}
         >
-          Create Task
+          Create Your Own Task
         </button>
       </div>
 
@@ -363,7 +375,22 @@ const TlTask: React.FC = () => {
             ))}
           </select>
         </div>
+       <div>
+  <label className="form-label fw-bold">Status:</label>
+ <select
+  className="form-select"
+  style={{ width: "180px" }}
+  value={statusFilter}
+  onChange={(e) => setStatusFilter(e.target.value)}
+>
+  <option value="all">All Statuses</option>
+  <option value="pending">Pending</option>
+  <option value="in_progress">In Progress</option>
+  <option value="code_review">Code Review</option>
+  <option value="done">Done</option>
+</select>
 
+        </div>
         <div>
           <label className="form-label fw-bold">Start Date</label>
           <input
@@ -462,16 +489,17 @@ const TlTask: React.FC = () => {
             )}
           </tbody>
         </table>
-        {totalPages > 1 && (
+        
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
             onPageChange={setCurrentPage}
             totalPages={totalPages}
           />
       )}
-      </div>
-
-      {/* Pagination */}
       
 
       <StopPermissionModal

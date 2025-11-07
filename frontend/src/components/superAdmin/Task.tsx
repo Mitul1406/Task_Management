@@ -64,7 +64,6 @@ const SuperAdminTask: React.FC = () => {
         toast.error("Failed to update status");
       }
     };
-  // Fetch base data
   useEffect(() => {
     fetchProjects();
     fetchUsers();
@@ -301,12 +300,12 @@ const fetchTasksByProject = async (id: string) => {
   >
     <thead>
       <tr>
-        <th>Title</th>
+        <th style={{minWidth:"300px"}}>Title</th>
         <th>Project</th>
         <th>Assigned To</th>
         <th>Start</th>
         <th>End</th>
-        <th>Est. Time</th>
+        <th>Estimated</th>
         <th>Consumed</th>
         <th>Saved</th>
         <th>Overtime</th>
@@ -323,7 +322,7 @@ const fetchTasksByProject = async (id: string) => {
     </tr>
   ):(tasks.map((task) => (
         <tr key={task.id}>
-          <td>{task.title}</td>
+          <td className="text-wrap text-break">{task.title}</td>
           <td>{task.projectName || projectName || "-"}</td>
           <td>{task.assignedUser?.username || "Unassigned"}</td>
           <td>{task.startDate?.split("T")[0]}</td>
@@ -364,13 +363,13 @@ const fetchTasksByProject = async (id: string) => {
       )))}
     </tbody>
   </table>
-    <Pagination
+    
+</div>
+<Pagination
       currentPage={currentPage}
       onPageChange={setCurrentPage}
       totalPages={totalPages}
     />
-</div>
-
 
       {showModal && (
   <div

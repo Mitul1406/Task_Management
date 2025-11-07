@@ -312,7 +312,7 @@ const fetchTasksByProject = async (id: string) => {
         <th>Assigned To</th>
         <th>Start</th>
         <th>End</th>
-        <th>Est. Time</th>
+        <th>Estimated</th>
         <th>Consumed</th>
         <th>Saved</th>
         <th>Overtime</th>
@@ -370,13 +370,13 @@ const fetchTasksByProject = async (id: string) => {
       )))}
     </tbody>
   </table>
-    <Pagination
+    
+</div>
+<Pagination
       currentPage={currentPage}
       onPageChange={setCurrentPage}
       totalPages={totalPages}
     />
-</div>
-
 
       {showModal && (
   <div

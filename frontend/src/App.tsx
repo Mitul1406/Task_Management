@@ -30,6 +30,7 @@ import TlTask from "./components/teamLead/TlTask";
 import TaskEmp from "./components/Employee/TaskEmp";
 import Dashboard from "./components/superAdmin/Dashboard";
 import DashboardTl from "./components/teamLead/DashboardTl";
+import DashboardEmp from "./components/Employee/DashboardEmp";
 
 function App() {
   return (
@@ -73,7 +74,7 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["user"]}>
                 <Layout>
-                <UserDashboard />
+                <DashboardEmp />
                 </Layout>
               </ProtectedRoute>
             }
