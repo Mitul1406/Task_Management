@@ -289,7 +289,7 @@ const fetchTasksByProject = async (id: string) => {
       </div>
 
      <div
-  className="table-responsive card p-4"
+  className="table-responsive card p-4 shadow-sm border-0 bg-light"
   style={{
     width: "100%",
     overflowX: "auto",

@@ -527,7 +527,9 @@ const SUPERADMINCOUNT=gql`query {
   superAdminDashboardCount {
     totalProjects
     totalTasks
-    doneTasks
+    totalUser
+    teamLead
+    employee
     pendingTasks
     inProgressTasks
     projectContributions {
@@ -684,13 +686,12 @@ export const getTasksByProject = async (projectId: string) => {
   return (res as any).data.tasks;
 };
 
-
 export const createProject = async (name: string, description?: string) => {
   const res = await client.mutate({
     mutation: CREATE_PROJECT,
     variables: { name, description },
   });
-  return (res as any).data.createProject; // returns project document
+  return (res as any).data.createProject;
 };
 
 export const deleteProject = async (id: string) => {

@@ -8,7 +8,9 @@ export const counterResolver = {
   try {
     const totalProjects = await Project.countDocuments();
     const totalTasks = await Task.countDocuments();
-    const doneTasks = await User.countDocuments({role:{$ne:"superAdmin"}});
+    const totalUser = await User.countDocuments({role:{$ne:"superAdmin"}});
+    const teamLead = await User.countDocuments({role:"teamLead"})
+    const employee = await User.countDocuments({role:"user"})
     const pendingTasks = await Task.countDocuments({ status: "pending" });
     const inProgressTasks = await Task.countDocuments({ status: "in_progress" });
 
@@ -82,7 +84,9 @@ export const counterResolver = {
     return {
       totalProjects,
       totalTasks,
-      doneTasks,
+      totalUser,
+      teamLead,
+      employee,
       pendingTasks,
       inProgressTasks,
       projectContributions: timerAgg,

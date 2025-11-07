@@ -122,7 +122,7 @@ const SuperAdminProject: React.FC = () => {
         </div>
       )}
 
-      <div className="card p-3 shadow-sm">
+      <div className="card p-3 shadow-sm border-0 bg-light">
   {paginatedProjects.length === 0 ? (
     <p>No projects found.</p>
   ) : (

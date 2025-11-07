@@ -19,7 +19,9 @@ interface ProjectContribution {
 interface DashboardData {
   totalProjects: number;
   totalTasks: number;
-  doneTasks: number;
+  totalUser:number;
+    teamLead:number;
+    employee:number;
   pendingTasks: number;
   inProgressTasks: number;
   projectContributions: ProjectContribution[];
@@ -157,14 +159,12 @@ const paginatedTimesheet = filteredTimesheet.slice(
 
   return (
     <div className="container mt-3">
-      {/* Top Metrics */}
-<div className="card p-4 mb-4 shadow-sm border-0">
+<div className="card p-4 mb-4 shadow-sm border-0 bg-light">
   <h4 className="mb-4 text-dark">Counts</h4>
   <div className="row g-4 text-center">
 
-    {/* Total Projects */}
     <div className="col-md-3 col-sm-6">
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-light  rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
         <span className="text-success mb-2">
           <FaProjectDiagram size={36} />
         </span>
@@ -173,9 +173,8 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    {/* Total Tasks */}
     <div className="col-md-3 col-sm-6">
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-light border-primary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
         <span className="text-primary mb-2">
           <FaTasks size={36} />
         </span>
@@ -184,9 +183,8 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    {/* Pending Tasks */}
     <div className="col-md-3 col-sm-6">
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-light border-warning rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
         <span className="text-warning mb-2">
           <FaClock size={36} />
         </span>
@@ -195,10 +193,9 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    {/* In Progress */}
     <div className="col-md-3 col-sm-6">
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-light border-info rounded">
-        <span className="text-info mb-2">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">
+        <span className="text-danger mb-2">
           <FaSpinner size={36} />
         </span>
         <strong className="fs-3 text-dark">{data.inProgressTasks}</strong>
@@ -206,14 +203,33 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    {/* Total Users */}
     <div className="col-md-3 col-sm-6">
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-light border-secondary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-whiteborder-secondary rounded">
         <span className="text-secondary mb-2">
           <FaUsers size={36} />
         </span>
-        <strong className="fs-3 text-dark">{data.doneTasks}</strong>
+        <strong className="fs-3 text-dark">{data.totalUser}</strong>
         <div className="text-secondary">Total Users</div>
+      </div>
+    </div>
+
+    <div className="col-md-3 col-sm-6">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+        <span className="text-info mb-2">
+          <FaUsers size={36} />
+        </span>
+        <strong className="fs-3 text-dark">{data.teamLead}</strong>
+        <div className="text-secondary">Team Leaders</div>
+      </div>
+    </div>
+
+    <div className="col-md-3 col-sm-6">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+        <span className="text-info mb-2">
+          <FaUsers size={36} />
+        </span>
+        <strong className="fs-3 text-dark">{data.employee}</strong>
+        <div className="text-secondary">Employees</div>
       </div>
     </div>
 
@@ -221,12 +237,12 @@ const paginatedTimesheet = filteredTimesheet.slice(
 </div>
 <hr className="my-4 border-2 border-primary opacity-25" />
 
-      <div className="card p-3 shadow-sm mb-4 border-0">
+      <div className="card p-3 shadow-sm mb-4 border-0 bg-light">
         <h4 className="mb-3 text-dark">Project Contributions</h4>
         <div className="row g-3">
           {paginatedProjects.map((project) => (
             <div key={project.projectId} className="col-md-4 col-sm-6">
-              <div className="card p-3 shadow-sm h-100 border-primary">
+              <div className="card p-3 shadow-sm h-100 border-0">
                 <div className="d-flex justify-content-between align-items-center mb-2">
                   <h5 className="mb-0 text-dark">{project.projectName}</h5>
                   <span className="badge bg-primary">
@@ -252,18 +268,16 @@ const paginatedTimesheet = filteredTimesheet.slice(
         </div>
 
         {totalPages > 1 && (
-          <div className="mt-3 d-flex justify-content-center">
             <Pagination
               currentPage={currentPage}
               onPageChange={setCurrentPage}
               totalPages={totalPages}
             />
-          </div>
         )}
       </div>
       <hr className="my-4 border-2 border-primary opacity-25" />
 
-      <div className="card p-3 shadow-sm mb-2 border-0">
+      <div className="card p-3 shadow-sm mb-2 border-0 bg-light">
   <div className="mb-3 row g-2 align-items-end">
     <div className="col-md-4 col-sm-6">
       <label className="form-label fw-bold">User</label>
@@ -327,11 +341,10 @@ const paginatedTimesheet = filteredTimesheet.slice(
     </div> */}
   </div>
 
-  {/* Timesheet Table */}
   <div className="table-responsive py-3">
     <table
-      className="table table-hover table-sm align-middle text-left"
-      style={{ border: "1px solid #000", fontSize: "13px", minWidth: "1100px" }}
+      className="table table-hover align-middle text-left"
+      style={{ border: "1px solid #000", fontSize: "13px"}}
     >
       <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
         <tr>

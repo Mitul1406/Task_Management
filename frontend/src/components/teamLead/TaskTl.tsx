@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  getProjects,
+  getAdminProjects,
   getUsers,
   getTasksByProject,
   createTaskAdmin,
@@ -12,6 +12,8 @@ import {
 } from "../../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../Pagination";
+import { jwtDecode } from "jwt-decode";
+import { parse } from "path";
 
 const TaskTl: React.FC = () => {
   const navigate = useNavigate();
@@ -24,7 +26,7 @@ const TaskTl: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState(projectIdFromURL || "all");
   const [loading, setLoading] = useState(false);
-
+  const [id,setId]=useState("")
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string>("");
@@ -79,8 +81,12 @@ const TaskTl: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await getProjects();
-      setProjects(res);
+      const token = localStorage.getItem("token");
+        if (token) {
+        const parsed = jwtDecode<any>(token);
+        setId(parsed.id)
+      const res = await getAdminProjects(parsed.id);
+      setProjects(res);}
     } catch {
       toast.error("Failed to load projects");
     }
@@ -138,9 +144,9 @@ const fetchTasksByProject = async (id: string) => {
     setSelectedProject(val);
     const name=projects.filter(p=>p.id===val)
     
-    if (val === "all") navigate("/tasks");
+    if (val === "all") navigate("/taskTls");
     else
-      { navigate(`/tasks?projectId=${val}`); 
+      { navigate(`/taskTls?projectId=${val}`); 
     setProjectName(name[0].name)}
   };
 
@@ -289,7 +295,7 @@ const fetchTasksByProject = async (id: string) => {
       </div>
 
      <div
-  className="table-responsive card p-4"
+  className="table-responsive card p-4 border-0 shadow-sm bg-light"
   style={{
     width: "100%",
     overflowX: "auto",
@@ -345,7 +351,7 @@ const fetchTasksByProject = async (id: string) => {
             </span>
           </td>
           <td>
-            <div className="d-flex gap-2">
+            {task.assignedUser.id !== id ?(<div className="d-flex gap-2">
               <button
                 className="btn btn-sm btn-outline-primary"
                 onClick={() => handleEditTask(task)}
@@ -358,7 +364,7 @@ const fetchTasksByProject = async (id: string) => {
               >
                 Delete
               </button>
-            </div>
+            </div>):<div className="text-info">Can't Modify your task</div>}
           </td>
         </tr>
       )))}

@@ -172,7 +172,7 @@ const UserPage: React.FC = () => {
 </div>
 
       {/* Card + Table */}
-      <div className="card shadow-sm">
+      <div className="card shadow-sm border-0 bg-light">
         <div className="card-body">
           {loading ? (
             <p className="d-flex justify-content-center">Loading...</p>

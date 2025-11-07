@@ -17,7 +17,9 @@ type ProjectContribution {
   type DashboardCount {
     totalProjects: Int
     totalTasks: Int
-    doneTasks: Int
+    totalUser: Int
+    teamLead: Int
+    employee: Int
     pendingTasks: Int
     inProgressTasks: Int
     projectContributions: [ProjectContribution]
