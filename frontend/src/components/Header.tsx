@@ -70,101 +70,103 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
 
   return (
     <header
-      className="app-header bg-light shadow-sm p-3 mb-3 d-flex justify-content-between align-items-center"
-      style={{ marginLeft: collapse ? "50px" : "0px" }}
+  className="app-header w-100 bg-light shadow-sm p-2 d-flex justify-content-between align-items-center"
+  style={{ marginLeft: collapse ? "50px" : "0px" }}
+>
+  {/* Left: Welcome message */}
+  <div className="d-flex align-items-center">
+    <h6 className="m-0">
+      Welcome{" "}
+      {role === "teamLead"
+        ? "Team Leader"
+        : role === "superAdmin"
+        ? "Super Admin"
+        : "Employee"}{" "}
+      : {username}
+    </h6>
+  </div>
+
+  {/* Right: User Menu Icon */}
+  <div className="user-menu">
+    <span className="user-icon">
+      <FaUserCircle size={28} />
+    </span>
+
+    <div className="user-popup">
+      <button onClick={() => setShowPasswordForm(true)}>Change Password</button>
+      <button className="logout-btn" onClick={logout}>Logout</button>
+    </div>
+  </div>
+
+  {/* Password Change Modal */}
+  {showPasswordForm && (
+    <div
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+      style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
     >
-      <h5 className="m-0">
-        Welcome{" "}
-        {role === "teamLead"
-          ? "Team Leader"
-          : role === "superAdmin"
-          ? "Super Admin"
-          : "User"}{" "}
-        : {username}
-      </h5>
-
-      {/* 🧩 User Menu Icon */}
-      <div className="user-menu">
-        <span className="user-icon" ><FaUserCircle size={28} /></span>
-
-        <div className="user-popup">
-          <button onClick={() => setShowPasswordForm(true)}>Change Password</button>
-          <button className="logout-btn" onClick={logout}>Logout</button>
-        </div>
-      </div>
-
-      {/* 🔐 Password Change Modal */}
-      {showPasswordForm && (
-        <div
-          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
-          style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
-        >
-          <div className="bg-white p-4 rounded shadow" style={{ width: "320px" }}>
-            <h5 className="text-center mb-3">Change Password</h5>
-            <form onSubmit={handlePasswordChange}>
-              {/* Old Password */}
-              <div className="mb-3 position-relative">
-                <input
-                  type={showOld ? "text" : "password"}
-                  className="form-control pe-5"
-                  placeholder="Old Password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  required
-                />
-                <span
-                  className="position-absolute top-50 end-0 translate-middle-y me-3"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setShowOld(!showOld)}
-                >
-                  {showOld ? <FaEyeSlash /> : <FaEye />}
-                </span>
-              </div>
-
-              {/* New Password */}
-              <div className="mb-3 position-relative">
-                <input
-                  type={showNew ? "text" : "password"}
-                  className="form-control pe-5"
-                  placeholder="New Password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
-                <span
-                  className="position-absolute top-50 end-0 translate-middle-y me-3"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setShowNew(!showNew)}
-                >
-                  {showNew ? <FaEyeSlash /> : <FaEye />}
-                </span>
-              </div>
-
-              <div className="d-flex justify-content-between">
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    setOldPassword("");
-                    setNewPassword("");
-                    setShowPasswordForm(false);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-sm"
-                  disabled={loading}
-                >
-                  {loading ? "Updating..." : "Update"}
-                </button>
-              </div>
-            </form>
+      <div className="bg-white p-4 rounded shadow" style={{ width: "320px" }}>
+        <h5 className="text-center mb-3">Change Password</h5>
+        <form onSubmit={handlePasswordChange}>
+          {/* Old Password */}
+          <div className="mb-3 position-relative">
+            <input
+              type={showOld ? "text" : "password"}
+              className="form-control pe-5"
+              placeholder="Old Password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              required
+            />
+            <span
+              className="position-absolute top-50 end-0 translate-middle-y me-3"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowOld(!showOld)}
+            >
+              {showOld ? <FaEyeSlash /> : <FaEye />}
+            </span>
           </div>
-        </div>
-      )}
-    </header>
+
+          {/* New Password */}
+          <div className="mb-3 position-relative">
+            <input
+              type={showNew ? "text" : "password"}
+              className="form-control pe-5"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+            <span
+              className="position-absolute top-50 end-0 translate-middle-y me-3"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowNew(!showNew)}
+            >
+              {showNew ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
+
+          <div className="d-flex justify-content-between">
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                setOldPassword("");
+                setNewPassword("");
+                setShowPasswordForm(false);
+              }}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>
+              {loading ? "Updating..." : "Update"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )}
+</header>
+
   );
 };
 

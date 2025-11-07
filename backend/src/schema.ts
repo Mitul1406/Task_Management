@@ -2,6 +2,26 @@ import { buildSchema } from "graphql";
 // import { Schema } from "mongoose";
 
 export const schema=buildSchema(`
+  type UserContribution {
+  userId: ID!
+  username: String
+  totalWorkTime: Float  # in hours or minutes — your choice
+}
+
+type ProjectContribution {
+  projectId: ID!
+  projectName: String
+  totalProjectWorkTime: Float
+  userContributions: [UserContribution]
+}
+  type DashboardCount {
+    totalProjects: Int
+    totalTasks: Int
+    doneTasks: Int
+    pendingTasks: Int
+    inProgressTasks: Int
+    projectContributions: [ProjectContribution]
+  }
     type Project{
         id:ID!,
         name:String!,
@@ -193,6 +213,8 @@ type AuthResponse {
   userDayWiseAdmin(startDate: String!, endDate: String!,userId:ID): UserDayWiseAdminResponse!
   userDayWiseAdminUser(adminId:String!,startDate: String!, endDate: String!): UserDayWiseAdminResponse!
   screenshotsByUser(userId: ID!): [Screenshot!]!
+
+  superAdminDashboardCount: DashboardCount
     }
 
     type Mutation{

@@ -181,14 +181,12 @@ const userTasks = useMemo(() => {
   }
 return (
   <>
-  <div className="mt-4 position-relative">
-  <div className="d-flex justify-content-end align-items-center position-relative mb-3 flex-wrap gap-2">
-      {/* --- Filters Section --- */}
+  <div className="mt-4">
+     <div className="d-flex justify-content-end align-items-center position-relative mb-3 flex-wrap gap-2">
       <div
         className="d-flex align-items-center flex-wrap gap-3 me-auto"
         style={{ position: "absolute", top: "0px", right: "0px" }}
       >
-        {/* User Filter */}
         <div className="d-flex flex-column">
           <label htmlFor="userSelect" className="form-label mb-1 fw-semibold">
             User
@@ -209,7 +207,6 @@ return (
           </select>
         </div>
 
-        {/* Start Date */}
         <div className="d-flex flex-column">
           <label htmlFor="startDate" className="form-label mb-1 fw-semibold">
             Start Date
@@ -224,7 +221,6 @@ return (
           />
         </div>
 
-        {/* End Date */}
         <div className="d-flex flex-column">
           <label htmlFor="endDate" className="form-label mb-1 fw-semibold">
             End Date
@@ -250,8 +246,8 @@ return (
         </button>
         </div>
       </div>
-  </div>
-    <div className="container position-absolute top-0" ref={reportRef}>
+     </div>
+    <div className="container-fluid   top-0" ref={reportRef}>
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center">
         <div>

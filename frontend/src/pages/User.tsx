@@ -3,6 +3,7 @@ import { getUsers, createUser, updateUser, deleteUser } from "../services/api";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
 import "../css/Userpage.css";
+import Pagination from "../components/Pagination";
 
 interface User {
   id: string;
@@ -31,7 +32,7 @@ const UserPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loggedInRole, setLoggedInRole] = useState("");
 
-  const usersPerPage = 8;
+  const usersPerPage = 10;
 
   const fetchUsers = async () => {
     try {
@@ -181,7 +182,7 @@ const UserPage: React.FC = () => {
             <>
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
-                  <thead className="table-light">
+                  <thead >
                     <tr>
                       <th>Username</th>
                       <th>Email</th>
@@ -197,13 +198,13 @@ const UserPage: React.FC = () => {
                         <td>{user.role === "user" ? "Employee" : "Team Lead"}</td>
                         <td>
                           <button
-                            className="btn btn-sm btn-warning me-2"
+                            className="btn btn-sm btn-outline-warning me-2"
                             onClick={() => handleEdit(user)}
                           >
                             Edit
                           </button>
                           <button
-                            className="btn btn-sm btn-danger"
+                            className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDelete(user.id)}
                           >
                             Delete
@@ -216,7 +217,11 @@ const UserPage: React.FC = () => {
               </div>
 
               {/* Pagination */}
-              <div className="pagination-container">
+              <Pagination
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              totalPages={totalPages}/>
+              {/* <div className="pagination-container">
                 <button
                   className="btn btn-light"
                   disabled={currentPage === 1}
@@ -234,7 +239,7 @@ const UserPage: React.FC = () => {
                 >
                   Next
                 </button>
-              </div>
+              </div> */}
             </>
           )}
         </div>

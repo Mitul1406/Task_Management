@@ -28,6 +28,7 @@ import ProjectTl from "./components/teamLead/ProjectTl";
 import TaskTl from "./components/teamLead/TaskTl";
 import TlTask from "./components/teamLead/TlTask";
 import TaskEmp from "./components/Employee/TaskEmp";
+import Dashboard from "./components/superAdmin/Dashboard";
 
 function App() {
   return (
@@ -80,9 +81,9 @@ function App() {
              path="/project-report/:projectId"
              element={
               <ProtectedRoute allowedRoles={["teamLead", "superAdmin"]}> 
-              <Layout>          
+              {/* <Layout>           */}
              <Report />
-             </Layout>
+             {/* </Layout> */}
              </ProtectedRoute>
              }
           />
@@ -100,9 +101,9 @@ function App() {
              path="/timesheet-report/:projectId"
              element={
              <ProtectedRoute allowedRoles={["teamLead", "superAdmin"]}>
-              <Layout>
+              {/* <Layout> */}
              <TimeSheet />
-             </Layout>
+             {/* </Layout> */}
              </ProtectedRoute>
              }
           />
@@ -133,7 +134,7 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["superAdmin"]}>
                 <Layout>
-                <SuperAdminDashboard />
+                <Dashboard />
                 </Layout>
               </ProtectedRoute>
             }
@@ -146,7 +147,7 @@ function App() {
             </Layout>
             </ProtectedRoute>
             } />
-          <Route path="/tasks/:id" element={
+          <Route path="/tasks" element={
             <ProtectedRoute allowedRoles={["superAdmin"]}>
                 <Layout>
             <SuperAdminTask />
@@ -161,7 +162,7 @@ function App() {
             </Layout>
             </ProtectedRoute>
             } />
-          <Route path="/taskTl/:id" element={
+          <Route path="/taskTls" element={
             <ProtectedRoute allowedRoles={["teamLead"]}>
                 <Layout>
             <TaskTl />

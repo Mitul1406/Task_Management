@@ -11,13 +11,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <div
         style={{
-          marginLeft: collapsed ? "20px" : "230px",
-          width: collapsed ? "calc(100% - 80px)" : "calc(100% - 230px)",
+          marginLeft: collapsed ? "20px" : "210px",
+          width: collapsed ? "calc(100% - 70px)" : "calc(100% - 210px)",
         //   transition: "all 0.2s ease",
         }}
       >
         <Header collapse={collapsed} />
-        <div className="container-fluid mt-3" style={{marginLeft:collapsed?"50px":"0px"}}>{children}</div>
+        <div className="container-fluid mt-1" style={{marginLeft:collapsed?"50px":"0px"}}>{children}</div>
       </div>
     </div>
   );

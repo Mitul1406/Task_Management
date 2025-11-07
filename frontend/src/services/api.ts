@@ -523,12 +523,45 @@ query GetUserScreenshots($userId: ID!) {
 
 `;
 
+const SUPERADMINCOUNT=gql`query {
+  superAdminDashboardCount {
+    totalProjects
+    totalTasks
+    doneTasks
+    pendingTasks
+    inProgressTasks
+    projectContributions {
+      projectId
+      projectName
+      totalProjectWorkTime
+      userContributions {
+        userId
+        username
+        totalWorkTime
+      }
+    }
+  }
+}
+`
 // API Functions
+export const getSuperAdminDashboardCount = async () => {
+  try {
+    const res = await client.query({
+      query: SUPERADMINCOUNT,
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.superAdminDashboardCount;
+  } catch (err) {
+    console.error("Failed to fetch Super Admin Dashboard Count:", err);
+    throw err;
+  }
+};
 export const getAdminProjects = async (userId: string) => {
   const res = await client.query({
     query: GET_ADMIN_PROJECT,
     variables: { userId },
-    fetchPolicy: "network-only", // always fetch fresh data
+    fetchPolicy: "network-only", 
   });
 
   return (res as any).data.adminsprojects;
@@ -557,7 +590,7 @@ export const getUserScreenshots = async (userId: string) => {
     const res = await client.query({
       query: SCREEN_SHOT,
       variables: { userId },
-      fetchPolicy: "network-only", // optional: always fetch fresh data
+      fetchPolicy: "network-only", 
     });
 
     return (res as any).data.screenshotsByUser;

@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
     { label: "View User Timesheet", icon: <FaClock />, path: "/alluser-timesheet-report" },
     { label: "View User Screenshot", icon: <FaCamera />, path: "/screenshots" },
     { label: "Projects", icon: <FaTasks />, path: "/projects" },
-    // { label: "Task", icon: <FaCamera />, path: "/screenshots" },
+    { label: "Task", icon: <FaTasks />, path: "/tasks" },
   ];
 
   const teamLeadLinks = [
@@ -58,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
     { label: "View User Timesheet", icon: <FaClock />, path: "/alluser-timesheet-report" },
     { label: "View User Screenshot", icon: <FaCamera />, path: "/screenshots" },
     { label: "Projects", icon: <FaTasks />, path: "/projectsTl" },
+    { label: "Task", icon: <FaTasks />, path: "/taskTls" },
     
   ];
 
@@ -65,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
     { label: "Dashboard", icon: <FaTachometerAlt />, path: "/user" },
     { label: "My Tasks", icon: <FaTasks />, path: "/empTask" },
     { label: "My Timesheet", icon: <FaClock />, path: "/user-timesheet-report/"+id },
-    { label: "View Screenshot", icon: <FaCamera />, path: "/screenshots/"+id },
+    // { label: "View Screenshot", icon: <FaCamera />, path: "/screenshots/"+id },
   ];
 
   let linksToRender: any[] = [];
@@ -75,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
 
   return (
     <div className={`sidebar d-flex flex-column ${collapsed ? "collapsed" : ""}`}>
-      <div className="d-flex align-items-center p-3" style={{justifyContent:collapsed ? "center":"space-between"}}>
+      <div className="d-flex align-items-center p-3" style={{justifyContent:collapsed ? "center":"space-between",minWidth:collapsed ? "0":"210px"}}>
         {!collapsed && <h5 className="m-0 ms-4">Task Tracker</h5>}
         <div
           onClick={toggleSidebar}

@@ -301,7 +301,7 @@ if (userTasks && Object.keys(userTasks).length > 0) {
       </div>
 
 
-      <div className="container mt-4" ref={reportRef}>
+      <div className="container-fluid mt-4" ref={reportRef}>
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center">
           <div>

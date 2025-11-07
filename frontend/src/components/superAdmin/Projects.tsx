@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { getProjects, createProject, deleteProject } from "../../services/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import Pagination from "../../components/Pagination"; // ✅ import reusable pagination
 
 interface Project {
   id: string;
@@ -18,6 +19,11 @@ const SuperAdminProject: React.FC = () => {
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [error, setError] = useState<{ name?: string; description?: string }>({});
   const [showModal, setShowModal] = useState(false);
+
+  // ✅ pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -41,7 +47,7 @@ const SuperAdminProject: React.FC = () => {
     toast.success("Project created successfully!");
     setNewProjectName("");
     setNewProjectDescription("");
-    setShowModal(false)
+    setShowModal(false);
   };
 
   const handleDeleteProject = async (id: string) => {
@@ -51,6 +57,11 @@ const SuperAdminProject: React.FC = () => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
     toast.success("Project deleted successfully!");
   };
+
+  // ✅ pagination logic
+  const totalPages = Math.ceil(projects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProjects = projects.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="container mt-4">
@@ -72,11 +83,6 @@ const SuperAdminProject: React.FC = () => {
             <div className="modal-content border-0">
               <div className="modal-header justify-content-center">
                 <h5 className="modal-title ">Create Project</h5>
-                {/* <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowModal(false)}
-                ></button> */}
               </div>
 
               <div className="modal-body">
@@ -116,65 +122,138 @@ const SuperAdminProject: React.FC = () => {
         </div>
       )}
 
-      {/* Project Cards */}
-      <div className="card p-3 shadow-sm" style={{background:"aliceblue"}}>
-      <div className="row">
-        {projects.length === 0 ? (
-          <p>No projects found.</p>
-        ) : (
-          projects.map((project) => (
-            <div key={project.id} className="col-md-4 mb-3">
-              <div className="card shadow-sm h-100">
-                <div className="card-body">
-                  <h5>{project.name}</h5>
-                  <p>{project.description}</p>
-                  
-    <h6>Created by:{(project as any).adminId.username}</h6>
+      <div className="card p-3 shadow-sm">
+  {paginatedProjects.length === 0 ? (
+    <p>No projects found.</p>
+  ) : (
+    <div className="table-responsive">
+      <table className="table table-hover align-middle text-start">
+        <thead>
+          <tr>
+            {/* <th></th> */}
+            <th>Project Name</th>
+            <th>Description</th>
+            <th>Created By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedProjects.map((project, index) => (
+            <tr key={project.id}>
+              {/* <td>{(currentPage - 1) * itemsPerPage + index + 1}</td> */}
+              <td className="fw-semibold">{project.name}</td>
+              <td>{project.description || "—"}</td>
+              <td>{(project as any).adminId?.username || "Unknown"}</td>
+              <td>
+                <div className="d-flex flex-wrap justify-content-start gap-2">
+                  <button
+                    className="btn btn-outline-info btn-sm"
+                    onClick={() => navigate(`/tasks?projectId=${project.id}`)}
+                  >
+                    Details
+                  </button>
+                  <button
+                    className="btn btn-outline-success btn-sm"
+                    onClick={() => window.open(`/timesheet-report/${project.id}`,"_blank")}
+                  >
+                    Timesheet
+                  </button>
+                  <button
+                    className="btn btn-outline-warning btn-sm"
+                    onClick={() => window.open(`/project-report/${project.id}`, "_blank")}
+                  >
+                    Report
+                  </button>
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => handleDeleteProject(project.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
-                <div className="card-footer">
-  <div className="row g-2">
-    <div className="col-6">
-      <button
-        className="btn btn-info btn-sm w-100"
-        onClick={() => navigate(`/tasks/${project.id}`)}
-      >
-        View Details
-      </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-    
-    <div className="col-6">
-      <button
-        className="btn btn-success btn-sm w-100"
-        onClick={() => navigate(`/timesheet-report/${project.id}`)}
-      >
-        View Timesheet
-      </button>
-    </div>
-    <div className="col-6">
-      <button
-        className="btn btn-warning btn-sm w-100"
-        onClick={() => navigate(`/project-report/${project.id}`)}
-      >
-        View Report
-      </button>
-    </div>
-    <div className="col-6">
-      <button
-        className="btn btn-danger btn-sm w-100"
-        onClick={() => handleDeleteProject(project.id)}
-      >
-        Delete
-      </button>
-    </div>
-  </div>
+  )}
+
+  {/* ✅ Pagination Component */}
+  {projects.length > itemsPerPage && (
+    <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={setCurrentPage}
+    />
+  )}
 </div>
 
+
+      {/* Project Cards */}
+      {/* <div className="card p-3 shadow-sm" style={{ background: "aliceblue" }}>
+        <div className="row">
+          {paginatedProjects.length === 0 ? (
+            <p>No projects found.</p>
+          ) : (
+            paginatedProjects.map((project) => (
+              <div key={project.id} className="col-md-4 mb-3">
+                <div className="card shadow-sm h-100">
+                  <div className="card-body">
+                    <h5>{project.name}</h5>
+                    <p>{project.description}</p>
+                    <h6>Created by: {(project as any).adminId?.username || "Unknown"}</h6>
+                  </div>
+                  <div className="card-footer">
+                    <div className="row g-2">
+                      <div className="col-6">
+                        <button
+                          className="btn btn-info btn-sm w-100"
+                          onClick={() => navigate(`/tasks/${project.id}`)}
+                        >
+                          View Details
+                        </button>
+                      </div>
+                      <div className="col-6">
+                        <button
+                          className="btn btn-success btn-sm w-100"
+                          onClick={() => navigate(`/timesheet-report/${project.id}`)}
+                        >
+                          View Timesheet
+                        </button>
+                      </div>
+                      <div className="col-6">
+                        <button
+                          className="btn btn-warning btn-sm w-100"
+                          onClick={() => navigate(`/project-report/${project.id}`)}
+                        >
+                          View Report
+                        </button>
+                      </div>
+                      <div className="col-6">
+                        <button
+                          className="btn btn-danger btn-sm w-100"
+                          onClick={() => handleDeleteProject(project.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            ))
+          )}
+        </div>
+
+        {projects.length > itemsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
-      </div>
-      </div>
+      </div> */}
     </div>
   );
 };
