@@ -715,14 +715,13 @@ userDayWiseAdmin: async ({
 }: {
   startDate: string | Date;
   endDate: string | Date;
-  userId?: string; // 👈 optional (if not provided, you can still handle all)
+  userId?: string;
 }) => {
   const start = new Date(startDate);
   start.setUTCHours(0, 0, 0, 0);
   const end = new Date(endDate);
   end.setUTCHours(23, 59, 59, 999);
 
-  // --- Generate all dates between start and end ---
   const dates: Date[] = [];
   const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
   const endUTC = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
@@ -731,9 +730,12 @@ userDayWiseAdmin: async ({
     current.setUTCDate(current.getUTCDate() + 1);
   }
 
-  // ✅ Fetch either the selected user or all users
-  const userFilter = userId ? { _id: userId } : {}; // 👈 filter condition
-  const users = await User.find(userFilter).lean();
+  const userFilter = userId ? { _id: userId } : {}; 
+  const users = await User.find({
+  ...userFilter,
+  role: { $ne: "superAdmin" }  
+}).lean();
+
 
   const result: any[] = [];
 
@@ -765,13 +767,11 @@ userDayWiseAdmin: async ({
       };
     }
 
-    // --- Get all timers for these tasks (by anyone) in this date range ---
     const allTimers = await Timer.find({
       taskId: { $in: workedTaskIds.map((id) => new Types.ObjectId(id)) },
       startTime: { $gte: start, $lte: end },
     }).lean();
 
-    // --- Group work by (taskId -> userId -> date) ---
     const workedByTaskUserDate: Record<string, Record<string, Record<string, number>>> = {};
     for (const timer of allTimers) {
       const taskId = timer.taskId.toString();
@@ -784,7 +784,6 @@ userDayWiseAdmin: async ({
         (workedByTaskUserDate[taskId][uId][dayKey] || 0) + (timer.duration || 0);
     }
 
-    // --- Build day-wise summary ---
     const projectMap: Record<string, any> = {};
 
     const dayWiseData = dates.map((date) => {

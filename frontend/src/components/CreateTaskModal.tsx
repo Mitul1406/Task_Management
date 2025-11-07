@@ -6,6 +6,7 @@ import { jwtDecode } from "jwt-decode";
 interface CreateTaskModalProps {
   show: boolean;
   onClose: () => void;
+  fetchUserTask:()=>any;
 }
 
 interface JwtPayload {
@@ -16,7 +17,7 @@ interface JwtPayload {
   exp?: number;
 }
 
-const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose }) => {
+const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUserTask }) => {
   const [title, setTitle] = useState("");
   const [estimatedHours, setEstimatedHours] = useState(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState(0);
@@ -148,6 +149,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose }) => {
       );
 
       toast.success(`Task "${task.title}" created successfully!`);
+      fetchUserTask()
       handleClose();
 
       setTitle("");
@@ -166,18 +168,17 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose }) => {
 
   return (
     <div
-      className="modal fade"
-      tabIndex={-1}
-      ref={modalRef}
-      role="dialog"
-      style={{ display: "none" }}
-    >
+        className={`modal fade ${show ? "show d-block" : ""}`}
+        tabIndex={-1}
+        role="dialog"
+        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      >
       <div className="modal-dialog modal-dialog-centered" style={{ width: "450px" }} role="document">
         <div className="modal-content">
           <form onSubmit={handleSubmit}>
-            <div className="modal-header">
+            <div className="modal-header justify-content-center">
               <h5 className="modal-title">Create Your Own Task</h5>
-              <button type="button" className="btn-close" aria-label="Close" onClick={handleClose}></button>
+              {/* <button type="button" className="btn-close" aria-label="Close" onClick={handleClose}></button> */}
             </div>
 
             <div className="modal-body">
@@ -259,7 +260,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose }) => {
               {dateError && <small className="text-danger">{dateError}</small>}
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer justify-content-between">
               <button type="button" className="btn btn-secondary" onClick={handleClose}>
                 Cancel
               </button>

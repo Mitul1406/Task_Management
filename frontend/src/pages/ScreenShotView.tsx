@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import { getUsers, getUserScreenshots } from "../services/api";
 import { toast } from "react-toastify";
+import Pagination from "../components/Pagination";
 
 interface Screenshot {
   id: string;
@@ -18,7 +19,7 @@ interface User {
 
 interface JwtPayload {
   id: string;
-  role: "projectManager"|"teamLead" | "superAdmin" | "user";
+  role: "projectManager" | "teamLead" | "superAdmin" | "user";
 }
 
 export default function ScreenShotView() {
@@ -32,8 +33,7 @@ export default function ScreenShotView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedScreenshots, setSelectedScreenshots] = useState<string[]>([]);
-  const [userRole, setUserRole] = useState<"projectManager"|"teamLead" | "superAdmin" | "user">("user");
-
+  const [userRole, setUserRole] = useState<"projectManager" | "teamLead" | "superAdmin" | "user">("user");
   const [selectMode, setSelectMode] = useState(false);
 
   // Date filters
@@ -41,15 +41,15 @@ export default function ScreenShotView() {
   const [startDate, setStartDate] = useState<string>(today);
   const [endDate, setEndDate] = useState<string>(today);
 
-  // Modal for viewing
   const [modalOpen, setModalOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState<string>("");
 
-  // Delete confirmation modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteIds, setDeleteIds] = useState<string[]>([]);
 
-  // Decode role from token
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -62,10 +62,9 @@ export default function ScreenShotView() {
     }
   }, []);
 
-  // Fetch users if admin
   useEffect(() => {
     if (currentUserId) return;
-    if (!["teamLead","projectManager", "superAdmin"].includes(userRole)) return;
+    if (!["teamLead", "superAdmin"].includes(userRole)) return;
 
     const fetchUsers = async () => {
       try {
@@ -98,12 +97,14 @@ export default function ScreenShotView() {
     fetchScreenshots();
   }, [selectedUserId]);
 
-  // Filter by date
+  // Filter screenshots by date
   useEffect(() => {
     if (!startDate && !endDate) {
       setFilteredScreenshots(screenshots);
+      setCurrentPage(1);
       return;
     }
+
     const filtered = screenshots.filter((shot) => {
       const shotDate = new Date(shot.createdAt).setHours(0, 0, 0, 0);
       const start = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : null;
@@ -114,8 +115,22 @@ export default function ScreenShotView() {
       if (end) return shotDate <= end;
       return true;
     });
+
     setFilteredScreenshots(filtered);
+    setCurrentPage(1);
   }, [screenshots, startDate, endDate]);
+
+  // Reset pagination when user changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedUserId]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredScreenshots.length / itemsPerPage);
+  const paginatedScreenshots = filteredScreenshots.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const openModal = (url: string) => {
     setCurrentImage(url);
@@ -126,7 +141,6 @@ export default function ScreenShotView() {
     setModalOpen(false);
   };
 
-  // Select Mode
   const toggleSelectMode = () => {
     setSelectMode((prev) => !prev);
     setSelectedScreenshots([]);
@@ -137,15 +151,14 @@ export default function ScreenShotView() {
     );
   };
 
-  // Open delete modal
   const confirmDelete = (ids: string[]) => {
     setDeleteIds(ids);
     setDeleteModalOpen(true);
   };
 
-  // Execute delete
   const deleteScreenshots = async (ids: string[]) => {
-    if (!["projectManager","teamLead","superAdmin"].includes(userRole) || ids.length === 0) return;
+    if (!["projectManager", "teamLead", "superAdmin"].includes(userRole) || ids.length === 0)
+      return;
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/screenshots`, {
@@ -175,12 +188,12 @@ export default function ScreenShotView() {
 
   return (
     <div className="container mt-4">
-      <h3 className="mb-3">User Screenshots</h3>
+      <h3 className="mb-3">Employee Screenshots</h3>
 
       {/* Filters */}
       <div className="mb-4 d-flex flex-wrap align-items-center gap-3 position-relative">
         {!currentUserId &&
-          ["teamLead","projectManager", "superAdmin"].includes(userRole) &&
+          ["teamLead", "projectManager", "superAdmin"].includes(userRole) &&
           users.length > 0 && (
             <div>
               <label className="form-label">Select User</label>
@@ -224,57 +237,54 @@ export default function ScreenShotView() {
           />
         </div>
 
-        {/* Toggle Select Mode */}
-        {["teamLead","projectManager", "superAdmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
-          <button className="btn btn-outline-primary ms-auto position-absolute"
-          style={{ top: "0", right: "0" }}
-          onClick={toggleSelectMode}>
-            {
-            ( selectMode ? "Exit Select Mode" : "Select Screenshots")}
+        {["superAdmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
+          <button
+            className="btn btn-outline-primary ms-auto position-absolute"
+            style={{ top: "0", right: "0" }}
+            onClick={toggleSelectMode}
+          >
+            {selectMode ? "Exit Select Mode" : "Select Screenshots"}
           </button>
         )}
       </div>
 
-      {/* Bulk delete */}
+      {/* Bulk Delete */}
       {selectMode && (
-  <div className="mb-3 d-flex flex-wrap align-items-center gap-2">
-    <button
-      className="btn btn-outline-success"
-      style={{minWidth:"120px"}}
-      onClick={() => {
-        if (selectedScreenshots.length === filteredScreenshots.length) {
-          setSelectedScreenshots([]); 
-        } else {
-          setSelectedScreenshots(filteredScreenshots.map((s) => s.id)); // Select all
-        }
-      }}
-    >
-      {selectedScreenshots.length === filteredScreenshots.length
-        ? "Unselect All"
-        : "Select All"}
-    </button>
+        <div className="mb-3 d-flex flex-wrap align-items-center gap-2">
+          <button
+            className="btn btn-outline-success"
+            style={{ minWidth: "120px" }}
+            onClick={() => {
+              if (selectedScreenshots.length === filteredScreenshots.length) {
+                setSelectedScreenshots([]);
+              } else {
+                setSelectedScreenshots(filteredScreenshots.map((s) => s.id));
+              }
+            }}
+          >
+            {selectedScreenshots.length === filteredScreenshots.length
+              ? "Unselect All"
+              : "Select All"}
+          </button>
 
-    {/* Delete Selected */}
-    <button
-      className="btn btn-danger"
-      style={{minWidth:"180px"}}
-      disabled={selectedScreenshots.length === 0}
-      onClick={() => confirmDelete(selectedScreenshots)}
-    >
-      Delete Selected ({selectedScreenshots.length})
-    </button>
+          <button
+            className="btn btn-danger"
+            style={{ minWidth: "180px" }}
+            disabled={selectedScreenshots.length === 0}
+            onClick={() => confirmDelete(selectedScreenshots)}
+          >
+            Delete Selected ({selectedScreenshots.length})
+          </button>
 
-    {/* Clear Selection */}
-    <button
-      className="btn btn-secondary"
-      onClick={() => setSelectedScreenshots([])}
-      disabled={selectedScreenshots.length === 0}
-    >
-      Clear Selection
-    </button>
-  </div>
-)}
-
+          <button
+            className="btn btn-secondary"
+            onClick={() => setSelectedScreenshots([])}
+            disabled={selectedScreenshots.length === 0}
+          >
+            Clear Selection
+          </button>
+        </div>
+      )}
 
       {/* Screenshots */}
       {loading ? (
@@ -284,69 +294,117 @@ export default function ScreenShotView() {
       ) : filteredScreenshots.length === 0 ? (
         <p>No screenshots available.</p>
       ) : (
-        <div className="row">
-          {filteredScreenshots.map((shot) => (
-            <div key={shot.id} className="col-12 col-md-4 mb-3">
-              <div className="card h-100 position-relative">
-                {selectMode && ["teamLead","projectManager", "superAdmin"].includes(userRole) && (
-                  <input
-                    type="checkbox"
-                    className="position-absolute top-0 start-0 m-2"
-                    checked={selectedScreenshots.includes(shot.id)}
-                    onChange={() => toggleSelectScreenshot(shot.id)}
+        <>
+          <div className="row">
+            {paginatedScreenshots.map((shot) => (
+              <div key={shot.id} className="col-12 col-md-4 mb-3">
+                <div className="card h-100 position-relative">
+                  {selectMode && ["superAdmin"].includes(userRole) && (
+                    <input
+                      type="checkbox"
+                      className="position-absolute top-0 start-0 m-2"
+                      checked={selectedScreenshots.includes(shot.id)}
+                      onChange={() => toggleSelectScreenshot(shot.id)}
+                    />
+                  )}
+                  <img
+                    src={`${process.env.REACT_APP_BACKEND_URL}${shot.url}`}
+                    alt={`Screenshot ${shot.id}`}
+                    className="card-img-top"
+                    style={{ maxHeight: "200px", objectFit: "cover", cursor: "pointer" }}
+                    onClick={() =>
+                      openModal(`${process.env.REACT_APP_BACKEND_URL}${shot.url}`)
+                    }
                   />
-                )}
-                <img
-                  src={`${process.env.REACT_APP_BACKEND_URL}${shot.url}`}
-                  alt={`Screenshot ${shot.id}`}
-                  className="card-img-top"
-                  style={{ maxHeight: "200px", objectFit: "cover", cursor: "pointer" }}
-                  onClick={() => openModal(`${process.env.REACT_APP_BACKEND_URL}${shot.url}`)}
-                />
-                {!selectMode && ["teamLead","projectManager", "superAdmin"].includes(userRole) && (
-                  <button
-                    className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
-                    onClick={() => confirmDelete([shot.id])}
-                  >
-                    🗑️
-                  </button>
-                )}
-                <div className="card-body p-2 text-center">
-                  <small className="text-muted">
-                    {new Date(shot.createdAt).toLocaleString()}
-                  </small>
+                  {!selectMode && ["superAdmin"].includes(userRole) && (
+                    <button
+                      className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                      onClick={() => confirmDelete([shot.id])}
+                    >
+                      🗑️
+                    </button>
+                  )}
+                  <div className="card-body p-2 text-center">
+                    <small className="text-muted">
+                      {new Date(shot.createdAt).toLocaleString()}
+                    </small>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {filteredScreenshots.length > itemsPerPage && (
+  <Pagination
+    currentPage={currentPage}
+    totalPages={totalPages}
+    onPageChange={setCurrentPage}
+  />
+)}
+        </>
       )}
 
-      {/* View Modal */}
       {modalOpen && (
         <div
-          className="modal fade show"
-          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
           onClick={closeModal}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(6px)",
+            zIndex: 1050,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
         >
           <div
-            className="modal-dialog modal-dialog-centered modal-xl"
+            style={{
+              position: "relative",
+              background: "#fff",
+              borderRadius: "10px",
+              padding: "10px",
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              boxShadow: "0 5px 25px rgba(0,0,0,0.5)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Screenshot</h5>
-                <button type="button" className="btn-close" onClick={closeModal}></button>
-              </div>
-              <div className="modal-body text-center">
-                <img
-                  src={currentImage}
-                  alt="Screenshot"
-                  className="img-fluid"
-                  style={{ maxHeight: "90vh", width: "100%", objectFit: "contain" }}
-                />
-              </div>
-            </div>
+            <button
+              onClick={closeModal}
+              style={{
+                position: "absolute",
+                top: "8px",
+                right: "8px",
+                background: "rgba(0,0,0,0.6)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "50%",
+                width: "32px",
+                height: "32px",
+                fontSize: "18px",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+
+            <img
+              src={currentImage}
+              alt="Screenshot"
+              style={{
+                maxWidth: "85vw",
+                maxHeight: "85vh",
+                objectFit: "contain",
+                borderRadius: "8px",
+                display: "block",
+                margin: "auto",
+              }}
+            />
           </div>
         </div>
       )}

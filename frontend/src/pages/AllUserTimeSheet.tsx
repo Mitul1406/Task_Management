@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import html2pdf from "html2pdf.js";
 import { getAllTimesheet, getAdminUserTimesheet, getUsers } from "../services/api";
 import {jwtDecode} from "jwt-decode";
+import Pagination from "../components/Pagination";
 
 const statusMap: Record<string, { label: string; bgColor: string }> = {
   pending: { label: "Pending", bgColor: "#064393ff" },
@@ -48,35 +49,48 @@ const AllUserTimeSheet: React.FC = () => {
   const pdfRef = useRef<HTMLDivElement>(null);
   const [showUserTotals, setShowUserTotals] = useState(false);
   const [selectedUserName, setSelectedUserName] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10; 
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+    useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const role = getCurrentUserRole(); 
-        let data: any[] = [];
+      const role = getCurrentUserRole();
+      let data: any[] = [];
 
-        if (role === "superAdmin") {
-          data = await getAllTimesheet(startDate, endDate,selectedUser||undefined);
-        } else if (role === "teamLead" || role === "projectManager") {
-          const adminId = getCurrentUserId();
-          if (!adminId) throw new Error("Admin ID not found");
-          data = await getAllTimesheet(startDate, endDate,selectedUser||undefined);
-        } else {
-          throw new Error("Unauthorized role");
-        }
-
-        setUsers(data || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load data");
-      } finally {
-        setLoading(false);
+      if (role === "superAdmin") {
+        data = await getAllTimesheet(startDate, endDate, selectedUser || undefined);
+      } else if (role === "teamLead" || role === "projectManager") {
+        const adminId = getCurrentUserId();
+        if (!adminId) throw new Error("Admin ID not found");
+        data = await getAllTimesheet(startDate, endDate, selectedUser || undefined);
+      } else {
+        throw new Error("Unauthorized role");
       }
-    };
 
-    fetchData();
-  }, [startDate, endDate,selectedUser]);
+      setTotalPages(Math.ceil(data.length / itemsPerPage));
+      
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const paginatedData = data.slice(startIdx, startIdx + itemsPerPage);
+      setUsers(paginatedData);
+    } catch (err: any) {
+      setError(err.message || "Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [startDate, endDate, selectedUser, currentPage]);
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [startDate, endDate, selectedUser]);
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -206,9 +220,8 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   setSelectedUserName(foundUser ? foundUser.username : "");
 };
   return (
-    <div className="container-fluid mt-4 position-relative" style={{ padding: "0px 100px" }}>
-      {/* Filter Controls */}
-      <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"100px", justifyContent: "flex-end" }}>
+    <div className="container-fluid mt-4 position-relative" style={{ padding: "10px 30px" }}>
+      <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"20px", justifyContent: "flex-end" }}>
         <div>
         <label className="form-label mb-1">User</label>
         <select
@@ -248,7 +261,6 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         </button>
       </div>
 
-      {/* PDF Content */}
       <div ref={pdfRef}>
         <h4 className="fw-bold text-left mb-2">Timesheet Summary{selectedUserName ? (
     <span style={{ fontWeight: "600", color: "#0d6efd", marginLeft: "8px" }}>
@@ -262,10 +274,8 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
             Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
           </p>
         </div>
-
         <div className="row mb-4">
-          {/* Overall Totals */}
-          <div className="col-md-5 mb-3">
+          <div className="col-md-5 mt-3">
             <div className="card p-4 shadow-sm h-100">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="fw-bold mb-0">Overall Totals</h5>
@@ -287,7 +297,6 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
             </div>
           </div>
 
-          {/* User Totals */}
           {showUserTotals && (
             <div className="col-md-7 mb-3">
               <div className="card p-4 shadow-sm h-100">
@@ -312,12 +321,10 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
             </div>
           )}
         </div>
-
-        {/* Main Table */}
         <div className="table-responsive">
           <table
             className="table table-bordered table-sm align-middle text-left"
-            style={{ border: "1px solid #000", fontSize: "13px", minWidth: "1100px" }}
+            style={{ border: "1px solid #000", fontSize: "13px", minWidth: "1100px",overflow:"auto" }}
           >
             <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
               <tr>
@@ -369,7 +376,15 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
               )}
             </tbody>
           </table>
+
+          <Pagination
+      currentPage={currentPage}
+      onPageChange={setCurrentPage}
+      totalPages={totalPages}
+    />
         </div>
+        
+        
       </div>
     </div>
   );

@@ -523,12 +523,47 @@ query GetUserScreenshots($userId: ID!) {
 
 `;
 
+const SUPERADMINCOUNT=gql`query {
+  superAdminDashboardCount {
+    totalProjects
+    totalTasks
+    totalUser
+    teamLead
+    employee
+    pendingTasks
+    inProgressTasks
+    projectContributions {
+      projectId
+      projectName
+      totalProjectWorkTime
+      userContributions {
+        userId
+        username
+        totalWorkTime
+      }
+    }
+  }
+}
+`
 // API Functions
+export const getSuperAdminDashboardCount = async () => {
+  try {
+    const res = await client.query({
+      query: SUPERADMINCOUNT,
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.superAdminDashboardCount;
+  } catch (err) {
+    console.error("Failed to fetch Super Admin Dashboard Count:", err);
+    throw err;
+  }
+};
 export const getAdminProjects = async (userId: string) => {
   const res = await client.query({
     query: GET_ADMIN_PROJECT,
     variables: { userId },
-    fetchPolicy: "network-only", // always fetch fresh data
+    fetchPolicy: "network-only", 
   });
 
   return (res as any).data.adminsprojects;
@@ -557,7 +592,7 @@ export const getUserScreenshots = async (userId: string) => {
     const res = await client.query({
       query: SCREEN_SHOT,
       variables: { userId },
-      fetchPolicy: "network-only", // optional: always fetch fresh data
+      fetchPolicy: "network-only", 
     });
 
     return (res as any).data.screenshotsByUser;
@@ -651,13 +686,12 @@ export const getTasksByProject = async (projectId: string) => {
   return (res as any).data.tasks;
 };
 
-
 export const createProject = async (name: string, description?: string) => {
   const res = await client.mutate({
     mutation: CREATE_PROJECT,
     variables: { name, description },
   });
-  return (res as any).data.createProject; // returns project document
+  return (res as any).data.createProject;
 };
 
 export const deleteProject = async (id: string) => {
@@ -731,13 +765,7 @@ export const createTaskAdmin = async (
 };
 
 export const updateTaskAdmin = async (
-  id: string,
-  title?: string,
-  estimatedTime?: number,
-  assignedUserId?: string,
-  startDate?: string,
-  endDate?: string
-) => {
+id: string, title?: string, estimatedTime?: number, assignedUserId?: string, startDate?: string, endDate?: string, status?: string) => {
   const res = await client.mutate({
     mutation: UPDATE_TASK,
     variables: { id, title, estimatedTime, assignedUserId,startDate,endDate },

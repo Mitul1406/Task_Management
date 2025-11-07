@@ -390,7 +390,7 @@ This will also delete all its tasks.`
   return (
     <div className="container mt-4">
       {/* <AutoScreenshot/> */}
-      {showPasswordForm && (
+      {/* {showPasswordForm && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
           style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
@@ -437,9 +437,9 @@ This will also delete all its tasks.`
             </form>
           </div>
         </div>
-      )}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Welcome Admin: {username}</h2>
+      )} */}
+      {/* <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2>Welcome Admin: {username}</h2> 
         <div className="d-flex ms-auto">
           <button
             className="btn btn-sm btn-success me-2"
@@ -458,12 +458,7 @@ This will also delete all its tasks.`
         >
           View ScreenShot
         </button>
-          <button
-          className="btn btn-sm btn-warning me-2"
-          onClick={() => setShowPasswordForm(true)}
-        >
-          Change Password
-        </button>
+          
         <button
           className="btn btn-primary me-2"
           onClick={() => {
@@ -472,6 +467,12 @@ This will also delete all its tasks.`
         >
           Users
         </button>
+         <button
+          className="btn btn-sm btn-warning me-2"
+          onClick={() => setShowPasswordForm(true)}
+        >
+          Change Password
+        </button> 
         <button
           className="btn btn-danger"
           onClick={() => {
@@ -482,9 +483,9 @@ This will also delete all its tasks.`
           }}
         >
           Logout
-        </button>
+        </button> 
         </div>
-      </div>
+      </div> */}
 
       <h1 className="text-center">Task Tracker</h1>
 

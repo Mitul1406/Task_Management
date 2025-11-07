@@ -21,6 +21,16 @@ import ScreenShotView from "./pages/ScreenShotView";
 import ForgotPass from "./pages/ForgotPass";
 import ResetPage from "./pages/ResetPage";
 import SuperAdminDashboard from "./pages/SuperadminDashboard";
+import Layout from "./components/Layout";
+import SuperAdminProject from "./components/superAdmin/Projects";
+import SuperAdminTask from "./components/superAdmin/Task";
+import ProjectTl from "./components/teamLead/ProjectTl";
+import TaskTl from "./components/teamLead/TaskTl";
+import TlTask from "./components/teamLead/TlTask";
+import TaskEmp from "./components/Employee/TaskEmp";
+import Dashboard from "./components/superAdmin/Dashboard";
+import DashboardTl from "./components/teamLead/DashboardTl";
+import DashboardEmp from "./components/Employee/DashboardEmp";
 
 function App() {
   return (
@@ -32,16 +42,20 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute allowedRoles={["teamLead","projectManager"]}>
-                <AdminDashboard />
+              <ProtectedRoute allowedRoles={["teamLead"]}>
+                <Layout>
+                <DashboardTl />
+                </Layout>
               </ProtectedRoute>
             }
           />
           <Route
             path="/screenshots"
             element={
-              <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
+              <ProtectedRoute allowedRoles={["teamLead", "superAdmin"]}>
+                <Layout>
                 <ScreenShotView />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -49,7 +63,9 @@ function App() {
             path="/screenshots/:id"
             element={
               <ProtectedRoute allowedRoles={["user"]}>
+                <Layout>
                 <ScreenShotView />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -57,39 +73,49 @@ function App() {
             path="/user"
             element={
               <ProtectedRoute allowedRoles={["user"]}>
-                <UserDashboard />
+                <Layout>
+                <DashboardEmp />
+                </Layout>
               </ProtectedRoute>
             }
           />
           <Route
              path="/project-report/:projectId"
              element={
-              <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>           
+              <ProtectedRoute allowedRoles={["teamLead", "superAdmin"]}> 
+              {/* <Layout>           */}
              <Report />
+             {/* </Layout> */}
              </ProtectedRoute>
              }
           />
           <Route
              path="/userView"
              element={
-             <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
+             <ProtectedRoute allowedRoles={["teamLead", "superAdmin"]}>
+              <Layout>
              <User />
+             </Layout>
              </ProtectedRoute>
              }
           />
           <Route
              path="/timesheet-report/:projectId"
              element={
-             <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
+             <ProtectedRoute allowedRoles={["teamLead", "superAdmin"]}>
+              {/* <Layout> */}
              <TimeSheet />
+             {/* </Layout> */}
              </ProtectedRoute>
              }
           />
           <Route
              path="/alluser-timesheet-report"
              element={
-             <ProtectedRoute allowedRoles={["teamLead","projectManager", "superAdmin"]}>
+             <ProtectedRoute allowedRoles={["teamLead", "superAdmin"]}>
+             <Layout>
              <AllUserTimeSheet />
+             </Layout>
              {/* <ExampleTimeAdmin/> */}
              </ProtectedRoute>
              }
@@ -98,7 +124,9 @@ function App() {
              path="/user-timesheet-report/:id"
              element={
              <ProtectedRoute allowedRoles={["user"]}>
+              <Layout>
              <UserTimeSheet />
+             </Layout>
              </ProtectedRoute>
              }
           />
@@ -107,10 +135,56 @@ function App() {
             path="/superAdmin"
             element={
               <ProtectedRoute allowedRoles={["superAdmin"]}>
-                <SuperAdminDashboard />
+                <Layout>
+                <Dashboard />
+                </Layout>
               </ProtectedRoute>
             }
           />
+          {/* superadmin */}
+          <Route path="/projects" element={
+            <ProtectedRoute allowedRoles={["superAdmin"]}>
+                <Layout>
+            <SuperAdminProject />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          <Route path="/tasks" element={
+            <ProtectedRoute allowedRoles={["superAdmin"]}>
+                <Layout>
+            <SuperAdminTask />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          {/* TeamLead */}
+          <Route path="/projectsTl" element={
+            <ProtectedRoute allowedRoles={["teamLead"]}>
+            <Layout>
+            <ProjectTl />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          <Route path="/taskTls" element={
+            <ProtectedRoute allowedRoles={["teamLead"]}>
+                <Layout>
+            <TaskTl />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          <Route path="/tlTask" element={
+            <ProtectedRoute allowedRoles={["teamLead"]}>
+                <Layout>
+            <TlTask />
+            </Layout>
+            </ProtectedRoute>
+            } />
+          <Route path="/empTask" element={
+            <ProtectedRoute allowedRoles={["user"]}>
+                <Layout>
+            <TaskEmp />
+            </Layout>
+            </ProtectedRoute>
+            } />
 
           <Route path="/login" element={<Login />} />
           <Route path="/registration" element={<Register />} />

@@ -14,17 +14,23 @@ const NotificationPermissionBanner: React.FC = () => {
     }
 
     const current = Notification.permission;
-    if(current === "granted" && flag)
-    {
-      toast.success("Notifications already enabled")
-      notifyUser("Notifications Enabled!", "You’ll now receive alerts when timers or tasks change.");
-      flag.current=false;
-    }
     setPermission(current);
 
-    // show modal only if permission not granted
-    if (current !== "granted") {
-      setShowModal(true);
+    const alreadyHandled = localStorage.getItem("notification_permission_checked");
+
+    if (!alreadyHandled && flag.current) {
+      if (current === "granted") {
+        toast.success("Notifications already enabled");
+        notifyUser(
+          "Notifications Enabled!",
+          "You’ll now receive alerts when timers or tasks change."
+        );
+      } else {
+        setShowModal(true);
+      }
+
+      localStorage.setItem("notification_permission_checked", "true");
+      flag.current = false;
     }
   }, []);
 
@@ -177,6 +183,36 @@ const NotificationPermissionBanner: React.FC = () => {
 
 export default NotificationPermissionBanner;
 
+// export const notifyUser = (title: string, body?: string, url?: string) => {
+//   if (!("Notification" in window)) return;
+
+//   if (Notification.permission === "granted") {
+//     const notification = new Notification(title, {
+//       body: body || "",
+//       icon: "/favicon.png",
+//     });
+
+//     notification.onclick = (event) => {
+//       event.preventDefault();
+
+//       setTimeout(() => {
+//         window.focus();
+//         if (url) {
+//           const redirectUrl = url.startsWith("http")
+//             ? url
+//             : `${window.location.origin}${url}`;
+          
+//           console.log("Opening:", redirectUrl);
+//           const win = window.open(redirectUrl, "_self");
+//           if (win) win.focus();
+//         }
+//       }, 100);
+//     };
+//   } else {
+//     console.warn("Notification not permitted:", Notification.permission);
+//   }
+// };
+
 export const notifyUser = (title: string, body?: string, url?: string) => {
   if ("Notification" in window) {
     if (Notification.permission === "granted") {
@@ -189,6 +225,7 @@ export const notifyUser = (title: string, body?: string, url?: string) => {
         event.preventDefault(); 
 
         if (url) {
+          alert(url)
           window.focus();
           window.open(url, "_self");
         }
