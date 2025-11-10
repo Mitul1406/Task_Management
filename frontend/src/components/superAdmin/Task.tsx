@@ -18,6 +18,7 @@ const SuperAdminTask: React.FC = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const projectIdFromURL = queryParams.get("projectId");
+  const status:any = queryParams.get("status");
 
   const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -33,6 +34,11 @@ const SuperAdminTask: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [projectName,setProjectName]=useState("")
   const today = () => new Date().toISOString().split("T")[0];
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedUser, setSelectedUser] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
 
   const [taskForm, setTaskForm] = useState({
     title: "",
@@ -64,10 +70,16 @@ const SuperAdminTask: React.FC = () => {
         toast.error("Failed to update status");
       }
     };
+    useEffect(()=>{
+       if(status)
+       {
+        setSelectedStatus(status)
+       }
+    },[status])
   useEffect(() => {
     fetchProjects();
     fetchUsers();
-  }, []);
+  });
 
   useEffect(() => {
     if (projects.length > 0) {
@@ -89,6 +101,7 @@ const SuperAdminTask: React.FC = () => {
     try {
       const res = await getUsers();
       setUsers(res);
+      console.log(users)
     } catch {
       toast.error("Failed to load users");
     }
@@ -263,6 +276,36 @@ const fetchTasksByProject = async (id: string) => {
 
   return parts.length > 0 ? parts.join(" ") : "-";
 };
+
+useEffect(() => {
+  if (!tasks || tasks.length === 0) return;
+
+  let filtered = [...tasks];
+
+  // Filter by status
+  if (selectedStatus !== "all") {
+    filtered = filtered.filter((t) => t.status === selectedStatus);
+  }
+
+  // Filter by assigned user
+  if (selectedUser !== "all") {
+    filtered = filtered.filter(
+      (t) => t.assignedUser?.id === selectedUser || t.assignedUserId === selectedUser
+    );
+  }
+
+  // Filter by date range
+  if (startDate) {
+    filtered = filtered.filter((t) => new Date(t.startDate) >= new Date(startDate));
+  }
+
+  if (endDate) {
+    filtered = filtered.filter((t) => new Date(t.endDate) <= new Date(endDate));
+  }
+
+  setFilteredTasks(filtered);
+}, [selectedStatus, selectedUser, startDate, endDate, tasks]);
+
   return (
     <div className="container mt-4">
           <h3>Tasks</h3>
@@ -282,6 +325,55 @@ const fetchTasksByProject = async (id: string) => {
             ))}
           </select>
         </div>
+        <div>
+    <label className="fw-bold">Filter By Status:</label>
+    <select
+      className="form-select mt-2"
+      value={selectedStatus}
+      onChange={(e) => setSelectedStatus(e.target.value)}
+    >
+      <option value="all">All Status</option>
+      <option value="pending">Pending</option>
+      <option value="in_progress">In Progress</option>
+      <option value="done">Done</option>
+    </select>
+  </div>
+
+  <div>
+    <label className="fw-bold">Filter By Assigned User:</label>
+    <select
+      className="form-select mt-2"
+      value={selectedUser}
+      onChange={(e) => setSelectedUser(e.target.value)}
+    >
+      <option value="all">All Users</option>
+      {users.map((u) => (
+        <option key={u.id} value={u.id}>
+          {u.username}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label className="fw-bold">Start Date:</label>
+    <input
+      type="date"
+      className="form-control mt-2"
+      value={startDate}
+      onChange={(e) => setStartDate(e.target.value)}
+    />
+  </div>
+
+  <div>
+    <label className="fw-bold">End Date:</label>
+    <input
+      type="date"
+      className="form-control mt-2"
+      value={endDate}
+      onChange={(e) => setEndDate(e.target.value)}
+    />
+  </div>
         <button className="btn btn-primary mt-4" onClick={handleAddTask}>
           + Add Task
         </button>
@@ -314,13 +406,13 @@ const fetchTasksByProject = async (id: string) => {
       </tr>
     </thead>
     <tbody>
-      {tasks.length === 0 ? (
+      {filteredTasks.length === 0 ? (
     <tr>
       <td colSpan={11} className="text-center text-muted py-3">
         No tasks found.
       </td>
     </tr>
-  ):(tasks.map((task) => (
+  ):(filteredTasks.map((task) => (
         <tr key={task.id}>
           <td className="text-wrap text-break">{task.title}</td>
           <td>{task.projectName || projectName || "-"}</td>

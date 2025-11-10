@@ -329,16 +329,17 @@ if (userTasks && Object.keys(userTasks).length > 0) {
               <p>
                 <strong>Total Used:</strong> {formatDuration(totalUsed)}
               </p>
-              <p className="text-danger">
-                <strong>Total Overtime:</strong>{" "}
-                {
-                  formatDuration(totalOvertime)
-                }
-              </p>
+              
               <p className="text-success">
                 <strong>Total Saved:</strong>{" "}
                 {formatDuration(totalSaved)}
               </p>
+              {totalOvertime>0 && <p className="text-danger">
+                <strong>Total Time Extension:</strong>{" "}
+                {
+                  formatDuration(totalOvertime)
+                }
+              </p>}
             </div>
           </div>
 
@@ -481,13 +482,19 @@ const saved = userDayWise.reduce((total, day: any) => {
               <p>
                 Estimated: {formatDuration(est)} | Used: {formatDuration(used)}{" "}
                 <br />
-                <span className="text-danger">
-                  Overtime: {formatDuration(overtime)}
-                </span>{" "}
-                |{" "}
+                
                 <span className="text-success">
                   Saved: {formatDuration(saved)}
-                </span>
+                </span>{overtime > 0 && (
+  <>
+    {`Overtime `}
+    |{" "}
+    <span className="text-danger">
+      Time Extension: {formatDuration(overtime)}
+    </span>
+  </>
+)}
+
               </p>
 
               <h6 className="mt-3">Day-wise Report</h6>

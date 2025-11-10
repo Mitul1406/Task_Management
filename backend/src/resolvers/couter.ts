@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Project } from "../models/Project.js";
 import { Task } from "../models/Task.js";
 import { Timer } from "../models/Timer.js";
@@ -95,8 +96,55 @@ export const counterResolver = {
     console.error("Error in superAdminDashboardCount:", err);
     throw new Error("Failed to fetch dashboard counts");
   }
+},
+teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
+  try {
+    if (!userId) throw new Error("User ID required");
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid userId format");
+    }
+
+    const projects = await Project.find({
+      adminId: new mongoose.Types.ObjectId(userId),
+    }).select("_id");
+
+    if (!projects.length) {
+      return {
+        totalProjects: 0,
+        totalTasks: 0,
+        pendingTasks: 0,
+        inProgressTasks: 0,
+      };
+    }
+
+    const projectIds = projects.map((p) => p._id);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const allTasks = await Task.find({
+      assignedUserId:new mongoose.Types.ObjectId(userId),
+      projectId: { $in: projectIds },
+      startDate: { $lte: todayEnd },
+      endDate: { $gte: todayStart },
+    }).select("status");
+    const totalTasks = allTasks.length;
+    const pendingTasks = allTasks.filter((t) => t.status === "pending").length;
+    const inProgressTasks = allTasks.filter((t) => t.status === "in_progress").length;
+
+    return {
+      totalProjects: projects.length,
+      totalTasks,
+      pendingTasks,
+      inProgressTasks,
+    };
+  } catch (err: any) {
+    console.error("Error in teamLeadDashboardCount:", err.message);
+    throw new Error("Failed to fetch dashboard data");
+  }
+},
 }
-
-
-
-};

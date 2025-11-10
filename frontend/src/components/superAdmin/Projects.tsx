@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { getProjects, createProject, deleteProject } from "../../services/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import Pagination from "../../components/Pagination"; // ✅ import reusable pagination
+import Pagination from "../../components/Pagination";
 
 interface Project {
   id: string;
@@ -15,12 +15,13 @@ interface Project {
 const SuperAdminProject: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<{ name?: string; description?: string }>({});
   const [showModal, setShowModal] = useState(false);
 
-  // ✅ pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -31,7 +32,16 @@ const SuperAdminProject: React.FC = () => {
   const fetchProjects = async () => {
     const res = await getProjects();
     setProjects(res);
+    setFilteredProjects(res);
   };
+
+  useEffect(() => {
+    const filtered = projects.filter((p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredProjects(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, projects]);
 
   const handleCreateProject = async () => {
     const errors: { name?: string; description?: string } = {};
@@ -58,21 +68,32 @@ const SuperAdminProject: React.FC = () => {
     toast.success("Project deleted successfully!");
   };
 
-  // ✅ pagination logic
-  const totalPages = Math.ceil(projects.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProjects = projects.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedProjects = filteredProjects.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <h2 className="m-0">Projects</h2>
+
+        
+
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           + New Project
         </button>
       </div>
+      <div className="mb-3">
+        <label className="fw-bold mb-1">Search By Project Name:</label>
+        <input
+          type="text"
+          className="form-control w-auto"
+          placeholder="Search by project name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ minWidth: "250px" }}
+        /></div>
 
-      {/* Modal */}
       {showModal && (
         <div
           className="modal fade show d-block"
@@ -107,10 +128,7 @@ const SuperAdminProject: React.FC = () => {
               </div>
 
               <div className="modal-footer justify-content-between">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
                 <button className="btn btn-primary" onClick={handleCreateProject}>
@@ -123,137 +141,72 @@ const SuperAdminProject: React.FC = () => {
       )}
 
       <div className="card p-3 shadow-sm border-0 bg-light">
-  {paginatedProjects.length === 0 ? (
-    <p>No projects found.</p>
-  ) : (
-    <div className="table-responsive">
-      <table className="table table-hover align-middle text-start">
-        <thead>
-          <tr>
-            {/* <th></th> */}
-            <th>Project Name</th>
-            <th>Description</th>
-            <th>Created By</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedProjects.map((project, index) => (
-            <tr key={project.id}>
-              {/* <td>{(currentPage - 1) * itemsPerPage + index + 1}</td> */}
-              <td className="fw-semibold">{project.name}</td>
-              <td>{project.description || "—"}</td>
-              <td>{(project as any).adminId?.username || "Unknown"}</td>
-              <td>
-                <div className="d-flex flex-wrap justify-content-start gap-2">
-                  <button
-                    className="btn btn-outline-info btn-sm"
-                    onClick={() => navigate(`/tasks?projectId=${project.id}`)}
-                  >
-                    Details
-                  </button>
-                  <button
-                    className="btn btn-outline-success btn-sm"
-                    onClick={() => window.open(`/timesheet-report/${project.id}`,"_blank")}
-                  >
-                    Timesheet
-                  </button>
-                  <button
-                    className="btn btn-outline-warning btn-sm"
-                    onClick={() => window.open(`/project-report/${project.id}`, "_blank")}
-                  >
-                    Report
-                  </button>
-                  <button
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={() => handleDeleteProject(project.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )}
-
-  {/* ✅ Pagination Component */}
-  {projects.length > itemsPerPage && (
-    <Pagination
-      currentPage={currentPage}
-      totalPages={totalPages}
-      onPageChange={setCurrentPage}
-    />
-  )}
-</div>
-
-
-      {/* Project Cards */}
-      {/* <div className="card p-3 shadow-sm" style={{ background: "aliceblue" }}>
-        <div className="row">
-          {paginatedProjects.length === 0 ? (
-            <p>No projects found.</p>
-          ) : (
-            paginatedProjects.map((project) => (
-              <div key={project.id} className="col-md-4 mb-3">
-                <div className="card shadow-sm h-100">
-                  <div className="card-body">
-                    <h5>{project.name}</h5>
-                    <p>{project.description}</p>
-                    <h6>Created by: {(project as any).adminId?.username || "Unknown"}</h6>
-                  </div>
-                  <div className="card-footer">
-                    <div className="row g-2">
-                      <div className="col-6">
+        {paginatedProjects.length === 0 ? (
+          <p>No projects found.</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover align-middle text-start">
+              <thead>
+                <tr>
+                  <th>Project Name</th>
+                  <th>Description</th>
+                  <th>Created By</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedProjects.map((project) => (
+                  <tr key={project.id}>
+                    <td className="fw-semibold">{project.name}</td>
+                    <td>{project.description || "—"}</td>
+                    <td>{(project as any).adminId?.username || "Unknown"}</td>
+                    <td>
+                      <div className="d-flex flex-wrap justify-content-start gap-2">
                         <button
-                          className="btn btn-info btn-sm w-100"
-                          onClick={() => navigate(`/tasks/${project.id}`)}
+                          className="btn btn-outline-info btn-sm"
+                          onClick={() => navigate(`/tasks?projectId=${project.id}`)}
                         >
-                          View Details
+                          Details
                         </button>
-                      </div>
-                      <div className="col-6">
                         <button
-                          className="btn btn-success btn-sm w-100"
-                          onClick={() => navigate(`/timesheet-report/${project.id}`)}
+                          className="btn btn-outline-success btn-sm"
+                          onClick={() =>
+                            window.open(`/timesheet-report/${project.id}`, "_blank")
+                          }
                         >
-                          View Timesheet
+                          Timesheet
                         </button>
-                      </div>
-                      <div className="col-6">
                         <button
-                          className="btn btn-warning btn-sm w-100"
-                          onClick={() => navigate(`/project-report/${project.id}`)}
+                          className="btn btn-outline-warning btn-sm"
+                          onClick={() =>
+                            window.open(`/project-report/${project.id}`, "_blank")
+                          }
                         >
-                          View Report
+                          Report
                         </button>
-                      </div>
-                      <div className="col-6">
                         <button
-                          className="btn btn-danger btn-sm w-100"
+                          className="btn btn-outline-danger btn-sm"
                           onClick={() => handleDeleteProject(project.id)}
                         >
                           Delete
                         </button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {projects.length > itemsPerPage && (
+        {filteredProjects.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
         )}
-      </div> */}
+      </div>
     </div>
   );
 };

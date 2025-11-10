@@ -22,7 +22,7 @@ const Pagination: React.FC<PaginationProps> = ({
           disabled={currentPage === 1}
           onClick={() => {
             onPageChange(Math.max(currentPage - 1, 1));
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            // window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         >
           ‹ Prev
@@ -49,7 +49,7 @@ const Pagination: React.FC<PaginationProps> = ({
                     className="page-link"
                     onClick={() => {
                       onPageChange(page);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      // window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                   >
                     {page}
@@ -65,7 +65,7 @@ const Pagination: React.FC<PaginationProps> = ({
           disabled={currentPage === totalPages}
           onClick={() => {
             onPageChange(Math.min(currentPage + 1, totalPages));
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            // window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         >
           Next ›

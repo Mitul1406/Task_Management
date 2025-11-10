@@ -14,6 +14,12 @@ type ProjectContribution {
   totalProjectWorkTime: Float
   userContributions: [UserContribution]
 }
+  type DashboardCountTl{
+  totalProjects: Int,
+      totalTasks: Int,
+      pendingTasks: Int,
+      inProgressTasks: Int,
+  }
   type DashboardCount {
     totalProjects: Int
     totalTasks: Int
@@ -217,6 +223,7 @@ type AuthResponse {
   screenshotsByUser(userId: ID!): [Screenshot!]!
 
   superAdminDashboardCount: DashboardCount
+  teamLeadDashboardCount(userId: ID!): DashboardCountTl
     }
 
     type Mutation{
