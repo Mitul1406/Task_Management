@@ -108,18 +108,22 @@ teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
     const projects = await Project.find({
       adminId: new mongoose.Types.ObjectId(userId),
     }).select("_id");
-
     if (!projects.length) {
       return {
         totalProjects: 0,
         totalTasks: 0,
         pendingTasks: 0,
         inProgressTasks: 0,
+        totalWorkedToday: 0,
       };
     }
+    const sharedProject = await Project.findOne({ name: "Shared Tasks" }).select("_id");
 
-    const projectIds = projects.map((p) => p._id);
-
+    const projectIds = [
+      ...projects.map((p) => p._id),
+      ...(sharedProject ? [sharedProject._id] : []),
+    ];
+    
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -135,15 +139,86 @@ teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
     const totalTasks = allTasks.length;
     const pendingTasks = allTasks.filter((t) => t.status === "pending").length;
     const inProgressTasks = allTasks.filter((t) => t.status === "in_progress").length;
+    const taskIds = allTasks.map((t) => t._id);
+    
+    const timers = await Timer.aggregate([
+      {
+        $match: {
+          taskId: { $in: taskIds },
+          startTime: { $gte: todayStart, $lte: todayEnd },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalDuration: { $sum: "$duration" }, 
+        },
+      },
+    ]);
 
+    const totalWorkedToday = timers[0]?.totalDuration || 0;
     return {
       totalProjects: projects.length,
       totalTasks,
       pendingTasks,
       inProgressTasks,
+      totalWorkedToday,
     };
   } catch (err: any) {
     console.error("Error in teamLeadDashboardCount:", err.message);
+    throw new Error("Failed to fetch dashboard data");
+  }
+},
+empDashboardCount: async ({ userId }: { userId: string }) => {
+  try {
+    if (!userId) throw new Error("User ID required");
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid userId format");
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const allTasks = await Task.find({
+      assignedUserId:new mongoose.Types.ObjectId(userId),
+      startDate: { $lte: todayEnd },
+      endDate: { $gte: todayStart },
+    }).select("status");
+    console.log(allTasks);
+    
+    const totalTasks = allTasks.length;
+    const pendingTasks = allTasks.filter((t) => t.status === "pending").length;
+    const inProgressTasks = allTasks.filter((t) => t.status === "in_progress").length;
+    const taskIds = allTasks.map((t) => t._id);
+    
+    const timers = await Timer.aggregate([
+      {
+        $match: {
+          taskId: { $in: taskIds },
+          startTime: { $gte: todayStart, $lte: todayEnd },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalDuration: { $sum: "$duration" }, 
+        },
+      },
+    ]);
+
+    const totalWorkedToday = timers[0]?.totalDuration || 0;
+    return {
+      totalTasks,
+      pendingTasks,
+      inProgressTasks,
+      totalWorkedToday,
+    };
+  } catch (err: any) {
+    console.error("Error in empDashboardCount:", err.message);
     throw new Error("Failed to fetch dashboard data");
   }
 },

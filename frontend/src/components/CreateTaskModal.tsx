@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { createTaskAdmin } from "../services/api";
+import { createTaskAdmin, getProjects } from "../services/api"; // ✅ add getProjects
 import { jwtDecode } from "jwt-decode";
 
 interface CreateTaskModalProps {
   show: boolean;
   onClose: () => void;
-  fetchUserTask:()=>any;
+  fetchUserTask: () => any;
 }
 
 interface JwtPayload {
@@ -17,23 +17,42 @@ interface JwtPayload {
   exp?: number;
 }
 
-const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUserTask }) => {
+const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
+  show,
+  onClose,
+  fetchUserTask,
+}) => {
   const [title, setTitle] = useState("");
   const [estimatedHours, setEstimatedHours] = useState(0);
   const [estimatedMinutes, setEstimatedMinutes] = useState(0);
   const [estimatedSeconds, setEstimatedSeconds] = useState(0);
-  
-  const todayDate = () => new Date().toISOString().split("T")[0];
-  const [startDate, setStartDate] = useState(todayDate());
-  const [endDate, setEndDate] = useState(todayDate());
+  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
 
-  // Error states
+  // ✅ new: projects state
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState("");
+
+  // Errors
   const [titleError, setTitleError] = useState("");
   const [dateError, setDateError] = useState("");
   const [durationError, setDurationError] = useState("");
 
   const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const data = await getProjects();
+        const newData:any = data.filter((p:any)=>p.name !== "Shared Tasks")
+        setProjects(newData || []);
+      } catch {
+        toast.error("Failed to load projects");
+      }
+    };
+    loadProjects();
+  }, []);
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
@@ -66,9 +85,9 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUs
       setDurationError("");
     }
   }, [show]);
-  
-   const handleClose = ()=> onClose()
-  // Real-time validation handlers
+
+  const handleClose = () => onClose();
+
   const handleTitleChange = (value: string) => {
     setTitle(value);
     setTitleError(value.trim() ? "" : "Task name is required");
@@ -76,43 +95,31 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUs
 
   const handleStartDateChange = (value: string) => {
     setStartDate(value);
-    if (!value || !endDate) {
-      setDateError("Start and End dates are required");
-    } else if (endDate < value) {
-      setDateError("End date cannot be before Start date");
-    } else {
-      setDateError("");
-    }
+    if (!value || !endDate) setDateError("Start and End dates are required");
+    else if (endDate < value) setDateError("End date cannot be before Start date");
+    else setDateError("");
   };
 
   const handleEndDateChange = (value: string) => {
     setEndDate(value);
-    if (!startDate || !value) {
-      setDateError("Start and End dates are required");
-    } else if (value < startDate) {
-      setDateError("End date cannot be before Start date");
-    } else {
-      setDateError("");
-    }
+    if (!startDate || !value) setDateError("Start and End dates are required");
+    else if (value < startDate) setDateError("End date cannot be before Start date");
+    else setDateError("");
   };
 
   const handleDurationChange = (hours: number, minutes: number, seconds: number) => {
     setEstimatedHours(hours);
     setEstimatedMinutes(minutes);
     setEstimatedSeconds(seconds);
-
-    if (hours + minutes + seconds <= 0) {
+    if (hours + minutes + seconds <= 0)
       setDurationError("Estimated duration must be greater than 0");
-    } else {
-      setDurationError("");
-    }
+    else setDurationError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     let valid = true;
-
     if (!title.trim()) {
       setTitleError("Task name is required");
       valid = false;
@@ -139,8 +146,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUs
 
     try {
       setLoading(true);
+
+      // ✅ Pass selectedProject — backend handles fallback to Shared Tasks
       const task = await createTaskAdmin(
-        "",
+        selectedProject || "",
         title,
         totalEstimatedTime,
         assignedUserId,
@@ -149,15 +158,17 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUs
       );
 
       toast.success(`Task "${task.title}" created successfully!`);
-      fetchUserTask()
+      fetchUserTask();
       handleClose();
 
+      // Reset form
       setTitle("");
       setEstimatedHours(0);
       setEstimatedMinutes(0);
       setEstimatedSeconds(0);
-      setStartDate("");
-      setEndDate("");
+      setStartDate(new Date().toISOString().split("T")[0]);
+      setEndDate(new Date().toISOString().split("T")[0]);
+      setSelectedProject("");
     } catch (error) {
       console.error(error);
       toast.error("Failed to create task");
@@ -168,20 +179,36 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUs
 
   return (
     <div
-        className={`modal fade ${show ? "show d-block" : ""}`}
-        tabIndex={-1}
-        role="dialog"
-        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-      >
+      className={`modal fade ${show ? "show d-block" : ""}`}
+      tabIndex={-1}
+      role="dialog"
+      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+    >
       <div className="modal-dialog modal-dialog-centered" style={{ width: "450px" }} role="document">
         <div className="modal-content">
           <form onSubmit={handleSubmit}>
             <div className="modal-header justify-content-center">
               <h5 className="modal-title">Create Your Own Task</h5>
-              {/* <button type="button" className="btn-close" aria-label="Close" onClick={handleClose}></button> */}
             </div>
 
             <div className="modal-body">
+              {/* ✅ Project Selection */}
+              <div className="mb-3">
+                <label className="form-label">Select Project (Optional)</label>
+                <select
+                  className="form-select"
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                >
+                  <option value="">Shared Tasks (default)</option>
+                  {projects.map((proj) => (
+                    <option key={proj.id} value={proj.id}>
+                      {proj.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Task Name */}
               <div className="mb-3">
                 <label className="form-label">Task Name</label>
@@ -195,7 +222,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUs
                 {titleError && <small className="text-danger">{titleError}</small>}
               </div>
 
-              {/* Estimated Duration */}
+              {/* Duration */}
               <div className="mb-3">
                 <label className="form-label">Estimated Duration</label>
                 <div className="d-flex gap-2">
@@ -235,7 +262,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ show, onClose,fetchUs
                 {durationError && <small className="text-danger">{durationError}</small>}
               </div>
 
-              {/* Start & End Dates */}
+              {/* Dates */}
               <div className="d-flex gap-2">
                 <div className="flex-1">
                   <label className="form-label">Start Date</label>

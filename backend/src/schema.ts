@@ -19,6 +19,7 @@ type ProjectContribution {
       totalTasks: Int,
       pendingTasks: Int,
       inProgressTasks: Int,
+      totalWorkedToday: Int,
   }
   type DashboardCount {
     totalProjects: Int
@@ -224,6 +225,7 @@ type AuthResponse {
 
   superAdminDashboardCount: DashboardCount
   teamLeadDashboardCount(userId: ID!): DashboardCountTl
+  empDashboardCount(userId: ID!): DashboardCountTl
     }
 
     type Mutation{

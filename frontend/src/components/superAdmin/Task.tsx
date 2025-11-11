@@ -39,7 +39,7 @@ const SuperAdminTask: React.FC = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
-
+  const [errors, setErrors] = useState<any>({});
   const [taskForm, setTaskForm] = useState({
     title: "",
     projectId: "",
@@ -117,10 +117,7 @@ const SuperAdminTask: React.FC = () => {
       })
     );
     const combined = all.flat();
-    setTotalPages(Math.ceil(combined.length / tasksPerPage));
-    const start = (currentPage - 1) * tasksPerPage;
-    const paginated = combined.slice(start, start + tasksPerPage);
-    setTasks(paginated);
+    setTasks(combined); // store all
   } catch {
     toast.error("Failed to fetch tasks");
   } finally {
@@ -128,22 +125,21 @@ const SuperAdminTask: React.FC = () => {
   }
 };
 
+
 const fetchTasksByProject = async (id: string) => {
   try {
     setLoading(true);
     const res = await getTasksByProject(id);
-    setTotalPages(Math.ceil(res.length / tasksPerPage));
-    const start = (currentPage - 1) * tasksPerPage;
-    const paginated = res.slice(start, start + tasksPerPage);
-    setTasks(paginated);
-    const data:any=projects.filter(p=>p.id === id)
-    setProjectName(data[0].name)
+    const project = projects.find(p => p.id === id);
+    setProjectName(project?.name || "-");
+    setTasks(res.map((t: any) => ({ ...t, projectName: project?.name })));
   } catch {
     toast.error("Failed to fetch project tasks");
   } finally {
     setLoading(false);
   }
 };
+
 
   const handleProjectFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -187,8 +183,6 @@ const fetchTasksByProject = async (id: string) => {
     proId = projects.filter((p) => p.id === selectedProject);
   }
 
-  console.log("Selected Project:", proId);
-  console.log("Task details:", task);
     
     setEditMode(true);
     setCurrentTaskId(task.id);
@@ -208,48 +202,84 @@ const fetchTasksByProject = async (id: string) => {
   };
 
   const handleSaveTask = async () => {
-    try {
-      if (!taskForm.title || !taskForm.projectId) {
-        toast.warning("Please enter title and select project");
-        return;
-      }
-
-      const estimatedTime =
-        taskForm.estimatedHours * 3600 +
-        taskForm.estimatedMinutes * 60 +
-        taskForm.estimatedSeconds;
-
-      if (editMode && currentTaskId) {
-        await updateTaskAdmin(
-          currentTaskId,
-          taskForm.title,
-          estimatedTime,
-          taskForm.assignedUserId,
-          taskForm.startDate,
-          taskForm.endDate,
-          taskForm.status
-        );
-        toast.success("Task updated successfully");
-      } else {
-        await createTaskAdmin(
-          taskForm.projectId,
-          taskForm.title,
-          estimatedTime,
-          taskForm.assignedUserId,
-          taskForm.startDate,
-          taskForm.endDate
-        );
-        toast.success("Task added successfully");
-      }
-
-      setShowModal(false);
-      if (selectedProject === "all") fetchAllTasks();
-      else fetchTasksByProject(selectedProject);
-    } catch {
-      toast.error("Error saving task");
-    }
+  const newErrors = {
+    projectId: "",
+    title: "",
+    estimatedTime: "",
+    assignedUserId: "",
+    startDate: "",
+    endDate: "",
   };
 
+  // Validate required fields
+  if (!taskForm.projectId) newErrors.projectId = "Please select a project.";
+  if (!taskForm.title.trim()) newErrors.title = "Task name is required.";
+  if (!taskForm.assignedUserId)
+    newErrors.assignedUserId = "Please select a user.";
+
+  // Estimated time validation
+  const { estimatedHours, estimatedMinutes, estimatedSeconds } = taskForm;
+  const totalSeconds =
+    (Number(estimatedHours) || 0) * 3600 +
+    (Number(estimatedMinutes) || 0) * 60 +
+    (Number(estimatedSeconds) || 0);
+  if (totalSeconds <= 0)
+    newErrors.estimatedTime = "Enter at least one non-zero time value.";
+
+  // Optional: start–end date logic
+  if (taskForm.startDate && taskForm.endDate) {
+    if (new Date(taskForm.endDate) < new Date(taskForm.startDate))
+      newErrors.endDate = "End date cannot be before start date.";
+  }
+
+  // Show errors if any
+  if (Object.values(newErrors).some((msg) => msg)) {
+    setErrors(newErrors);
+    return;
+  }
+
+  setErrors({
+    projectId: "",
+    title: "",
+    estimatedTime: "",
+    assignedUserId: "",
+    startDate: "",
+    endDate: "",
+  });
+
+  try {
+    const estimatedTime = totalSeconds;
+
+    if (editMode && currentTaskId) {
+      await updateTaskAdmin(
+        currentTaskId,
+        taskForm.title,
+        estimatedTime,
+        taskForm.assignedUserId,
+        taskForm.startDate,
+        taskForm.endDate,
+        taskForm.status
+      );
+      toast.success("Task updated successfully");
+    } else {
+      await createTaskAdmin(
+        taskForm.projectId,
+        taskForm.title,
+        estimatedTime,
+        taskForm.assignedUserId,
+        taskForm.startDate,
+        taskForm.endDate
+      );
+      toast.success("Task added successfully");
+    }
+
+    setShowModal(false);
+    if (selectedProject === "all") fetchAllTasks();
+    else fetchTasksByProject(selectedProject);
+  } catch {
+    toast.error("Error saving task");
+  }
+};
   const handleDeleteTask = async (id: string) => {
     if (!window.confirm("Are you sure to delete this task?")) return;
     try {
@@ -278,33 +308,49 @@ const fetchTasksByProject = async (id: string) => {
 };
 
 useEffect(() => {
-  if (!tasks || tasks.length === 0) return;
+  if (!tasks || tasks.length === 0) {
+    setFilteredTasks([]);
+    setTotalPages(1);
+    return;
+  }
 
   let filtered = [...tasks];
 
-  // Filter by status
   if (selectedStatus !== "all") {
     filtered = filtered.filter((t) => t.status === selectedStatus);
   }
 
-  // Filter by assigned user
   if (selectedUser !== "all") {
     filtered = filtered.filter(
       (t) => t.assignedUser?.id === selectedUser || t.assignedUserId === selectedUser
     );
   }
 
-  // Filter by date range
   if (startDate) {
-    filtered = filtered.filter((t) => new Date(t.startDate) >= new Date(startDate));
+    filtered = filtered.filter(
+      (t) => t.startDate && new Date(t.startDate) >= new Date(startDate)
+    );
   }
 
   if (endDate) {
-    filtered = filtered.filter((t) => new Date(t.endDate) <= new Date(endDate));
+    filtered = filtered.filter(
+      (t) => t.endDate && new Date(t.endDate) <= new Date(endDate)
+    );
   }
 
-  setFilteredTasks(filtered);
-}, [selectedStatus, selectedUser, startDate, endDate, tasks]);
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / tasksPerPage);
+  setTotalPages(totalPages);
+
+  const start = (currentPage - 1) * tasksPerPage;
+  const paginated = filtered.slice(start, start + tasksPerPage);
+
+  setFilteredTasks(paginated);
+}, [tasks, selectedStatus, selectedUser, startDate, endDate, currentPage]);
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [selectedStatus, selectedUser, startDate, endDate]);
 
   return (
     <div className="container mt-4">
@@ -337,9 +383,9 @@ useEffect(() => {
       <option value="in_progress">In Progress</option>
       <option value="done">Done</option>
     </select>
-  </div>
+        </div>
 
-  <div>
+        <div>
     <label className="fw-bold">Filter By Assigned User:</label>
     <select
       className="form-select mt-2"
@@ -353,7 +399,7 @@ useEffect(() => {
         </option>
       ))}
     </select>
-  </div>
+        </div>
 
   <div>
     <label className="fw-bold">Start Date:</label>
@@ -487,135 +533,191 @@ useEffect(() => {
       </h5>
 
       <div className="d-flex flex-column gap-3">
-        {/* Project */}
+        
+<div>
+  <label>Project</label>
+  <select
+  className={`form-select ${errors.projectId ? "is-invalid" : ""}`}
+  value={taskForm.projectId}
+  onChange={(e) => {
+    setTaskForm({ ...taskForm, projectId: e.target.value });
+    if (errors.projectId && e.target.value)
+      setErrors((prev:any) => ({ ...prev, projectId: "" }));
+  }}
+>
+  <option value="">Select Project</option>
+  {projects.map((p) => (
+    <option key={p.id} value={p.id}>
+      {p.name}
+    </option>
+  ))}
+</select>
+{errors.projectId && <small className="text-danger">{errors.projectId}</small>}
+
+</div>
+
+<div>
+  <label>Task Name</label>
+  <input
+  type="text"
+  className={`form-control ${errors.title ? "is-invalid" : ""}`}
+  value={taskForm.title}
+  onChange={(e) => {
+    setTaskForm({ ...taskForm, title: e.target.value });
+    if (errors.title && e.target.value.trim())
+      setErrors((prev:any) => ({ ...prev, title: "" }));
+  }}
+/>
+{errors.title && <small className="text-danger">{errors.title}</small>}
+
+</div>
+
+<div className="row g-3">
+  <div className="col-md-6">
+    <label>Start Date</label>
+    <input
+      type="date"
+      className={`form-control ${errors.startDate ? "is-invalid" : ""}`}
+      value={taskForm.startDate}
+      onChange={(e) =>
+        setTaskForm({ ...taskForm, startDate: e.target.value })
+      }
+    />
+    {errors.startDate && (
+      <small className="text-danger">{errors.startDate}</small>
+    )}
+  </div>
+
+  <div className="col-md-6">
+    <label>End Date</label>
+    <input
+      type="date"
+      className={`form-control ${errors.endDate ? "is-invalid" : ""}`}
+      min={taskForm.startDate || ""}
+      value={taskForm.endDate}
+      onChange={(e) =>
+        setTaskForm({ ...taskForm, endDate: e.target.value })
+      }
+    />
+    {errors.endDate && (
+      <small className="text-danger">{errors.endDate}</small>
+    )}
+  </div>
+</div>
+
         <div>
-          <label>Project</label>
-          <select
-            className="form-select"
-            value={taskForm.projectId}
-            onChange={(e) =>
-              setTaskForm({ ...taskForm, projectId: e.target.value })
-            }
-          >
-            <option value="">Select Project</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
+  <label>Estimated Time</label>
+  <div className="row g-3">
+    <div className="col-md-4">
+      <input
+        type="number"
+        className={`form-control ${
+          errors.estimatedTime ? "is-invalid" : ""
+        }`}
+        placeholder="Hours"
+        min={0}
+        value={taskForm.estimatedHours}
+        onChange={(e) => {
+          const value = Number(e.target.value);
+          const updatedForm = { ...taskForm, estimatedHours: value };
 
-        {/* Task Name */}
-        <div>
-          <label>Task Name</label>
-          <input
-            type="text"
-            className="form-control"
-            value={taskForm.title}
-            onChange={(e) =>
-              setTaskForm({ ...taskForm, title: e.target.value })
-            }
-          />
-        </div>
+          const { estimatedHours, estimatedMinutes, estimatedSeconds } = updatedForm;
+          if (
+            estimatedHours > 0 ||
+            estimatedMinutes > 0 ||
+            estimatedSeconds > 0
+          ) {
+            setErrors((prev: any) => ({ ...prev, estimatedTime: "" }));
+          }
 
-        {/* Dates */}
-        <div className="row g-3">
-          <div className="col-md-6">
-            <label>Start Date</label>
-            <input
-              type="date"
-              className="form-control"
-              value={taskForm.startDate}
-              onChange={(e) =>
-                setTaskForm({ ...taskForm, startDate: e.target.value })
-              }
-            />
-          </div>
-          <div className="col-md-6">
-            <label>End Date</label>
-            <input
-              type="date"
-              className="form-control"
-              min={taskForm.startDate || ""}
-              value={taskForm.endDate}
-              onChange={(e) =>
-                setTaskForm({ ...taskForm, endDate: e.target.value })
-              }
-            />
-          </div>
-        </div>
+          setTaskForm(updatedForm);
+        }}
+      />
+    </div>
 
-        {/* Estimated Time */}
-        <div>
-          <label>Estimated Time</label>
-          <div className="row g-3">
-            <div className="col-md-4">
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Hours"
-                min={0}
-                value={taskForm.estimatedHours}
-                onChange={(e) =>
-                  setTaskForm({
-                    ...taskForm,
-                    estimatedHours: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="col-md-4">
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Minutes"
-                min={0}
-                value={taskForm.estimatedMinutes}
-                onChange={(e) =>
-                  setTaskForm({
-                    ...taskForm,
-                    estimatedMinutes: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="col-md-4">
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Seconds"
-                min={0}
-                value={taskForm.estimatedSeconds}
-                onChange={(e) =>
-                  setTaskForm({
-                    ...taskForm,
-                    estimatedSeconds: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
+    <div className="col-md-4">
+      <input
+        type="number"
+        className={`form-control ${
+          errors.estimatedTime ? "is-invalid" : ""
+        }`}
+        placeholder="Minutes"
+        min={0}
+        value={taskForm.estimatedMinutes}
+        onChange={(e) => {
+          const value = Number(e.target.value);
+          const updatedForm = { ...taskForm, estimatedMinutes: value };
 
-        {/* Assign User + Status (inline change ready) */}
+          const { estimatedHours, estimatedMinutes, estimatedSeconds } = updatedForm;
+          if (
+            estimatedHours > 0 ||
+            estimatedMinutes > 0 ||
+            estimatedSeconds > 0
+          ) {
+            setErrors((prev: any) => ({ ...prev, estimatedTime: "" }));
+          }
+
+          setTaskForm(updatedForm);
+        }}
+      />
+    </div>
+
+    <div className="col-md-4">
+      <input
+        type="number"
+        className={`form-control ${
+          errors.estimatedTime ? "is-invalid" : ""
+        }`}
+        placeholder="Seconds"
+        min={0}
+        value={taskForm.estimatedSeconds}
+        onChange={(e) => {
+          const value = Number(e.target.value);
+          const updatedForm = { ...taskForm, estimatedSeconds: value };
+
+          const { estimatedHours, estimatedMinutes, estimatedSeconds } = updatedForm;
+          if (
+            estimatedHours > 0 ||
+            estimatedMinutes > 0 ||
+            estimatedSeconds > 0
+          ) {
+            setErrors((prev: any) => ({ ...prev, estimatedTime: "" }));
+          }
+
+          setTaskForm(updatedForm);
+        }}
+      />
+    </div>
+  </div>
+
+  {errors.estimatedTime && (
+    <small className="text-danger">{errors.estimatedTime}</small>
+  )}
+</div>
+
+
         <div className="row g-3">
           <div className="col-md-6">
             <label>Assign User</label>
             <select
-              className="form-select"
-              value={taskForm.assignedUserId}
-              onChange={(e) =>
-                setTaskForm({ ...taskForm, assignedUserId: e.target.value })
-              }
-            >
-              <option value="">Select User</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.username}
-                </option>
-              ))}
-            </select>
+  className={`form-select ${errors.assignedUserId ? "is-invalid" : ""}`}
+  value={taskForm.assignedUserId}
+  onChange={(e) => {
+    setTaskForm({ ...taskForm, assignedUserId: e.target.value });
+    if (errors.assignedUserId && e.target.value)
+      setErrors((prev: any) => ({ ...prev, assignedUserId: "" }));
+  }}
+>
+  <option value="">Select User</option>
+  {users.map((u) => (
+    <option key={u.id} value={u.id}>
+      {u.username}
+    </option>
+  ))}
+</select>
+{errors.assignedUserId && (
+  <small className="text-danger">{errors.assignedUserId}</small>
+)}
           </div>
 
           <div className="col-md-6">
@@ -643,7 +745,9 @@ useEffect(() => {
       <div className="d-flex justify-content-between align-items-center mt-4">
         <button
           className="btn btn-secondary"
-          onClick={() => setShowModal(false)}
+          onClick={() => {
+            setErrors({})
+            setShowModal(false)}}
         >
           Close
         </button>

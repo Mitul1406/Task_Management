@@ -318,8 +318,14 @@ const UserPage: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingUser ? "Update" : "Add"}
+                <button type="submit" className="btn btn-primary" disabled={loading}> 
+                  {loading
+    ? editingUser
+      ? "Updating..."
+      : "Adding..."
+    : editingUser
+      ? "Update"
+      : "Add"}
                 </button>
               </div>
             </form>
