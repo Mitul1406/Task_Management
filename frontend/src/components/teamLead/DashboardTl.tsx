@@ -218,6 +218,8 @@ const DashboardTl: React.FC = () => {
             currentPage={currentPage}
             onPageChange={onPageChange}
             totalPages={totalPages}
+            pageSize={20}
+            totalResults={20}
           />
       )}
       <CreateTaskModal

@@ -507,6 +507,8 @@ useEffect(() => {
       currentPage={currentPage}
       onPageChange={setCurrentPage}
       totalPages={totalPages}
+      pageSize={tasksPerPage}
+      totalResults={tasks.length}
     />
 
       {showModal && (

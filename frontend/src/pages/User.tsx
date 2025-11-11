@@ -230,7 +230,10 @@ const UserPage: React.FC = () => {
               <Pagination
               currentPage={currentPage}
               onPageChange={setCurrentPage}
-              totalPages={totalPages}/>
+              totalPages={totalPages}
+              pageSize={usersPerPage}
+              totalResults={users.length}
+              />
               {/* <div className="pagination-container">
                 <button
                   className="btn btn-light"

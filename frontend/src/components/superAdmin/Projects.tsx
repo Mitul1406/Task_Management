@@ -204,6 +204,8 @@ const SuperAdminProject: React.FC = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
+            pageSize={itemsPerPage}
+            totalResults={projects.length}
           />
         )}
       </div>

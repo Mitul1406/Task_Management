@@ -217,6 +217,9 @@ const DashboardEmp: React.FC = () => {
             currentPage={currentPage}
             onPageChange={onPageChange}
             totalPages={totalPages}
+            totalResults={data.totalTasks}
+            pageSize={tasksPerPage}
+
           />
       )}
       <CreateTaskModal

@@ -529,6 +529,8 @@ useEffect(() => {
             currentPage={currentPage}
             onPageChange={setCurrentPage}
             totalPages={totalPages}
+            totalResults={fetchTasks.length}
+            pageSize={ITEMS_PER_PAGE}
           />
       )}
 

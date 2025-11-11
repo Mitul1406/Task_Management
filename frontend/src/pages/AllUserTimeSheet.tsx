@@ -52,7 +52,8 @@ const AllUserTimeSheet: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10; 
-
+  let totalResults=0;
+  let totalPagesCalc=0;
     useEffect(() => {
   const fetchData = async () => {
     try {
@@ -71,12 +72,8 @@ const AllUserTimeSheet: React.FC = () => {
       } else {
         throw new Error("Unauthorized role");
       }
-
-      setTotalPages(Math.ceil(data.length / itemsPerPage));
       
-      const startIdx = (currentPage - 1) * itemsPerPage;
-      const paginatedData = data.slice(startIdx, startIdx + itemsPerPage);
-      setUsers(paginatedData);
+      setUsers(data);
     } catch (err: any) {
       setError(err.message || "Failed to load data");
     } finally {
@@ -103,6 +100,11 @@ useEffect(() => {
     };
     fetchUsers();
   }, []);
+  useEffect(() => {
+  setTotalPages(totalPagesCalc);
+  if (currentPage > totalPagesCalc) setCurrentPage(1);
+}, [totalResults, totalPagesCalc]);
+
   const totalHours = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -174,8 +176,7 @@ useEffect(() => {
     });
   });
 
-  const allRows = Object.values(mergedTasks);
-  
+const allRows = Object.values(mergedTasks);
 const seenEstimateKeys = new Set<string>();
 const totalEstimated = allRows.reduce((sum: number, r: any) => {
   const estKey = `${r.project}_${r.task}`;
@@ -214,6 +215,12 @@ allRows.forEach((r: any) => {
 });
 
 const userSummaryRows = Object.values(userTotals);
+
+ totalResults = allRows.length;
+ totalPagesCalc = Math.ceil(totalResults / itemsPerPage);
+const startIdx = (currentPage - 1) * itemsPerPage;
+const paginatedData = allRows.slice(startIdx, startIdx + itemsPerPage);
+
 
 const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   const userId = e.target.value;
@@ -353,8 +360,8 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
               </tr>
             </thead>
             <tbody>
-              {allRows.length > 0 ? (
-                [...allRows]
+              {paginatedData.length > 0 ? (
+                [...paginatedData]
                   .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
                   .map((r: any, i: number) => (
                     <tr key={i}>
@@ -393,7 +400,9 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
           <Pagination
       currentPage={currentPage}
       onPageChange={setCurrentPage}
-      totalPages={totalPages}
+      totalPages={totalPagesCalc}
+      pageSize={itemsPerPage}
+      totalResults={allRows.length}
     />
         </div>
         

@@ -41,6 +41,7 @@ const TaskTl: React.FC = () => {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
+  const [paginatedTasks, setPaginatedTasks] = useState<any[]>([]);
   const [errors, setErrors] = useState<any>({});
   const [taskForm, setTaskForm] = useState({
     title: "",
@@ -109,37 +110,50 @@ useEffect(()=>{
   };
 
   useEffect(() => {
-    if (!tasks || tasks.length === 0) return;
-  
-    let filtered = [...tasks];
-  
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter((t) => t.status === selectedStatus);
-    }
-  
-    if (selectedUser !== "all") {
-      filtered = filtered.filter(
-        (t) => t.assignedUser?.id === selectedUser || t.assignedUserId === selectedUser
-      );
-    }
-  
-    if (startDate) {
-      filtered = filtered.filter((t) => new Date(t.startDate) >= new Date(startDate));
-    }
-  
-    if (endDate) {
-      filtered = filtered.filter((t) => new Date(t.endDate) <= new Date(endDate));
-    }
-    setCurrentPage(1);
+  if (!tasks || tasks.length === 0) {
+    setFilteredTasks([]);
+    setPaginatedTasks([]);
+    setTotalPages(1);
+    return;
+  }
 
-    const pages = Math.ceil(filtered.length / tasksPerPage);
+  let filtered = [...tasks];
+
+  if (selectedStatus !== "all") {
+    filtered = filtered.filter((t) => t.status === selectedStatus);
+  }
+
+  if (selectedUser !== "all") {
+    filtered = filtered.filter(
+      (t) => t.assignedUser?.id === selectedUser || t.assignedUserId === selectedUser
+    );
+  }
+
+  if (startDate) {
+    filtered = filtered.filter((t) => new Date(t.startDate) >= new Date(startDate));
+  }
+
+  if (endDate) {
+    filtered = filtered.filter((t) => new Date(t.endDate) <= new Date(endDate));
+  }
+
+  setFilteredTasks(filtered);
+  // setCurrentPage(1);
+}, [selectedStatus, selectedUser, startDate, endDate,tasks]);
+useEffect(() => {
+  setCurrentPage(1);
+}, [selectedStatus, selectedUser, startDate, endDate]);
+
+ useEffect(() => {
+  const pages = Math.ceil(filteredTasks.length / tasksPerPage);
   setTotalPages(pages || 1);
 
-  const start = (1 - 1) * tasksPerPage; 
-  const paginated = filtered.slice(start, start + tasksPerPage);
-    setFilteredTasks(paginated);
-  }, [selectedStatus, selectedUser, startDate, endDate, tasks]);
+  const start = (currentPage - 1) * tasksPerPage;
+  const paginated = filteredTasks.slice(start, start + tasksPerPage);
+  setPaginatedTasks(paginated);
   
+}, [filteredTasks, currentPage]);
+
   const fetchUsers = async () => {
     try {
       const res = await getUsers();
@@ -173,11 +187,7 @@ useEffect(()=>{
     );
 
     const combined = all.flat();
-
-    setTotalPages(Math.ceil(combined.length / tasksPerPage));
-    const start = (currentPage - 1) * tasksPerPage;
-    const paginated = combined.slice(start, start + tasksPerPage);
-    setTasks(paginated);
+    setTasks(combined);
   } catch (err) {
     toast.error("Failed to fetch tasks");
   } finally {
@@ -197,11 +207,7 @@ const fetchTasksByProject = async (id: string) => {
         t.assignedUser?.id === data.id
     );
 
-    setTotalPages(Math.ceil(filtered.length / tasksPerPage));
-
-    const start = (currentPage - 1) * tasksPerPage;
-    const paginated = filtered.slice(start, start + tasksPerPage);
-    setTasks(paginated);
+    setTasks(filtered);
 
     const projectData: any = projects.find((p) => p.id === id);
     setProjectName(projectData?.name || "");
@@ -511,13 +517,13 @@ const fetchTasksByProject = async (id: string) => {
       </tr>
     </thead>
     <tbody>
-      {filteredTasks.length === 0 ? (
+      {paginatedTasks.length === 0 ? (
     <tr>
       <td colSpan={11} className="text-center text-muted py-3">
         No tasks found.
       </td>
     </tr>
-  ):(filteredTasks.map((task) => (
+  ):(paginatedTasks.map((task) => (
         <tr key={task.id}>
           <td>{task.title}</td>
           <td>{task.projectName || projectName || "-"}</td>
@@ -575,6 +581,8 @@ const fetchTasksByProject = async (id: string) => {
       currentPage={currentPage}
       onPageChange={setCurrentPage}
       totalPages={totalPages}
+      pageSize={tasksPerPage}
+      totalResults={filteredTasks.length}
     />
 
       {showModal && (

@@ -280,7 +280,6 @@ const TlTask: React.FC = () => {
     done: { label: "Done", bgColor: "#2bc22b" },
   };
 
-  // 🔹 Flatten all tasks for table
   const allTasks = projects.flatMap((project) =>
     project.tasks.map((task: any) => ({
       ...task,
@@ -312,14 +311,13 @@ const TlTask: React.FC = () => {
 
 useEffect(() => {
   if (!focusedTaskId || filteredTasks.length === 0) return;
-
   const index = filteredTasks.findIndex((t) => t.id === focusedTaskId);
   if (index !== -1) {
     const pageNumber = Math.floor(index / tasksPerPage) + 1;
     setCurrentPage(pageNumber);
   }
 }, [focusedTaskId, filteredTasks, tasksPerPage]);
-   
+
   const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
   const startIndex = (currentPage - 1) * tasksPerPage;
   const paginatedTasks = filteredTasks.slice(
@@ -498,6 +496,8 @@ useEffect(() => {
             currentPage={currentPage}
             onPageChange={setCurrentPage}
             totalPages={totalPages}
+            pageSize={tasksPerPage}
+            totalResults={filteredTasks.length}
           />
       )}
       

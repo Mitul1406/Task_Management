@@ -45,7 +45,6 @@ const Dashboard: React.FC = () => {
   const [filteredTimesheet, setFilteredTimesheet] = useState<TimesheetRow[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [data, setData] = useState<DashboardData | null>(null);
-  const [timesheet, setTimesheet] = useState<TimesheetRow[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentTimesheetPage, setCurrentTimesheetPage] = useState(1);
   const today = new Date().toISOString().split("T")[0];
@@ -95,14 +94,10 @@ const formatDate = (val: any) => {
 
 useEffect(() => {
   const fetchAndFilterData = async () => {
-    // Fetch dashboard counts
     const dashRes = await getSuperAdminDashboardCount();
     setData(dashRes);
-
-    // Fetch timesheet using current date range
     const timesheetRes = await getAllTimesheet(startDate, endDate);
 
-    // Flatten tasks
     const allRows: TimesheetRow[] = [];
     timesheetRes.forEach((user: any) => {
       user.projects.forEach((project: any) => {
@@ -121,8 +116,7 @@ useEffect(() => {
         });
       });
     });
-
-    // Filter rows according to selected filters
+    
     const filteredRows = allRows.filter((r) => {
       const date = new Date(r.date).getTime();
       const start = startDate ? new Date(startDate).getTime() : -Infinity;
@@ -135,8 +129,6 @@ useEffect(() => {
         date <= end
       );
     });
-
-    setTimesheet(allRows);
     setFilteredTimesheet(filteredRows);
     setCurrentTimesheetPage(1);
   };
@@ -145,17 +137,16 @@ useEffect(() => {
 }, [selectedUser, startDate, endDate, selectedStatus, users]);
 
   if (!data) return <div>Loading...</div>;
-
   const totalPages = Math.ceil(data.projectContributions.length / dashboardItemsPerPage);
   const startIdx = (currentPage - 1) * dashboardItemsPerPage;
   const paginatedProjects = data.projectContributions.slice(
     startIdx,
     startIdx + dashboardItemsPerPage
   );
-
+  
   const totalTimesheetPages = Math.ceil(filteredTimesheet.length / timesheetItemsPerPage);
-const startTimesheetIdx = (currentTimesheetPage - 1) * timesheetItemsPerPage;
-const paginatedTimesheet = filteredTimesheet.slice(
+  const startTimesheetIdx = (currentTimesheetPage - 1) * timesheetItemsPerPage;
+  const paginatedTimesheet = filteredTimesheet.slice(
   startTimesheetIdx,
   startTimesheetIdx + timesheetItemsPerPage
 );
@@ -285,6 +276,8 @@ const paginatedTimesheet = filteredTimesheet.slice(
               currentPage={currentPage}
               onPageChange={setCurrentPage}
               totalPages={totalPages}
+              totalResults={data.projectContributions.length}
+              pageSize={dashboardItemsPerPage}
             />
         )}
       </div>
@@ -415,6 +408,8 @@ const paginatedTimesheet = filteredTimesheet.slice(
       currentPage={currentTimesheetPage}
       onPageChange={setCurrentTimesheetPage}
       totalPages={totalTimesheetPages}
+      totalResults={filteredTimesheet.length}
+      pageSize={timesheetItemsPerPage}
     />
   )}
       </div>
