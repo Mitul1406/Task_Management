@@ -336,12 +336,18 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
       <p>
         <strong>Total Estimated:</strong> {formatTime(overallTotals?.totalEstimated || 0)}
       </p>
-      <p className="text-danger">
-        <strong>Total Overtime:</strong> {formatTime(overallTotals?.totalOvertime || 0)}
-      </p>
+      
       <p className="text-success">
         <strong>Total Saved:</strong> {formatTime(overallTotals?.totalSaved || 0)}
       </p>
+
+      {overallTotals!.totalOvertime > 0 && (
+  <p className="text-danger">
+    <strong>Total Time Extension:</strong>{" "}
+    {formatTime(overallTotals?.totalOvertime || 0)}
+  </p>
+)}
+
     </div>
   </div>
 </div>

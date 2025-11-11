@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getSuperAdminDashboardCount, getAllTimesheet, getUsers } from "../../services/api";
 import Pagination from "../Pagination";
 import { FaClock, FaProjectDiagram, FaSpinner, FaTasks, FaUsers } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 interface UserContribution {
   userId: string;
@@ -44,7 +45,6 @@ const Dashboard: React.FC = () => {
   const [filteredTimesheet, setFilteredTimesheet] = useState<TimesheetRow[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [data, setData] = useState<DashboardData | null>(null);
-  const [timesheet, setTimesheet] = useState<TimesheetRow[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentTimesheetPage, setCurrentTimesheetPage] = useState(1);
   const today = new Date().toISOString().split("T")[0];
@@ -53,6 +53,8 @@ const Dashboard: React.FC = () => {
   const dashboardItemsPerPage = 3;
   const timesheetItemsPerPage = 10;
   const [users, setUsers] = useState<any[]>([]);
+  const navigate=useNavigate()
+
   const [selectedUser, setSelectedUser] = useState<string>("");
   const formatDuration = (seconds: number) => {
     if (!seconds || seconds <= 0) return "-";
@@ -92,14 +94,10 @@ const formatDate = (val: any) => {
 
 useEffect(() => {
   const fetchAndFilterData = async () => {
-    // Fetch dashboard counts
     const dashRes = await getSuperAdminDashboardCount();
     setData(dashRes);
-
-    // Fetch timesheet using current date range
     const timesheetRes = await getAllTimesheet(startDate, endDate);
 
-    // Flatten tasks
     const allRows: TimesheetRow[] = [];
     timesheetRes.forEach((user: any) => {
       user.projects.forEach((project: any) => {
@@ -118,8 +116,7 @@ useEffect(() => {
         });
       });
     });
-
-    // Filter rows according to selected filters
+    
     const filteredRows = allRows.filter((r) => {
       const date = new Date(r.date).getTime();
       const start = startDate ? new Date(startDate).getTime() : -Infinity;
@@ -132,8 +129,6 @@ useEffect(() => {
         date <= end
       );
     });
-
-    setTimesheet(allRows);
     setFilteredTimesheet(filteredRows);
     setCurrentTimesheetPage(1);
   };
@@ -142,17 +137,16 @@ useEffect(() => {
 }, [selectedUser, startDate, endDate, selectedStatus, users]);
 
   if (!data) return <div>Loading...</div>;
-
   const totalPages = Math.ceil(data.projectContributions.length / dashboardItemsPerPage);
   const startIdx = (currentPage - 1) * dashboardItemsPerPage;
   const paginatedProjects = data.projectContributions.slice(
     startIdx,
     startIdx + dashboardItemsPerPage
   );
-
+  
   const totalTimesheetPages = Math.ceil(filteredTimesheet.length / timesheetItemsPerPage);
-const startTimesheetIdx = (currentTimesheetPage - 1) * timesheetItemsPerPage;
-const paginatedTimesheet = filteredTimesheet.slice(
+  const startTimesheetIdx = (currentTimesheetPage - 1) * timesheetItemsPerPage;
+  const paginatedTimesheet = filteredTimesheet.slice(
   startTimesheetIdx,
   startTimesheetIdx + timesheetItemsPerPage
 );
@@ -160,10 +154,10 @@ const paginatedTimesheet = filteredTimesheet.slice(
   return (
     <div className="container mt-3">
 <div className="card p-4 mb-4 shadow-sm border-0 bg-light">
-  <h4 className="mb-4 text-dark">Counts</h4>
+  {/* <h4 className="mb-4 text-dark">l</h4> */}
   <div className="row g-4 text-center">
 
-    <div className="col-md-3 col-sm-6">
+    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/projects")} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
         <span className="text-success mb-2">
           <FaProjectDiagram size={36} />
@@ -173,7 +167,7 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6">
+    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks")} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
         <span className="text-primary mb-2">
           <FaTasks size={36} />
@@ -183,7 +177,7 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6">
+    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=pending")} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
         <span className="text-warning mb-2">
           <FaClock size={36} />
@@ -193,7 +187,7 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6">
+    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=in_progress")} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">
         <span className="text-danger mb-2">
           <FaSpinner size={36} />
@@ -203,8 +197,8 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6">
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-whiteborder-secondary rounded">
+    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/userView")} style={{cursor:"pointer"}}>
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-secondary rounded">
         <span className="text-secondary mb-2">
           <FaUsers size={36} />
         </span>
@@ -213,7 +207,7 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6">
+    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/userView?role=teamLead")} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
         <span className="text-info mb-2">
           <FaUsers size={36} />
@@ -223,7 +217,7 @@ const paginatedTimesheet = filteredTimesheet.slice(
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6">
+    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/userView?role=user")} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
         <span className="text-info mb-2">
           <FaUsers size={36} />
@@ -242,28 +236,38 @@ const paginatedTimesheet = filteredTimesheet.slice(
         <div className="row g-3">
           {paginatedProjects.map((project) => (
             <div key={project.projectId} className="col-md-4 col-sm-6">
-              <div className="card p-3 shadow-sm h-100 border-0">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h5 className="mb-0 text-dark">{project.projectName}</h5>
-                  <span className="badge bg-primary">
-                    {formatDuration(project.totalProjectWorkTime)}
-                  </span>
-                </div>
-                <ul className="list-group list-group-flush">
-                  {project.userContributions.map((user) => (
-                    <li
-                      key={user.userId}
-                      className="list-group-item d-flex justify-content-between align-items-center p-2"
-                    >
-                      <span>{user.username}</span>
-                      <span className="fw-semibold text-secondary">
-                        {formatDuration(user.totalWorkTime)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+  <div className="card p-3 shadow-sm h-100 border-0">
+    <div className="d-flex justify-content-between align-items-center mb-2">
+      <h5 className="mb-0 text-dark">{project.projectName}</h5>
+      <span className="badge bg-primary">
+        {formatDuration(project.totalProjectWorkTime)}
+      </span>
+    </div>
+
+    <ul className="list-group list-group-flush">
+      {project.userContributions.slice(0, 3).map((user) => (
+        <li
+          key={user.userId}
+          className="list-group-item d-flex justify-content-between align-items-center p-2"
+        >
+          <span>{user.username}</span>
+          <span className="fw-semibold text-secondary">
+            {formatDuration(user.totalWorkTime)}
+          </span>
+        </li>
+      ))}
+
+      {project.userContributions.length > 3 && (
+        <li className="list-group-item text-end text-primary fw-semibold p-1"
+            style={{ cursor: "pointer" }}
+            onClick={() => {window.open(`project-report/${project.projectId}`,"_blank")}}>
+          +{project.userContributions.length - 3} more
+        </li>
+      )}
+    </ul>
+  </div>
+</div>
+
           ))}
         </div>
 
@@ -272,6 +276,8 @@ const paginatedTimesheet = filteredTimesheet.slice(
               currentPage={currentPage}
               onPageChange={setCurrentPage}
               totalPages={totalPages}
+              totalResults={data.projectContributions.length}
+              pageSize={dashboardItemsPerPage}
             />
         )}
       </div>
@@ -402,6 +408,8 @@ const paginatedTimesheet = filteredTimesheet.slice(
       currentPage={currentTimesheetPage}
       onPageChange={setCurrentTimesheetPage}
       totalPages={totalTimesheetPages}
+      totalResults={filteredTimesheet.length}
+      pageSize={timesheetItemsPerPage}
     />
   )}
       </div>

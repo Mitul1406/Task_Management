@@ -36,7 +36,6 @@ export default function ScreenShotView() {
   const [userRole, setUserRole] = useState<"projectManager" | "teamLead" | "superAdmin" | "user">("user");
   const [selectMode, setSelectMode] = useState(false);
 
-  // Date filters
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState<string>(today);
   const [endDate, setEndDate] = useState<string>(today);
@@ -340,6 +339,8 @@ export default function ScreenShotView() {
     currentPage={currentPage}
     totalPages={totalPages}
     onPageChange={setCurrentPage}
+    pageSize={itemsPerPage}
+    totalResults={(screenshots.length-1)}
   />
 )}
         </>

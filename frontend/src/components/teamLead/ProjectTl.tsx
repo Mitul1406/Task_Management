@@ -191,75 +191,12 @@ const ProjectTl: React.FC = () => {
       currentPage={currentPage}
       totalPages={totalPages}
       onPageChange={setCurrentPage}
+      pageSize={itemsPerPage}
+      totalResults={projects.length}
     />
   )}
 </div>
 
-
-      {/* Project Cards */}
-      {/* <div className="card p-3 shadow-sm" style={{ background: "aliceblue" }}>
-        <div className="row">
-          {paginatedProjects.length === 0 ? (
-            <p>No projects found.</p>
-          ) : (
-            paginatedProjects.map((project) => (
-              <div key={project.id} className="col-md-4 mb-3">
-                <div className="card shadow-sm h-100">
-                  <div className="card-body">
-                    <h5>{project.name}</h5>
-                    <p>{project.description}</p>
-                    <h6>Created by: {(project as any).adminId?.username || "Unknown"}</h6>
-                  </div>
-                  <div className="card-footer">
-                    <div className="row g-2">
-                      <div className="col-6">
-                        <button
-                          className="btn btn-info btn-sm w-100"
-                          onClick={() => navigate(`/tasks/${project.id}`)}
-                        >
-                          View Details
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        <button
-                          className="btn btn-success btn-sm w-100"
-                          onClick={() => navigate(`/timesheet-report/${project.id}`)}
-                        >
-                          View Timesheet
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        <button
-                          className="btn btn-warning btn-sm w-100"
-                          onClick={() => navigate(`/project-report/${project.id}`)}
-                        >
-                          View Report
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        <button
-                          className="btn btn-danger btn-sm w-100"
-                          onClick={() => handleDeleteProject(project.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {projects.length > itemsPerPage && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        )}
-      </div> */}
     </div>
   );
 };

@@ -21,19 +21,16 @@ tasks: async ({
   const query: any = { projectId: new mongoose.Types.ObjectId(projectId) };
   if (userId) query.assignedUserId = new mongoose.Types.ObjectId(userId);
 
-  // ✅ Fetch all tasks of this project
   const tasks = await Task.find(query)
     .populate("assignedUser", "username _id email role")
     .sort({ createdAt: -1 })
     .lean();
 
-  // ✅ Get all timers for all these tasks in one go
   const allTaskIds = tasks.map((t: any) => t._id);
   const timers = await Timer.find({ taskId: { $in: allTaskIds } })
     .populate("userId", "username _id email role")
     .lean();
 
-  // 🗺 Map taskId -> list of timers
   const taskTimersMap: Record<string, any[]> = {};
   for (const t of timers) {
     const tid = t.taskId?.toString?.() || "";

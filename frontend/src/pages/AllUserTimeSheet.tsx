@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import html2pdf from "html2pdf.js";
-import { getAllTimesheet, getAdminUserTimesheet, getUsers } from "../services/api";
+import { getAllTimesheet, getUsers } from "../services/api";
 import {jwtDecode} from "jwt-decode";
 import Pagination from "../components/Pagination";
 
@@ -52,7 +52,8 @@ const AllUserTimeSheet: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10; 
-
+  let totalResults=0;
+  let totalPagesCalc=0;
     useEffect(() => {
   const fetchData = async () => {
     try {
@@ -71,12 +72,8 @@ const AllUserTimeSheet: React.FC = () => {
       } else {
         throw new Error("Unauthorized role");
       }
-
-      setTotalPages(Math.ceil(data.length / itemsPerPage));
       
-      const startIdx = (currentPage - 1) * itemsPerPage;
-      const paginatedData = data.slice(startIdx, startIdx + itemsPerPage);
-      setUsers(paginatedData);
+      setUsers(data);
     } catch (err: any) {
       setError(err.message || "Failed to load data");
     } finally {
@@ -103,6 +100,11 @@ useEffect(() => {
     };
     fetchUsers();
   }, []);
+  useEffect(() => {
+  setTotalPages(totalPagesCalc);
+  if (currentPage > totalPagesCalc) setCurrentPage(1);
+}, [totalResults, totalPagesCalc]);
+
   const totalHours = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -120,7 +122,10 @@ useEffect(() => {
       .set({
         margin: 5,
         filename: `Timesheet_${startDate}_to_${endDate}.pdf`,
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2,
+          ignoreElements: (element:HTMLButtonElement) => {
+          return element.classList.contains("no-print");
+        }, },
         jsPDF: { orientation: "landscape", unit: "mm", format: "a4" },
       })
       .save();
@@ -171,8 +176,7 @@ useEffect(() => {
     });
   });
 
-  const allRows = Object.values(mergedTasks);
-  
+const allRows = Object.values(mergedTasks);
 const seenEstimateKeys = new Set<string>();
 const totalEstimated = allRows.reduce((sum: number, r: any) => {
   const estKey = `${r.project}_${r.task}`;
@@ -212,6 +216,12 @@ allRows.forEach((r: any) => {
 
 const userSummaryRows = Object.values(userTotals);
 
+ totalResults = allRows.length;
+ totalPagesCalc = Math.ceil(totalResults / itemsPerPage);
+const startIdx = (currentPage - 1) * itemsPerPage;
+const paginatedData = allRows.slice(startIdx, startIdx + itemsPerPage);
+
+
 const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   const userId = e.target.value;
   setSelectedUser(userId);
@@ -219,8 +229,18 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   const foundUser = users1.find((u: any) => u.id === userId);
   setSelectedUserName(foundUser ? foundUser.username : "");
 };
+
   return (
     <div className="container-fluid mt-4 position-relative" style={{ padding: "10px 30px" }}>
+      <style>
+      {`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}
+    </style>
       <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"20px", justifyContent: "flex-end" }}>
         <div>
         <label className="form-label mb-1">User</label>
@@ -280,7 +300,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="fw-bold mb-0">Overall Totals</h5>
                 <button
-                  className="btn btn-sm btn-outline-primary"
+                  className="btn btn-sm btn-outline-primary no-print"
                   onClick={() => setShowUserTotals(!showUserTotals)}
                 >
                   {showUserTotals ? "Hide User Totals" : "View User Totals"}
@@ -291,14 +311,14 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
                 <li style={{marginBottom:"1rem"}}><strong>Total Used:</strong> {formatTime(totalSpent)}</li>
                 <li style={{marginBottom:"1rem"}}><strong>Total Estimated:</strong> {formatTime(totalEstimated)}</li>
                 <li style={{marginBottom:"1rem"}} className="text-success"><strong>Total Saved:</strong> {formatTime(totalSaved)}</li>
-                <li style={{marginBottom:"1rem"}} className="text-danger"><strong>Total Overtime:</strong> {formatTime(totalOvertime)}</li>
+                {totalOvertime>0 && <li style={{marginBottom:"1rem"}} className="text-danger"><strong>Total Time Extension:</strong> {formatTime(totalOvertime)}</li>}
               </ul>
               <p className="text-muted small mb-0">Summary for all users combined</p>
             </div>
           </div>
 
           {showUserTotals && (
-            <div className="col-md-7 mb-3">
+            <div className="col-md-7 mt-3">
               <div className="card p-4 shadow-sm h-100">
                 <h5 className="fw-bold mb-3">👤 User-wise Totals</h5>
                 <div className="row">
@@ -340,8 +360,8 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
               </tr>
             </thead>
             <tbody>
-              {allRows.length > 0 ? (
-                [...allRows]
+              {paginatedData.length > 0 ? (
+                [...paginatedData]
                   .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
                   .map((r: any, i: number) => (
                     <tr key={i}>
@@ -380,7 +400,9 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
           <Pagination
       currentPage={currentPage}
       onPageChange={setCurrentPage}
-      totalPages={totalPages}
+      totalPages={totalPagesCalc}
+      pageSize={itemsPerPage}
+      totalResults={allRows.length}
     />
         </div>
         

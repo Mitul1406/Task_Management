@@ -152,18 +152,18 @@ const userTasks = useMemo(() => {
   const totalOvertime = filteredTasks.reduce((sum, t) => sum + ((t as any).overtime || 0), 0);
   const totalSaved = filteredTasks.reduce((sum, t) => sum + ((t as any).savedTime || 0), 0);
 
-  const tasksById = tasks.reduce((acc: Record<string, any>, task: any) => {
+//   const tasksById = tasks.reduce((acc: Record<string, any>, task: any) => {
     
-  acc[task.id] = {
-    ...task,
-    users: task.users.map((user: any) => ({
-      id: user.id,
-      username: user.username,
-      totalTime: user.totalTime ?? 0,
-    })),
-  };
-  return acc;
-}, {});
+//   acc[task.id] = {
+//     ...task,
+//     users: task.users.map((user: any) => ({
+//       id: user.id,
+//       username: user.username,
+//       totalTime: user.totalTime ?? 0,
+//     })),
+//   };
+//   return acc;
+// }, {});
 
   const handleDownloadPDF=()=>{
     if(reportRef.current)
@@ -275,14 +275,15 @@ return (
             <h5 className="mb-3">Overall Totals</h5>
             <p><strong>Total Estimated:</strong> {formatDuration(totalEstimated)}</p>
             <p><strong>Total Used:</strong> {formatDuration(totalUsed)}</p>
-            <p className="text-danger">
-              <strong>Total Overtime:</strong>{" "}
-              {formatDuration(totalOvertime)}
-            </p>
+            
             <p className="text-success">
               <strong>Total Saved:</strong>{" "}
               {formatDuration(totalSaved)}
             </p>
+            {totalOvertime>0 && <p className="text-danger">
+              <strong>Total Time Extension:</strong>{" "}
+              {formatDuration(totalOvertime)}
+            </p>}
           </div>
         </div>
 
@@ -328,9 +329,10 @@ return (
     <div key={userId} className="card mb-3 p-3 shadow-sm">
       <h5>{username}</h5>
       <p>
-        Estimated: {formatDuration(est)} | Used: {formatDuration(used)} <br />
-        <span className="text-danger">Overtime: {formatDuration(overtime)}</span> |{" "}
-        <span className="text-success">Saved: {formatDuration(saved)}</span>
+        Estimated: {formatDuration(est)} | Used: {formatDuration(used)} <br /> 
+        <span className="text-success">Saved: {formatDuration(saved)}</span>{overtime>0 && <>
+        |{" "}
+        <span className="text-danger">Time Extension: {formatDuration(overtime)}</span></>}
       </p>
 
       <table

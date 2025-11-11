@@ -545,7 +545,57 @@ const SUPERADMINCOUNT=gql`query {
   }
 }
 `
+const TEAMLEADCOUNT = gql`
+  query ($userId: ID!) {
+    teamLeadDashboardCount(userId: $userId) {
+      totalProjects
+      totalTasks
+      pendingTasks
+      inProgressTasks
+      totalWorkedToday
+    }
+  }
+`;
+
+const EMPCOUNT = gql`
+  query ($userId: ID!) {
+    empDashboardCount(userId: $userId) {
+      totalTasks
+      pendingTasks
+      inProgressTasks
+      totalWorkedToday
+    }
+  }
+`;
 // API Functions
+export const getEmpDashboardCount = async (userId: string) => {
+  try {
+    const res = await client.query({
+      query: EMPCOUNT,
+      variables: { userId },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.empDashboardCount;
+  } catch (err) {
+    console.error("Failed to fetch Employee Dashboard Count:", err);
+    throw err;
+  }
+};
+export const getTeamLeadDashboardCount = async (userId: string) => {
+  try {
+    const res = await client.query({
+      query: TEAMLEADCOUNT,
+      variables: { userId },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.teamLeadDashboardCount;
+  } catch (err) {
+    console.error("Failed to fetch Team Lead Dashboard Count:", err);
+    throw err;
+  }
+};
 export const getSuperAdminDashboardCount = async () => {
   try {
     const res = await client.query({

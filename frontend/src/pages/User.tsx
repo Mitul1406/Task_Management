@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
 import "../css/Userpage.css";
 import Pagination from "../components/Pagination";
+import { useLocation } from "react-router-dom";
 
 interface User {
   id: string;
@@ -17,6 +18,9 @@ interface DecodedUser {
 }
 
 const UserPage: React.FC = () => {
+  const location=useLocation()
+  const url=new URLSearchParams(location.search)
+  const filterRole=url.get("role")
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
@@ -46,7 +50,11 @@ const UserPage: React.FC = () => {
       setLoading(false);
     }
   };
-
+  useEffect(()=>{
+   if(filterRole){
+    setRoleFilter(filterRole)
+   }
+  },[filterRole])
   useEffect(() => {
     fetchUsers();
     const token = localStorage.getItem("token");
@@ -163,6 +171,8 @@ const UserPage: React.FC = () => {
       <option value="user">Employee</option>
     ) : (
       <>
+        
+        <option value="">Select Role</option>
         <option value="user">Employee</option>
         <option value="teamLead">Team Lead</option>
       </>
@@ -220,7 +230,10 @@ const UserPage: React.FC = () => {
               <Pagination
               currentPage={currentPage}
               onPageChange={setCurrentPage}
-              totalPages={totalPages}/>
+              totalPages={totalPages}
+              pageSize={usersPerPage}
+              totalResults={users.length}
+              />
               {/* <div className="pagination-container">
                 <button
                   className="btn btn-light"
@@ -308,8 +321,14 @@ const UserPage: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingUser ? "Update" : "Add"}
+                <button type="submit" className="btn btn-primary" disabled={loading}> 
+                  {loading
+    ? editingUser
+      ? "Updating..."
+      : "Adding..."
+    : editingUser
+      ? "Update"
+      : "Add"}
                 </button>
               </div>
             </form>

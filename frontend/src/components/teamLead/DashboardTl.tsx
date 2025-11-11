@@ -1,18 +1,35 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { getUserTasks } from "../../services/api";
+import { getTeamLeadDashboardCount, getUserTasks } from "../../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../Pagination";
 import { useNavigate } from "react-router-dom";
-
+import { jwtDecode } from "jwt-decode";
+import { FaClock, FaProjectDiagram, FaRegCalendarCheck, FaSpinner, FaTasks } from "react-icons/fa";
+import { log } from "console";
+import CreateTaskModal from "../CreateTaskModal";
+interface DashboardData {
+  totalProjects: number;
+  totalTasks: number;
+  pendingTasks: number;
+  inProgressTasks: number;
+  totalWorkedToday: number;
+}
 const DashboardTl: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [id,SetId]=useState("")
   const [todayPage, setTodayPage] = useState(1);
   const [yesterdayPage, setYesterdayPage] = useState(1);
   const tasksPerPage = 10;
-
+  const [data, setData] = useState<DashboardData>({
+     totalProjects: 0,
+  totalTasks: 0,
+  pendingTasks: 0,
+  inProgressTasks: 0,
+  totalWorkedToday: 0
+  });
   const navigate = useNavigate();
   const statusMap: Record<string, { label: string; bgColor: string }> = {
   pending: { label: "Pending", bgColor: "#064393ff" },       
@@ -20,10 +37,32 @@ const DashboardTl: React.FC = () => {
   code_review: { label: "Code Review", bgColor: "#a1dcaeff" }, 
   done: { label: "Done", bgColor: "#2bc22bff" },    
 };
+  useEffect(() => {
+    fetchDashboardData();
+    fetchTasks();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const decoded: any = jwtDecode(token);
+      
+      SetId(decoded.id)
+      const res = await getTeamLeadDashboardCount(decoded.id);
+      setData(res);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchTasks = async () => {
     try {
       const res = await getUserTasks();
-      console.log("Fetched Tasks:", res);
       setProjects(res || []);
     } catch (error) {
       toast.error("Failed to fetch tasks");
@@ -31,10 +70,6 @@ const DashboardTl: React.FC = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
 
   const normalizeDate = (val: any) => {
     if (!val) return null;
@@ -45,7 +80,6 @@ const DashboardTl: React.FC = () => {
     return d;
   };
 
-  // ✅ Utility: Compare same day
   const isSameDay = (d1: any, d2: any) => {
     if (!d1 || !d2) return false;
     return (
@@ -61,7 +95,6 @@ const DashboardTl: React.FC = () => {
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
-  // ✅ Flatten all tasks from all projects
   const allTasks = projects.flatMap((p: any) =>
     (p.tasks || []).map((t: any) => ({
       ...t,
@@ -119,7 +152,13 @@ const DashboardTl: React.FC = () => {
 
   const TaskTable = ({ title, data, currentPage, onPageChange, totalPages }: any) => (
     <div className="card shadow-sm p-3 mb-4 border-0 bg-light">
-      <h5 className="mb-3 text-dark fw-bold">{title}</h5>
+      <div className="d-flex justify-content-between mb-3 "><h5 className="text-dark fw-bold">{title}</h5>
+      <button
+          className="btn btn-primary p-1"
+          onClick={() => setShowTaskModal(true)}
+        >
+          Create Your Own Task
+        </button></div>
       <div className="table-responsive">
         <table className="table table-hover align-middle text-left">
           <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
@@ -179,13 +218,98 @@ const DashboardTl: React.FC = () => {
             currentPage={currentPage}
             onPageChange={onPageChange}
             totalPages={totalPages}
+            pageSize={20}
+            totalResults={20}
           />
       )}
+      <CreateTaskModal
+        show={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+        fetchUserTask={fetchTasks}
+      />
     </div>
   );
 
   return (
     <div className="container mt-4">
+      <div className="card p-4 mb-4 shadow-sm border-0 bg-light">
+        <div className="row g-4 text-center">
+
+          {/* Total Projects */}
+          <div
+            className="col-md-3 col-sm-6"
+            onClick={() => navigate("/projectsTl")}
+            style={{ cursor: "pointer" }}
+          >
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+              <span className="text-success mb-2">
+                <FaProjectDiagram size={36} />
+              </span>
+              <strong className="fs-3 text-dark">{data.totalProjects}</strong>
+              <div className="text-secondary">Total Projects</div>
+            </div>
+          </div>
+
+          {/* Total Tasks */}
+          <div
+            className="col-md-3 col-sm-6"
+            onClick={() => navigate(`/taskTls?user=${id}`)}
+            style={{ cursor: "pointer" }}
+          >
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
+              <span className="text-primary mb-2">
+                <FaTasks size={36} />
+              </span>
+              <strong className="fs-3 text-dark">{data.totalTasks}</strong>
+              <div className="text-secondary">Total Tasks</div>
+            </div>
+          </div>
+
+          {/* Pending Tasks */}
+          <div
+            className="col-md-3 col-sm-6"
+            onClick={() => navigate(`/taskTls?status=pending&user=${id}`)}
+            style={{ cursor: "pointer" }}
+          >
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
+              <span className="text-warning mb-2">
+                <FaClock size={36} />
+              </span>
+              <strong className="fs-3 text-dark">{data.pendingTasks}</strong>
+              <div className="text-secondary">Pending Tasks</div>
+            </div>
+          </div>
+
+          {/* In Progress Tasks */}
+          <div
+            className="col-md-3 col-sm-6"
+            onClick={() => navigate(`/taskTls?status=in_progress&user=${id}`)}
+            style={{ cursor: "pointer" }}
+          >
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">
+              <span className="text-danger mb-2">
+                <FaSpinner size={36} />
+              </span>
+              <strong className="fs-3 text-dark">{data.inProgressTasks}</strong>
+              <div className="text-secondary">In Progress</div>
+            </div>
+          </div>
+
+          {/* Worked Today */}
+          <div className="col-md-3 col-sm-6" style={{ cursor: "default" }}>
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-success rounded">
+              <span className="text-success mb-2">
+                <FaRegCalendarCheck size={36} />
+              </span>
+              <strong className="fs-3 text-dark">
+                {formatDuration(data.totalWorkedToday)}
+              </strong>
+              <div className="text-secondary">Worked Today</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
       <TaskTable
         title="Today's Tasks"
         data={todayPaginated}
