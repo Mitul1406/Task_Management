@@ -23,13 +23,11 @@ const Pagination: React.FC<PaginationProps> = ({
   return (
     <div className="card mt-3 mb-3 bg-light border-0 px-3 py-2">
       <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        {/* ✅ Left Side: Results Info */}
         <div className="text-muted small">
           Showing <strong>{start}</strong>–<strong>{end}</strong> of{" "}
           <strong>{totalResults}</strong> results
         </div>
 
-        {/* ✅ Right Side: Pagination Controls */}
         <nav className="d-flex align-items-center">
           {/* Prev Button */}
           <button

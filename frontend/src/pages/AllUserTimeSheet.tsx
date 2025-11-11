@@ -82,7 +82,7 @@ const AllUserTimeSheet: React.FC = () => {
   };
 
   fetchData();
-}, [startDate, endDate, selectedUser, currentPage]);
+}, [startDate, endDate, selectedUser]);
 
 useEffect(() => {
   setCurrentPage(1);
@@ -107,29 +107,51 @@ useEffect(() => {
 
   const totalHours = () => {
     const start = new Date(startDate);
-    const end = new Date(endDate);
+  const end = new Date(endDate);
+  let workDays = 0;
 
-    const diffDays =
-      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dayOfWeek = d.getDay(); 
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      workDays++;
+    }
+  }
 
-    return diffDays * 8 * 3600; 
+    return workDays * 8 * 3600; 
   };
 
-  const handleDownload = () => {
-    if (!pdfRef.current) return;
-    html2pdf()
-      .from(pdfRef.current)
-      .set({
-        margin: 5,
-        filename: `Timesheet_${startDate}_to_${endDate}.pdf`,
-        html2canvas: { scale: 2,
-          ignoreElements: (element:HTMLButtonElement) => {
-          return element.classList.contains("no-print");
-        }, },
-        jsPDF: { orientation: "landscape", unit: "mm", format: "a4" },
-      })
-      .save();
+const handleDownload = () => {
+  if (!pdfRef.current) return;
+
+  const element = pdfRef.current;
+
+  const opt: any = {
+    margin: [2,2,2,2],
+    filename: `Timesheet_${startDate}_to_${endDate}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+      logging: false,
+      ignoreElements: (el: HTMLElement) => el.classList.contains("no-print"),
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "landscape",
+    },
+    pagebreak: {
+      mode: ["css", "legacy"],
+    },
   };
+
+  setTimeout(() => {
+    html2pdf().from(element).set(opt).save();
+  }, 100);
+};
 
   if (loading)
     return (
@@ -231,7 +253,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 };
 
   return (
-    <div className="container-fluid mt-4 position-relative" style={{ padding: "10px 30px" }}>
+    <div className="container-fluid mt-3" >
       <style>
       {`
         @media print {
@@ -241,8 +263,34 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         }
       `}
     </style>
-      <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"20px", justifyContent: "flex-end" }}>
-        <div>
+      
+      <div ref={pdfRef}>
+  <div className="d-flex flex-wrap justify-content-between align-items-start mb-1 gap-3">
+    <div>
+      <h4 className="fw-bold mb-2">
+        Timesheet Summary
+        {selectedUserName && (
+          <span
+            style={{
+              fontWeight: 600,
+              color: "#0d6efd",
+              marginLeft: "8px",
+            }}
+          >
+            — {selectedUserName}
+          </span>
+        )}
+      </h4>
+
+      <div>
+          <p>
+            Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
+          </p>
+        </div>
+    </div>
+
+    <div className="d-flex flex-wrap align-items-end justify-content-end gap-3 no-print">
+      <div style={{ minWidth: "160px" }}>
         <label className="form-label mb-1">User</label>
         <select
           className="form-select form-select-sm"
@@ -257,43 +305,38 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
           ))}
         </select>
       </div>
-        <div>
-          <label className="form-label mb-1">Start Date</label>
-          <input
-            type="date"
-            className="form-control form-control-sm"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="form-label mb-1">End Date</label>
-          <input
-            type="date"
-            className="form-control form-control-sm"
-            min={startDate}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
+
+      <div style={{ minWidth: "140px" }}>
+        <label className="form-label mb-1">Start Date</label>
+        <input
+          type="date"
+          className="form-control form-control-sm"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+      </div>
+
+      <div style={{ minWidth: "140px" }}>
+        <label className="form-label mb-1">End Date</label>
+        <input
+          type="date"
+          className="form-control form-control-sm"
+          min={startDate}
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="form-label mb-1 d-block">&nbsp;</label>
         <button className="btn btn-primary" onClick={handleDownload}>
           📄 Download PDF
         </button>
       </div>
+    </div>
+  </div>
 
-      <div ref={pdfRef}>
-        <h4 className="fw-bold text-left mb-2">Timesheet Summary{selectedUserName ? (
-    <span style={{ fontWeight: "600", color: "#0d6efd", marginLeft: "8px" }}>
-      — {selectedUserName}
-    </span>
-  ) : (
-    ""
-  )}</h4>
-        <div>
-          <p>
-            Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
-          </p>
-        </div>
+        
         <div className="row mb-4">
           <div className="col-md-5 mt-3">
             <div className="card p-4 shadow-sm h-100">
@@ -331,7 +374,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
                           <li className="mt-1"><strong>Estimated:</strong> {formatTime(u.totalEstimated)}</li>
                           <li className="mt-1"><strong>Used:</strong> {formatTime(u.totalSpent)}</li>
                           <li className="text-success mt-1"><strong>Saved:</strong> {formatTime(u.totalSaved)}</li>
-                          <li className="text-danger mt-1"><strong>Overtime:</strong> {formatTime(u.totalOvertime)}</li>
+                          {totalOvertime>0 && <li className="text-danger mt-1"><strong>Time Extension:</strong> {formatTime(u.totalOvertime)}</li>}
                         </ul>
                       </div>
                     </div>
@@ -355,7 +398,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
                 <th>Estimated</th>
                 <th>Spent</th>
                 <th>Saved</th>
-                <th>Overtime</th>
+                <th>Time Extension</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -397,16 +440,15 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
             </tbody>
           </table>
 
-          <Pagination
+      
+        </div>
+            <Pagination
       currentPage={currentPage}
       onPageChange={setCurrentPage}
       totalPages={totalPagesCalc}
       pageSize={itemsPerPage}
       totalResults={allRows.length}
-    />
-        </div>
-        
-        
+    />   
       </div>
     </div>
   );

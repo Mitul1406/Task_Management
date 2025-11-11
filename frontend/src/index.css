@@ -18,4 +18,60 @@ div {
   -moz-user-select: none;    
   -ms-user-select: none;      
 }
+@media print {
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 
+  /* Wrapper Fix */
+  #pdfRef, 
+  .pdfRef {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Table Rules */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  tbody, tr, td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    vertical-align: middle !important;
+  }
+
+  td, th {
+    padding: 6px 8px !important;
+  }
+
+  /* Prevent card/table gaps causing new page */
+  .card,
+  .table,
+  .table-wrapper,
+  .table-responsive {
+    margin: 0 0 6px 0 !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Optional helper class */
+  .avoid-page-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

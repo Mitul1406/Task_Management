@@ -139,7 +139,7 @@ const UserPage: React.FC = () => {
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   return (
-    <div className="user-page container mt-4">
+    <div className="user-page container mt-1">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Users</h2>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>

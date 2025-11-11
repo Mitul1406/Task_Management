@@ -55,14 +55,28 @@ const ExampleTimeAdmin: React.FC = () => {
 
   const handleDownload = () => {
     if (!sheetRef.current) return;
+    const opt: any = { 
+    margin: [10, 10, 10, 10],
+    filename: `AllUserTimesheet_${new Date().toISOString().split("T")[0]}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0,
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    },
+    pagebreak: {
+      mode: ["avoid-all", "css", "legacy"],
+      before: ".avoid-page-break",
+    },
+  };
     html2pdf()
       .from(sheetRef.current)
-      .set({
-        margin: 5,
-        filename: `AllUserTimesheet_${new Date().toISOString().split("T")[0]}.pdf`,
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
-      })
+      .set(opt)
       .save();
   };
 

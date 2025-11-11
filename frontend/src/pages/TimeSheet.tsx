@@ -142,18 +142,33 @@ useEffect(() => {
 }, [projectId, startDateFilter, endDateFilter, selectedUser]);
 
   const handleDownloadPDF = () => {
-    if (reportRef.current) {
-      const el: any = reportRef.current;
-      const opt: any = {
-        margin: 0.1,
-        filename: `${project?.name}-TimeSheet_report.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-      };
-      html2pdf().set(opt).from(el).save();
-    }
+  if (!reportRef.current) return;
+  const el = reportRef.current;
+
+  const opt: any = {
+    margin: [5, 5, 5, 5],
+    filename: `${project?.name || "Project"}_Timesheet_Report.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0,
+      windowWidth: el.scrollWidth,
+      windowHeight: el.scrollHeight,
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
   };
+
+  setTimeout(() => {
+    html2pdf().from(el).set(opt).save();
+  }, 100);
+};
+
 
   if (loading) return <div>Loading report...</div>;
   if (!project) return <div>Project not found</div>;
