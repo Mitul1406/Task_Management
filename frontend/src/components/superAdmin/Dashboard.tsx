@@ -361,7 +361,7 @@ useEffect(() => {
           <th>Estimated</th>
           <th>Spent</th>
           <th>Saved</th>
-          <th>Overtime</th>
+          <th>Time Extension</th>
           <th>Status</th>
         </tr>
       </thead>

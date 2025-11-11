@@ -371,7 +371,7 @@ return (
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Task Status</th>
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Estimated</th>
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Used</th>
-            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Overtime</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Time Extension</th>
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Saved</th>
             <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Start</th>
             <th style={{ width: "10%", border: "1px solid #dee2e6" }}>End</th>

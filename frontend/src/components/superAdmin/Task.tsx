@@ -446,7 +446,7 @@ useEffect(() => {
         <th>Estimated</th>
         <th>Consumed</th>
         <th>Saved</th>
-        <th>Overtime</th>
+        <th>Time Extension</th>
         <th>Status</th>
         <th>Actions</th>
       </tr>

@@ -613,7 +613,7 @@ const saved = userDayWise.reduce((total, day: any) => {
                                       borderRight: "1px solid #dee2e6",
                                     }}
                                   >
-                                    Overtime
+                                    Time Extension
                                   </th>
                                 </tr>
                               </thead>

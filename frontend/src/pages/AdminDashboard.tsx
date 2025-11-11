@@ -849,7 +849,7 @@ const handleScreenShareStopped = useCallback(async () => {
                     <th>Estimated Time</th>
                     <th>Time Consumed</th>
                     <th>Saved Time</th>
-                    <th>Overtime</th>
+                    <th>Time Extension</th>
                     <th>Start Date</th>
                     <th>End Date</th>
                     <th>Status</th>
@@ -1184,7 +1184,7 @@ const handleScreenShareStopped = useCallback(async () => {
                         <th style={{ width: "6%" }}>SS</th>
                         <th style={{ width: "12%" }}>Time Consume</th>
                         <th style={{ width: "12%" }}>Saved Time</th>
-                        <th style={{ width: "12%" }}>Overtime</th>
+                        <th style={{ width: "12%" }}>Time Extension</th>
                         <th style={{ width: "12%" }}>Start Date</th>
                         <th style={{ width: "12%" }}>End Date</th>
                         <th style={{ width: "10%" }}>Assigned User</th>

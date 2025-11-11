@@ -466,7 +466,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
                   Saved
                 </th>
                 <th style={{ border: '1px solid black', padding: '4px', width: '15%' }}>
-                  Overtime
+                  Time Extension
                 </th>
               </tr>
             </thead>
