@@ -21,11 +21,10 @@ const ProjectTl: React.FC = () => {
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [error, setError] = useState<{ name?: string; description?: string }>({});
   const [showModal, setShowModal] = useState(false);
-
-  // ✅ pagination states
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-
+  
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -72,11 +71,12 @@ const ProjectTl: React.FC = () => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
     toast.success("Project deleted successfully!");
   };
-
-  // ✅ pagination logic
+  const filteredProjects = projects.filter((p) =>
+  p.name.toLowerCase().includes(searchTerm.toLowerCase())
+);
   const totalPages = Math.ceil(projects.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProjects = projects.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedProjects = filteredProjects.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="container mt-4">
@@ -86,6 +86,16 @@ const ProjectTl: React.FC = () => {
           + New Project
         </button>
       </div>
+      <div className="mb-3">
+        <label className="fw-bold mb-1">Search By Project Name:</label>
+        <input
+          type="text"
+          className="form-control w-auto"
+          placeholder="Search by project name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ minWidth: "250px" }}
+        /></div>
 
       {/* Modal */}
       {showModal && (

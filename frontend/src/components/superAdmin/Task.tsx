@@ -110,6 +110,7 @@ const selectStyles = {
     zIndex: 9999,
   }),
 };
+
 const style = document.createElement("style");
 style.innerHTML = `
   .css-1rhbuit-multiValue { max-width: 100%; }
@@ -118,6 +119,7 @@ style.innerHTML = `
   }
 `;
 document.head.appendChild(style);
+
 const selectedProjectOptions = selectedProject.includes("all")
   ? [projectOptions[0]]
   : projectOptions.filter((opt) => selectedProject.includes(opt.value));
@@ -169,11 +171,9 @@ const selectedUserOptions = selectedUser.includes("all")
 
 useEffect(() => {
   if (projects.length > 0) {
-    // If "All" is selected or multiple projects selected → fetch all tasks
     if (selectedProject.includes("all") || selectedProject.length !== 1) {
       fetchAllTasks();
     } else {
-      // Exactly one project selected → fetch tasks for that project
       fetchTasksByProject(selectedProject[0]);
     }
   }
@@ -276,7 +276,6 @@ const fetchTasksByProject = async (id: string) => {
   if (selectedProject.includes("all") || selectedProject.length !== 1) {
     proId = projects.find((p) => p.name === task.projectName);
   } else {
-    // Only one project selected — use that directly
     proId = projects.find((p) => p.id === selectedProject[0]);
   }
 
@@ -321,13 +320,11 @@ const handleSaveTask = async () => {
   if (totalSeconds <= 0)
     newErrors.estimatedTime = "Enter at least one non-zero time value.";
 
-  // Optional: start–end date logic
   if (taskForm.startDate && taskForm.endDate) {
     if (new Date(taskForm.endDate) < new Date(taskForm.startDate))
       newErrors.endDate = "End date cannot be before start date.";
   }
 
-  // Show errors if any
   if (Object.values(newErrors).some((msg) => msg)) {
     setErrors(newErrors);
     return;
@@ -430,13 +427,9 @@ useEffect(() => {
   }
 
   let filtered = [...tasks];
-  console.log("---->",selectedProject)
-  console.log("----0000000000>",filtered)
   if (!selectedProject.includes("all") && selectedProject.length > 0) {
   filtered = filtered.filter((t) => selectedProject.includes(t.projectId));
 }
-  console.log("after=====>",filtered)
-
 
   if (!selectedStatus.includes("all") && selectedStatus.length > 0) {
     filtered = filtered.filter((task) => selectedStatus.includes(task.status));

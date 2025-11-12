@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { jwtDecode } from "jwt-decode";
 import {
   getUserTasks,
   startTimer,
@@ -15,11 +14,12 @@ import CreateTaskModal from "../CreateTaskModal";
 import StopPermissionModal from "../StopPermissionModel";
 import Pagination from "../Pagination";
 import { useLocation } from "react-router-dom";
+import Select from "react-select";
 
 const TlTask: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [selectedProject, setSelectedProject] = useState(["all"]);
   const [filterStartDate, setFilterStartDate] = useState(() =>
     new Date().toISOString().split("T")[0]
   );
@@ -31,11 +31,82 @@ const TlTask: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const tasksPerPage = 10;
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(["all"]);
   const intervalsRef = useRef<{ [key: string]: any }>({});
   const screenshotRef = useRef<AutoScreenshotRef>(null);
   const projectsRef = useRef<any[]>([]);
   const location = useLocation();
+  const statusOptions = [
+  { value: "all", label: "All Statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "code_review", label: "Code Review" },
+  { value: "done", label: "Done" },
+];
+  const projectOptions = [
+  { value: "all", label: "All Projects" },
+  ...projects.map((p) => ({ value: p.id, label: p.name })),
+]
+
+const selectedProjectOptions = selectedProject.includes("all")
+  ? [projectOptions.find((opt) => opt.value === "all")!]
+  : projectOptions.filter((opt) => selectedProject.includes(opt.value));
+
+
+  const selectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
+    borderRadius: "6px",
+    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)" : "none",
+    minHeight: "35px",
+    alignItems: "flex-start",
+  }),
+  valueContainer: (base: any) => ({
+    ...base,
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    paddingTop: "4px",
+    paddingBottom: "4px",
+    maxHeight: "35px", 
+    overflowY: "auto", 
+    scrollbarWidth: "none", 
+    msOverflowStyle: "none", 
+  }),
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#e9f2ff",
+    margin: "2px",
+    borderRadius: "4px",
+  }),
+  multiValueLabel: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+  }),
+  multiValueRemove: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    ":hover": {
+      backgroundColor: "#0d6efd",
+      color: "white",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  };
+
+const style = document.createElement("style");
+style.innerHTML = `
+  .css-1rhbuit-multiValue { max-width: 100%; }
+  .css-12jo7m5-value-container::-webkit-scrollbar {
+    display: none;
+  }
+`;
+document.head.appendChild(style);
 
   useEffect(() => {
     projectsRef.current = projects;
@@ -290,15 +361,13 @@ const TlTask: React.FC = () => {
   
   const filteredTasks = allTasks.filter((task: any) => {
     const projectMatch =
-      selectedProject === "all" || task.projectId === selectedProject;
+      selectedProject.includes("all") || selectedProject.includes(task.projectId);
     const start:any = normalizeDate(filterStartDate);
     const end:any = normalizeDate(filterEndDate);
     const taskStart = normalizeDate(task.startDate);
     const taskEnd = normalizeDate(task.endDate);
     const statusMatch =
-    statusFilter === "all"
-      ? true
-      : task.status?.toLowerCase() === statusFilter.toLowerCase();
+    statusFilter.includes("all") || statusFilter.includes(task.status?.toLowerCase());
 
     return (
       projectMatch &&statusMatch&&
@@ -360,34 +429,42 @@ useEffect(() => {
       <div className="d-flex flex-wrap gap-3 mb-3">
         <div>
           <label className="form-label fw-bold">Project</label>
-          <select
-            className="form-select"
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-          >
-            <option value="all">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-       <div>
-  <label className="form-label fw-bold">Status:</label>
- <select
-  className="form-select"
-  style={{ width: "180px" }}
-  value={statusFilter}
-  onChange={(e) => setStatusFilter(e.target.value)}
->
-  <option value="all">All Statuses</option>
-  <option value="pending">Pending</option>
-  <option value="in_progress">In Progress</option>
-  <option value="code_review">Code Review</option>
-  <option value="done">Done</option>
-</select>
+          <div style={{maxWidth:"200px",minWidth:"200px"}}>
+          <Select
+              isMulti
+              options={projectOptions}
+              value={selectedProjectOptions}
+              onChange={(selected: any) => {
+    const values = selected ? selected.map((s: any) => s.value) : [];
 
+    if (values.includes("all")) {
+      setSelectedProject(["all"]);
+    } else if (values.length === 0) {
+      setSelectedProject([]);
+    } else {
+      setSelectedProject(values);
+    }
+  }}
+              placeholder="Select Projects..."
+              styles={selectStyles}
+          /> </div>
+        </div>
+      <div>
+  <label className="form-label fw-bold">Status:</label>
+          <div style={{maxWidth:"200px",minWidth:"200px"}}>
+
+  <Select
+  isMulti
+  options={statusOptions}
+  value={statusOptions.filter((opt) => statusFilter.includes(opt.value))}
+  onChange={(selected: any) => {
+    const values = selected ? selected.map((s: any) => s.value) : [];
+    setStatusFilter(values.includes("all") ? ["all"] : values);
+  }}
+  placeholder="Select Status..."
+  styles={selectStyles}
+/>
+          </div>
         </div>
         <div>
           <label className="form-label fw-bold">Start Date</label>
