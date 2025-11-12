@@ -12,6 +12,9 @@ import {
 } from "../../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../Pagination";
+import { InputActionMeta } from "react-select";
+import Select from "react-select";
+import Swal from "sweetalert2";
 
 const SuperAdminTask: React.FC = () => {
   const navigate = useNavigate();
@@ -23,9 +26,13 @@ const SuperAdminTask: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
-  const [selectedProject, setSelectedProject] = useState(projectIdFromURL || "all");
-  const [loading, setLoading] = useState(false);
+  
+  const [selectedProject, setSelectedProject] = useState(
+  projectIdFromURL ? [projectIdFromURL] : ["all"]
+);
 
+  const [loading, setLoading] = useState(false);
+  const [filteredCount, setFilteredCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string>("");
@@ -34,12 +41,91 @@ const SuperAdminTask: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [projectName,setProjectName]=useState("")
   const today = () => new Date().toISOString().split("T")[0];
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedUser, setSelectedUser] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState(["all"]);
+  const [selectedUser, setSelectedUser] = useState(["all"]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
   const [errors, setErrors] = useState<any>({});
+  const statusOptions = [
+  { value: "all", label: "All Status" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "code_review", label: "Code Review" },
+  { value: "done", label: "Done" },
+];
+
+const projectOptions = [
+  { value: "all", label: "All Projects" },
+  ...projects.map((p) => ({ value: p.id, label: p.name })),
+];
+
+const userOptions = [
+  { value: "all", label: "All Users" },
+  ...users.map((u) => ({ value: u.id, label: u.username })),
+];
+
+const selectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
+    borderRadius: "6px",
+    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)" : "none",
+    minHeight: "35px",
+    alignItems: "flex-start",
+  }),
+  valueContainer: (base: any) => ({
+    ...base,
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    paddingTop: "4px",
+    paddingBottom: "4px",
+    maxHeight: "35px", 
+    overflowY: "auto", 
+    scrollbarWidth: "none", 
+    msOverflowStyle: "none", 
+  }),
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#e9f2ff",
+    margin: "2px",
+    borderRadius: "4px",
+  }),
+  multiValueLabel: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+  }),
+  multiValueRemove: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    ":hover": {
+      backgroundColor: "#0d6efd",
+      color: "white",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+const style = document.createElement("style");
+style.innerHTML = `
+  .css-1rhbuit-multiValue { max-width: 100%; }
+  .css-12jo7m5-value-container::-webkit-scrollbar {
+    display: none;
+  }
+`;
+document.head.appendChild(style);
+const selectedProjectOptions = selectedProject.includes("all")
+  ? [projectOptions[0]]
+  : projectOptions.filter((opt) => selectedProject.includes(opt.value));
+
+const selectedUserOptions = selectedUser.includes("all")
+  ? [userOptions[0]]
+  : userOptions.filter((opt) => selectedUser.includes(opt.value));
+
   const [taskForm, setTaskForm] = useState({
     title: "",
     projectId: "",
@@ -79,14 +165,19 @@ const SuperAdminTask: React.FC = () => {
   useEffect(() => {
     fetchProjects();
     fetchUsers();
-  });
+  },[]);
 
-  useEffect(() => {
-    if (projects.length > 0) {
-      if (selectedProject === "all") fetchAllTasks();
-      else fetchTasksByProject(selectedProject);
+useEffect(() => {
+  if (projects.length > 0) {
+    // If "All" is selected or multiple projects selected → fetch all tasks
+    if (selectedProject.includes("all") || selectedProject.length !== 1) {
+      fetchAllTasks();
+    } else {
+      // Exactly one project selected → fetch tasks for that project
+      fetchTasksByProject(selectedProject[0]);
     }
-  }, [selectedProject, projects,currentPage]);
+  }
+}, [selectedProject, projects, currentPage]);
 
   const fetchProjects = async () => {
     try {
@@ -113,7 +204,7 @@ const SuperAdminTask: React.FC = () => {
     const all = await Promise.all(
       projects.map(async (proj) => {
         const tasks = await getTasksByProject(proj.id);
-        return tasks.map((t: any) => ({ ...t, projectName: proj.name }));
+        return tasks.map((t: any) => ({ ...t, projectName: proj.name,projectId: proj.id }));
       })
     );
     const combined = all.flat();
@@ -127,13 +218,26 @@ const SuperAdminTask: React.FC = () => {
 
 
 const fetchTasksByProject = async (id: string) => {
+  if (!id || id === "all") {
+    await fetchAllTasks();
+    return;
+  }
+
   try {
     setLoading(true);
     const res = await getTasksByProject(id);
-    const project = projects.find(p => p.id === id);
+    const project = projects.find((p) => p.id === id);
+
+    const tasksWithProjectName = res.map((t: any) => ({
+      ...t,
+      projectName: project?.name || "-",
+      projectId: id,
+    }));
+
     setProjectName(project?.name || "-");
-    setTasks(res.map((t: any) => ({ ...t, projectName: project?.name })));
-  } catch {
+    setTasks(tasksWithProjectName);
+  } catch (err) {
+    console.error("Error fetching project tasks:", err);
     toast.error("Failed to fetch project tasks");
   } finally {
     setLoading(false);
@@ -141,23 +245,16 @@ const fetchTasksByProject = async (id: string) => {
 };
 
 
-  const handleProjectFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    setSelectedProject(val);
-    const name=projects.filter(p=>p.id===val)
-    
-    if (val === "all") navigate("/tasks");
-    else
-      { navigate(`/tasks?projectId=${val}`); 
-    setProjectName(name[0].name)}
-  };
-
   const handleAddTask = () => {
     setEditMode(false);
     setCurrentTaskId("");
+    const projectId =
+    selectedProject.includes("all") || selectedProject.length !== 1
+      ? ""
+      : selectedProject[0];
     setTaskForm({
       title: "",
-      projectId: selectedProject === "all" ? "" : selectedProject,
+      projectId,
       assignedUserId: "",
       startDate: today(),
       endDate: today(),
@@ -176,11 +273,11 @@ const fetchTasksByProject = async (id: string) => {
     const seconds = totalSeconds % 60;
     let proId: any;
 
-  if (selectedProject === "all" ) {
-    
-    proId = projects.filter((p) => p.name === task.projectName);
+  if (selectedProject.includes("all") || selectedProject.length !== 1) {
+    proId = projects.find((p) => p.name === task.projectName);
   } else {
-    proId = projects.filter((p) => p.id === selectedProject);
+    // Only one project selected — use that directly
+    proId = projects.find((p) => p.id === selectedProject[0]);
   }
 
     
@@ -189,7 +286,7 @@ const fetchTasksByProject = async (id: string) => {
     setProjectName(proId[0].name)
     setTaskForm({
       title: task.title,
-      projectId: proId[0]?.id || task.project?._id || task.projectId || "",
+      projectId: proId?.id || task.project?._id || task.projectId || "",
       assignedUserId: task.assignedUser?.id || "",
       startDate: task.startDate?.split("T")[0] || today(),
       endDate: task.endDate?.split("T")[0] || today(),
@@ -201,7 +298,7 @@ const fetchTasksByProject = async (id: string) => {
     setShowModal(true);
   };
 
-  const handleSaveTask = async () => {
+const handleSaveTask = async () => {
   const newErrors = {
     projectId: "",
     title: "",
@@ -211,13 +308,11 @@ const fetchTasksByProject = async (id: string) => {
     endDate: "",
   };
 
-  // Validate required fields
   if (!taskForm.projectId) newErrors.projectId = "Please select a project.";
   if (!taskForm.title.trim()) newErrors.title = "Task name is required.";
   if (!taskForm.assignedUserId)
     newErrors.assignedUserId = "Please select a user.";
 
-  // Estimated time validation
   const { estimatedHours, estimatedMinutes, estimatedSeconds } = taskForm;
   const totalSeconds =
     (Number(estimatedHours) || 0) * 3600 +
@@ -274,23 +369,43 @@ const fetchTasksByProject = async (id: string) => {
     }
 
     setShowModal(false);
-    if (selectedProject === "all") fetchAllTasks();
-    else fetchTasksByProject(selectedProject);
+    if (selectedProject.includes("all") || selectedProject.length !== 1) {
+      await fetchAllTasks();
+    } else {
+      await fetchTasksByProject(selectedProject[0]);
+    }
   } catch {
     toast.error("Error saving task");
   }
 };
-  const handleDeleteTask = async (id: string) => {
-    if (!window.confirm("Are you sure to delete this task?")) return;
-    try {
-      await deleteTask(id);
-      toast.success("Task deleted");
-      if (selectedProject === "all") fetchAllTasks();
-      else fetchTasksByProject(selectedProject);
-    } catch {
-      toast.error("Failed to delete task");
+const handleDeleteTask = async (id: string) => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This action will permanently delete the task.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await deleteTask(id);
+    toast.success("Task deleted successfully");
+
+    if (selectedProject.includes("all") || selectedProject.length !== 1) {
+      await fetchAllTasks();
+    } else {
+      await fetchTasksByProject(selectedProject[0]);
     }
-  };
+  } catch {
+    toast.error("Failed to delete task");
+  }
+};
     const formatDuration = (seconds: number) => {
   if (!seconds || seconds <= 0) return "-";
 
@@ -315,14 +430,21 @@ useEffect(() => {
   }
 
   let filtered = [...tasks];
+  console.log("---->",selectedProject)
+  console.log("----0000000000>",filtered)
+  if (!selectedProject.includes("all") && selectedProject.length > 0) {
+  filtered = filtered.filter((t) => selectedProject.includes(t.projectId));
+}
+  console.log("after=====>",filtered)
 
-  if (selectedStatus !== "all") {
-    filtered = filtered.filter((t) => t.status === selectedStatus);
+
+  if (!selectedStatus.includes("all") && selectedStatus.length > 0) {
+    filtered = filtered.filter((task) => selectedStatus.includes(task.status));
   }
 
-  if (selectedUser !== "all") {
+  if (!selectedUser.includes("all") && selectedUser.length > 0) {
     filtered = filtered.filter(
-      (t) => t.assignedUser?.id === selectedUser || t.assignedUserId === selectedUser
+      (t) => selectedUser.includes(t.assignedUser?.id || t.assignedUserId || "")
     );
   }
 
@@ -344,88 +466,103 @@ useEffect(() => {
 
   const start = (currentPage - 1) * tasksPerPage;
   const paginated = filtered.slice(start, start + tasksPerPage);
-
+  setFilteredCount(filtered.length);
   setFilteredTasks(paginated);
-}, [tasks, selectedStatus, selectedUser, startDate, endDate, currentPage]);
+}, [tasks, selectedStatus, selectedUser, selectedProject, startDate, endDate, currentPage]);
 
 useEffect(() => {
   setCurrentPage(1);
 }, [selectedStatus, selectedUser, startDate, endDate]);
 
   return (
-    <div className="container mt-4">
+    <div className="container-fluid mt-4">
           <h3>Tasks</h3>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <label className="fw-bold">Filter By Project:</label>
-          <select
-            className="form-select w-100 mt-2"
-            value={selectedProject}
-            onChange={handleProjectFilter}
-          >
-            <option value="all">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-    <label className="fw-bold">Filter By Status:</label>
-    <select
-      className="form-select mt-2"
-      value={selectedStatus}
-      onChange={(e) => setSelectedStatus(e.target.value)}
-    >
-      <option value="all">All Status</option>
-      <option value="pending">Pending</option>
-      <option value="in_progress">In Progress</option>
-      <option value="done">Done</option>
-    </select>
-        </div>
+      <div className="container-fluid mb-3">
+  <div className="row g-3 align-items-end">
 
-        <div>
-    <label className="fw-bold">Filter By Assigned User:</label>
-    <select
-      className="form-select mt-2"
-      value={selectedUser}
-      onChange={(e) => setSelectedUser(e.target.value)}
-    >
-      <option value="all">All Users</option>
-      {users.map((u) => (
-        <option key={u.id} value={u.id}>
-          {u.username}
-        </option>
-      ))}
-    </select>
-        </div>
+    {/* Filter By Project */}
+    <div className="col-12 col-md-4 col-lg-2">
+      <label className="fw-bold mb-1">Filter By Project:</label>
+      <Select
+        isMulti
+        options={projectOptions}
+        value={selectedProjectOptions}
+        onChange={(selected: any) => {
+          const values = selected ? selected.map((s: any) => s.value) : [];
+          setSelectedProject(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Projects..."
+        styles={selectStyles}
+      />
+    </div>
 
-  <div>
-    <label className="fw-bold">Start Date:</label>
-    <input
-      type="date"
-      className="form-control mt-2"
-      value={startDate}
-      onChange={(e) => setStartDate(e.target.value)}
-    />
+    {/* Filter By Status */}
+    <div className="col-12 col-md-4 col-lg-2">
+      <label className="fw-bold mb-1">Filter By Status:</label>
+      <Select
+        isMulti
+        options={statusOptions}
+        value={statusOptions.filter((opt) =>
+          selectedStatus.includes(opt.value)
+        )}
+        onChange={(selected) => {
+          const values = selected ? selected.map((s) => s.value) : [];
+          setSelectedStatus(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Status..."
+        styles={selectStyles}
+      />
+    </div>
+
+    {/* Filter By User */}
+    <div className="col-12 col-md-4 col-lg-2">
+      <label className="fw-bold mb-1">Filter By Assigned User:</label>
+      <Select
+        isMulti
+        options={userOptions}
+        value={selectedUserOptions}
+        onChange={(selected: any) => {
+          const values = selected ? selected.map((s: any) => s.value) : [];
+          setSelectedUser(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Users..."
+        styles={selectStyles}
+      />
+    </div>
+
+    {/* Start Date */}
+    <div className="col-6 col-md-3 col-lg-2">
+      <label className="fw-bold mb-1">Start Date:</label>
+      <input
+        type="date"
+        className="form-control"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+      />
+    </div>
+
+    {/* End Date */}
+    <div className="col-6 col-md-3 col-lg-2">
+      <label className="fw-bold mb-1">End Date:</label>
+      <input
+        type="date"
+        className="form-control"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+      />
+    </div>
+
+    {/* Add Task Button */}
+    <div className="col-12 col-md-3 col-lg-2 text-md-end">
+      <button className="btn btn-primary w-100 mt-2 mt-md-0" onClick={handleAddTask}>
+        + Add Task
+      </button>
+    </div>
+
   </div>
+</div>
 
-  <div>
-    <label className="fw-bold">End Date:</label>
-    <input
-      type="date"
-      className="form-control mt-2"
-      value={endDate}
-      onChange={(e) => setEndDate(e.target.value)}
-    />
-  </div>
-        <button className="btn btn-primary mt-4" onClick={handleAddTask}>
-          + Add Task
-        </button>
-      </div>
-
-     <div
+  <div
   className="table-responsive card p-4 shadow-sm border-0 bg-light"
   style={{
     width: "100%",
@@ -508,7 +645,7 @@ useEffect(() => {
       onPageChange={setCurrentPage}
       totalPages={totalPages}
       pageSize={tasksPerPage}
-      totalResults={tasks.length}
+      totalResults={filteredCount}
     />
 
       {showModal && (
