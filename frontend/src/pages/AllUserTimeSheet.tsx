@@ -121,41 +121,6 @@ useEffect(() => {
     return workDays * 8 * 3600; 
   };
 
-const handleDownload = () => {
-  setRenderPdf(true);
-
-  setTimeout(() => {
-  if (!pdfRef.current) return;
-
-  const element = pdfRef.current;
-
-  const opt: any = {
-    margin: [2,2,2,2],
-    filename: `Timesheet_${startDate}_to_${endDate}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true,
-      scrollY: 0,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
-      logging: false,
-      ignoreElements: (el: HTMLElement) => el.classList.contains("no-print"),
-    },
-    jsPDF: {
-      unit: "mm",
-      format: "a4",
-      orientation: "landscape",
-    },
-    pagebreak: {
-      mode: ["css", "legacy"],
-    },
-  };
-
-    html2pdf().from(element).set(opt).save().finally(()=> setRenderPdf(false));
-  }, 100);
-};
-
   if (loading)
     return (
       <div className="d-flex justify-content-center align-items-center py-5">
@@ -202,6 +167,37 @@ const handleDownload = () => {
   });
 
 const allRows = Object.values(mergedTasks);
+const sortedRows = allRows
+  .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+const handleDownload = () => {
+  setRenderPdf(true);
+  setTimeout(() => {
+    if (!pdfRef.current) return;
+
+    const opt:any = {
+      margin: [8, 8, 12, 8],
+      filename: `Timesheet_${startDate}_to_${endDate}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: 1400,
+        ignoreElements: (el: HTMLElement) => el.classList.contains("no-print")
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "landscape"
+      },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+    };
+
+    html2pdf().from(pdfRef.current).set(opt).save()
+      .finally(() => setRenderPdf(false));
+  }, 300); // Increased delay
+};
 const seenEstimateKeys = new Set<string>();
 const totalEstimated = allRows.reduce((sum: number, r: any) => {
   const estKey = `${r.project}_${r.task}`;
@@ -254,7 +250,42 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   const foundUser = users1.find((u: any) => u.id === userId);
   setSelectedUserName(foundUser ? foundUser.username : "");
 };
+  const tableStyle: React.CSSProperties = {
+  width: '100%',
+  borderCollapse: 'collapse',
+  border: '1px solid #000',
+  margin: 0,
+  fontSize: '10.5px',
+};
 
+const headerRowStyle: React.CSSProperties = {
+  backgroundColor: '#1b263b',
+  color: 'white',
+};
+
+const thStyle: React.CSSProperties = {
+  border: '1px solid #000',
+  padding: '6px 4px',
+  textAlign: 'left',
+  fontWeight: 'bold',
+  fontSize: '10.5px',
+};
+
+const tdStyle: React.CSSProperties = {
+  border: '1px solid #000',
+  padding: '5px 4px',
+  fontSize: '10.5px',
+  verticalAlign: 'top',
+};
+
+const badgeStyle = (status: string) => ({
+  backgroundColor: statusMap[status]?.bgColor || "#6c757d",
+  fontSize: "9px",
+  padding: "1px 4px",
+  borderRadius: "3px",
+  color: "#fff",
+  display: "inline-block",
+});
   return (
     <div className="container-fluid mt-3" >
       <style>
@@ -453,159 +484,191 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       totalResults={allRows.length}
     />   
       </div>
-      {renderPdf && (
-      <div ref={pdfRef} className="pdf-wrapper">
+  {renderPdf && (
+  <div className="container-fluid mt-3">
 
-  {/* Header */}
-  <div className="d-flex flex-wrap justify-content-between align-items-start mb-1 gap-3 avoid-break">
-    <div>
-      <h4 className="fw-bold mb-2">
+    {/* ---------- UI (visible on screen) ---------- */}
+    {/* …your existing UI code (filters, cards, table, pagination)… */}
+
+    {/* -------------------------------------------------
+         PDF CONTENT – ONLY ONE ROOT DIV, placed **inside**
+         the main container so it is always rendered.
+         ------------------------------------------------- */}
+   {renderPdf && (
+  <div ref={pdfRef} style={{ padding: "8mm", background: "white" }}>
+    <style>{`
+      @page {
+        size: A4 landscape;
+        margin: 8mm;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body, html { font-family: Arial, sans-serif; font-size: 10.5px; line-height: 1.35; }
+      
+      .pdf-header h4 { font-size: 16px; margin-bottom: 4px; }
+      .pdf-header .user-name { color: #0d6efd; }
+      .info-text { margin: 4px 0; font-size: 11px; }
+      
+      .pdf-card {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px 10px;
+        background: #fff;
+        page-break-inside: avoid;
+      }
+      .pdf-card h5 { font-size: 12px; margin-bottom: 6px; font-weight: bold; }
+      .pdf-card ul { list-style: none; padding: 0; margin: 0; }
+      .pdf-card li { margin: 3px 0; font-size: 10.5px; }
+      
+      .pdf-table-wrapper { margin-top: 10px; }
+      .pdf-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 10.5px;
+      }
+      .pdf-table th, .pdf-table td {
+        border: 1px solid #000;
+        padding: 4px 3px;
+        word-wrap: break-word;
+        text-align: left;
+      }
+      .pdf-table th {
+        background: #1b263b !important;
+        color: white !important;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .pdf-table thead {
+        display: table-header-group;
+      }
+      .pdf-table tbody tr {
+        page-break-inside: auto;
+        page-break-after: auto;
+      }
+      .badge {
+        font-size: 9px;
+        padding: 1px 4px;
+        border-radius: 3px;
+        color: #fff;
+        display: inline-block;
+      }
+      .text-success { color: #28a745 !important; }
+      .text-danger { color: #dc3545 !important; }
+
+      /* Force header on every page */
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+    `}</style>
+
+    {/* Header */}
+    <div className="pdf-header" style={{ pageBreakAfter: "avoid" }}>
+      <h4>
         Timesheet Summary
-        {selectedUserName && (
-          <span style={{ fontWeight: 600, color: "#0d6efd", marginLeft: "8px" }}>
-            — {selectedUserName}
-          </span>
-        )}
+        {selectedUserName && <span className="user-name"> — {selectedUserName}</span>}
       </h4>
-      <p>
+      <p className="info-text">
         Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
       </p>
     </div>
-  </div>
 
-  {/* Totals Section */}
-  <div className="row mb-4 avoid-break">
-    <div className="col-md-5 mt-3">
-      <div className="card p-4 shadow-sm h-100 pdf-card avoid-break">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold mb-0">Overall Totals</h5>
-          <button
-            className="btn btn-sm btn-outline-primary no-print"
-            onClick={() => setShowUserTotals(!showUserTotals)}
-          >
-            {showUserTotals ? "Hide User Totals" : "View User Totals"}
-          </button>
+    {/* Totals */}
+    <div style={{ display: "flex", gap: "8px", margin: "8px 0", pageBreakInside: "avoid" }}>
+      <div style={{ flex: "0 0 38%" }}>
+        <div className="pdf-card">
+          <h5>Overall Totals</h5>
+          <ul>
+            <li><strong>Total Hours:</strong> {formatTime(totalHours())}</li>
+            <li><strong>Total Used:</strong> {formatTime(totalSpent)}</li>
+            <li><strong>Total Estimated:</strong> {formatTime(totalEstimated)}</li>
+            <li className="text-success"><strong>Total Saved:</strong> {formatTime(totalSaved)}</li>
+            {totalOvertime > 0 && (
+              <li className="text-danger"><strong>Time Extension:</strong> {formatTime(totalOvertime)}</li>
+            )}
+          </ul>
         </div>
-        <ul className="list-unstyled mb-2">
-          <li style={{ marginBottom: "1rem" }}>
-            <strong>Total Hours:</strong> {formatTime(totalHours())}
-          </li>
-          <li style={{ marginBottom: "1rem" }}>
-            <strong>Total Used:</strong> {formatTime(totalSpent)}
-          </li>
-          <li style={{ marginBottom: "1rem" }}>
-            <strong>Total Estimated:</strong> {formatTime(totalEstimated)}
-          </li>
-          <li style={{ marginBottom: "1rem" }} className="text-success">
-            <strong>Total Saved:</strong> {formatTime(totalSaved)}
-          </li>
-          {totalOvertime > 0 && (
-            <li style={{ marginBottom: "1rem" }} className="text-danger">
-              <strong>Total Time Extension:</strong> {formatTime(totalOvertime)}
-            </li>
-          )}
-        </ul>
-        <p className="text-muted small mb-0">Summary for all users combined</p>
       </div>
-    </div>
 
-    {showUserTotals && (
-      <div className="col-md-7 mt-3">
-        <div className="card p-4 shadow-sm h-100 pdf-card avoid-break">
-          <h5 className="fw-bold mb-3">👤 User-wise Totals</h5>
-          <div className="row">
-            {userSummaryRows.map((u: any, i: number) => (
-              <div key={i} className="col-md-6 mb-3">
-                <div className="border rounded p-3 bg-light h-100 avoid-break">
-                  <h6 className="fw-bold text-dark mb-1">{u.assignee}</h6>
-                  <ul className="list-unstyled mb-0 small">
-                    <li className="mt-1">
-                      <strong>Hours:</strong> {formatTime(totalHours())}
-                    </li>
-                    <li className="mt-1">
-                      <strong>Estimated:</strong> {formatTime(u.totalEstimated)}
-                    </li>
-                    <li className="mt-1">
-                      <strong>Used:</strong> {formatTime(u.totalSpent)}
-                    </li>
-                    <li className="text-success mt-1">
-                      <strong>Saved:</strong> {formatTime(u.totalSaved)}
-                    </li>
-                    {totalOvertime > 0 && (
-                      <li className="text-danger mt-1">
-                        <strong>Time Extension:</strong> {formatTime(u.totalOvertime)}
-                      </li>
+      {showUserTotals && (
+        <div style={{ flex: "0 0 60%" }}>
+          <div className="pdf-card">
+            <h5>User-wise Totals</h5>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+              {userSummaryRows.map((u: any, i: number) => (
+                <div key={i} style={{ border: "1px solid #ddd", borderRadius: "3px", padding: "4px", background: "#f8f9fa" }}>
+                  <strong style={{ fontSize: "10px" }}>{u.assignee}</strong>
+                  <ul style={{ margin: "2px 0 0", fontSize: "9.5px" }}>
+                    <li><strong>Est:</strong> {formatTime(u.totalEstimated)}</li>
+                    <li><strong>Used:</strong> {formatTime(u.totalSpent)}</li>
+                    <li className="text-success"><strong>Saved:</strong> {formatTime(u.totalSaved)}</li>
+                    {u.totalOvertime > 0 && (
+                      <li className="text-danger"><strong>Ext:</strong> {formatTime(u.totalOvertime)}</li>
                     )}
                   </ul>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    )}
-  </div>
+      )}
+    </div>
 
-  {/* Page break before table */}
-  {/* <div className="page-break-before"></div> */}
-
-  {/* Table Section */}
-  <div className="table-responsive avoid-break">
-    <table className="table table-bordered table-sm align-middle text-left pdf-table">
-      <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
-        <tr>
-          <th>Assignee</th>
-          <th>Project</th>
-          <th>Task</th>
-          <th>Date</th>
-          <th>Estimated</th>
-          <th>Spent</th>
-          <th>Saved</th>
-          <th>Time Extension</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {allRows.length > 0 ? (
-          allRows
-            .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .map((r: any, i: number) => (
-              <tr key={i} className="avoid-break">
-                <td>{r.assignee}</td>
-                <td>{r.project}</td>
-                <td>{r.task}</td>
-                <td>{r.date}</td>
-                <td>{formatTime(r.estimated)}</td>
-                <td>{formatTime(r.spent)}</td>
-                <td className="text-success">{formatTime(r.saved)}</td>
-                <td className="text-danger">{formatTime(r.overtime)}</td>
-                <td>
-                  <span
-                    className="badge"
-                    style={{
-                      backgroundColor: statusMap[r.status]?.bgColor || "#6c757d",
-                      color: "#fff",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {statusMap[r.status]?.label || r.status}
-                  </span>
-                </td>
-              </tr>
-            ))
-        ) : (
+    {/* Full Table with Auto-Repeating Header */}
+    <div className="pdf-table-wrapper">
+      <table className="pdf-table">
+        <thead>
           <tr>
-            <td colSpan={9} className="text-center text-muted py-3">
-              No records found
-            </td>
+            {["Assignee", "Project", "Task", "Date", "Est", "Spent", "Saved", "Ext", "Status"].map((h, i) => (
+              <th key={i} style={{
+                background: "#1b263b",
+                color: "white",
+                textAlign: i >= 4 ? "left" : "left"
+              }}>
+                {h}
+              </th>
+            ))}
           </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
+        </thead>
+        <tbody>
+          {sortedRows.map((r: any, i: number) => (
+            <tr key={i}>
+              <td>{r.assignee}</td>
+              <td style={{ maxWidth: "120px", overflow: "hidden" }}>{r.project}</td>
+              <td style={{ maxWidth: "160px", overflow: "hidden" }}>{r.task}</td>
+              <td>{r.date}</td>
+              <td style={{ textAlign: "center" }}>{formatTime(r.estimated)}</td>
+              <td style={{ textAlign: "center" }}>{formatTime(r.spent)}</td>
+              <td className="text-success" style={{ textAlign: "center" }}>{formatTime(r.saved)}</td>
+              <td className="text-danger" style={{ textAlign: "center" }}>{formatTime(r.overtime)}</td>
+              <td>
+                <span className="badge" style={badgeStyle(r.status)}>
+                  {statusMap[r.status]?.label || r.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
 
-    )}
+    {/* Optional: Footer */}
+    <div style={{
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      textAlign: "center",
+      fontSize: "9px",
+      color: "#666",
+      pageBreakAfter: "avoid"
+    }}>
+      Generated on {new Date().toLocaleDateString()} | Page <span className="pageNumber"></span> of <span className="totalPages"></span>
+    </div>
+  </div>
+)}
+
+  </div>
+)}
 
     </div>
   );
