@@ -75,3 +75,40 @@ div {
     break-inside: avoid !important;
   }
 }
+.pdf-wrapper {
+  background: white;
+}
+
+.avoid-break, 
+.pdf-card,
+.pdf-table tr {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+.page-break-before {
+  page-break-before: always !important;
+  break-before: always !important;
+}
+
+thead {
+  display: table-header-group !important;
+}
+tfoot {
+  display: table-footer-group !important;
+}
+
+.pdf-table td, .pdf-table th {
+  word-wrap: break-word;
+}
+
+.pdf-table tr {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+.pdf-card + .pdf-table {
+  margin-top: 10px;
+}
+
+

@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import Pagination from "../Pagination";
 import { jwtDecode } from "jwt-decode";
 import { parse } from "path";
+import Swal from "sweetalert2";
 
 const TaskTl: React.FC = () => {
   const navigate = useNavigate();
@@ -391,7 +392,18 @@ const fetchTasksByProject = async (id: string) => {
   };
 
   const handleDeleteTask = async (id: string) => {
-    if (!window.confirm("Are you sure to delete this task?")) return;
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "This action will permanently delete the task.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
+      });
+    if (!result.isConfirmed) return;
     try {
       await deleteTask(id);
       toast.success("Task deleted");

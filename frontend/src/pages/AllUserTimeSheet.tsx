@@ -51,6 +51,7 @@ const AllUserTimeSheet: React.FC = () => {
   const [selectedUserName, setSelectedUserName] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [renderPdf, setRenderPdf] = useState(false);
   const itemsPerPage = 10; 
   let totalResults=0;
   let totalPagesCalc=0;
@@ -121,6 +122,9 @@ useEffect(() => {
   };
 
 const handleDownload = () => {
+  setRenderPdf(true);
+
+  setTimeout(() => {
   if (!pdfRef.current) return;
 
   const element = pdfRef.current;
@@ -148,8 +152,7 @@ const handleDownload = () => {
     },
   };
 
-  setTimeout(() => {
-    html2pdf().from(element).set(opt).save();
+    html2pdf().from(element).set(opt).save().finally(()=> setRenderPdf(false));
   }, 100);
 };
 
@@ -264,7 +267,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       `}
     </style>
       
-      <div ref={pdfRef}>
+      <div>
   <div className="d-flex flex-wrap justify-content-between align-items-start mb-1 gap-3">
     <div>
       <h4 className="fw-bold mb-2">
@@ -450,6 +453,160 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       totalResults={allRows.length}
     />   
       </div>
+      {renderPdf && (
+      <div ref={pdfRef} className="pdf-wrapper">
+
+  {/* Header */}
+  <div className="d-flex flex-wrap justify-content-between align-items-start mb-1 gap-3 avoid-break">
+    <div>
+      <h4 className="fw-bold mb-2">
+        Timesheet Summary
+        {selectedUserName && (
+          <span style={{ fontWeight: 600, color: "#0d6efd", marginLeft: "8px" }}>
+            — {selectedUserName}
+          </span>
+        )}
+      </h4>
+      <p>
+        Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
+      </p>
+    </div>
+  </div>
+
+  {/* Totals Section */}
+  <div className="row mb-4 avoid-break">
+    <div className="col-md-5 mt-3">
+      <div className="card p-4 shadow-sm h-100 pdf-card avoid-break">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="fw-bold mb-0">Overall Totals</h5>
+          <button
+            className="btn btn-sm btn-outline-primary no-print"
+            onClick={() => setShowUserTotals(!showUserTotals)}
+          >
+            {showUserTotals ? "Hide User Totals" : "View User Totals"}
+          </button>
+        </div>
+        <ul className="list-unstyled mb-2">
+          <li style={{ marginBottom: "1rem" }}>
+            <strong>Total Hours:</strong> {formatTime(totalHours())}
+          </li>
+          <li style={{ marginBottom: "1rem" }}>
+            <strong>Total Used:</strong> {formatTime(totalSpent)}
+          </li>
+          <li style={{ marginBottom: "1rem" }}>
+            <strong>Total Estimated:</strong> {formatTime(totalEstimated)}
+          </li>
+          <li style={{ marginBottom: "1rem" }} className="text-success">
+            <strong>Total Saved:</strong> {formatTime(totalSaved)}
+          </li>
+          {totalOvertime > 0 && (
+            <li style={{ marginBottom: "1rem" }} className="text-danger">
+              <strong>Total Time Extension:</strong> {formatTime(totalOvertime)}
+            </li>
+          )}
+        </ul>
+        <p className="text-muted small mb-0">Summary for all users combined</p>
+      </div>
+    </div>
+
+    {showUserTotals && (
+      <div className="col-md-7 mt-3">
+        <div className="card p-4 shadow-sm h-100 pdf-card avoid-break">
+          <h5 className="fw-bold mb-3">👤 User-wise Totals</h5>
+          <div className="row">
+            {userSummaryRows.map((u: any, i: number) => (
+              <div key={i} className="col-md-6 mb-3">
+                <div className="border rounded p-3 bg-light h-100 avoid-break">
+                  <h6 className="fw-bold text-dark mb-1">{u.assignee}</h6>
+                  <ul className="list-unstyled mb-0 small">
+                    <li className="mt-1">
+                      <strong>Hours:</strong> {formatTime(totalHours())}
+                    </li>
+                    <li className="mt-1">
+                      <strong>Estimated:</strong> {formatTime(u.totalEstimated)}
+                    </li>
+                    <li className="mt-1">
+                      <strong>Used:</strong> {formatTime(u.totalSpent)}
+                    </li>
+                    <li className="text-success mt-1">
+                      <strong>Saved:</strong> {formatTime(u.totalSaved)}
+                    </li>
+                    {totalOvertime > 0 && (
+                      <li className="text-danger mt-1">
+                        <strong>Time Extension:</strong> {formatTime(u.totalOvertime)}
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+
+  {/* Page break before table */}
+  {/* <div className="page-break-before"></div> */}
+
+  {/* Table Section */}
+  <div className="table-responsive avoid-break">
+    <table className="table table-bordered table-sm align-middle text-left pdf-table">
+      <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
+        <tr>
+          <th>Assignee</th>
+          <th>Project</th>
+          <th>Task</th>
+          <th>Date</th>
+          <th>Estimated</th>
+          <th>Spent</th>
+          <th>Saved</th>
+          <th>Time Extension</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {allRows.length > 0 ? (
+          allRows
+            .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .map((r: any, i: number) => (
+              <tr key={i} className="avoid-break">
+                <td>{r.assignee}</td>
+                <td>{r.project}</td>
+                <td>{r.task}</td>
+                <td>{r.date}</td>
+                <td>{formatTime(r.estimated)}</td>
+                <td>{formatTime(r.spent)}</td>
+                <td className="text-success">{formatTime(r.saved)}</td>
+                <td className="text-danger">{formatTime(r.overtime)}</td>
+                <td>
+                  <span
+                    className="badge"
+                    style={{
+                      backgroundColor: statusMap[r.status]?.bgColor || "#6c757d",
+                      color: "#fff",
+                      fontSize: "11px",
+                    }}
+                  >
+                    {statusMap[r.status]?.label || r.status}
+                  </span>
+                </td>
+              </tr>
+            ))
+        ) : (
+          <tr>
+            <td colSpan={9} className="text-center text-muted py-3">
+              No records found
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+    )}
+
     </div>
   );
 };

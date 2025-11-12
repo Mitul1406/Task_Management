@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import Pagination from "../../components/Pagination"; // ✅ import reusable pagination
 import { jwtDecode } from "jwt-decode";
+import Swal from "sweetalert2";
 
 interface Project {
   id: string;
@@ -56,8 +57,17 @@ const ProjectTl: React.FC = () => {
   };
 
   const handleDeleteProject = async (id: string) => {
-    const confirmDelete = window.confirm("Are you sure to delete this project?");
-    if (!confirmDelete) return;
+    const result = await Swal.fire({
+    title: "Are you sure you?",
+    text: "This action will permanently delete the Project.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+  });
+    if (!result.isConfirmed) return;
     await deleteProject(id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
     toast.success("Project deleted successfully!");
