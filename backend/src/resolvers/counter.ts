@@ -188,7 +188,6 @@ empDashboardCount: async ({ userId }: { userId: string }) => {
       startDate: { $lte: todayEnd },
       endDate: { $gte: todayStart },
     }).select("status");
-    console.log(allTasks);
     
     const totalTasks = allTasks.length;
     const pendingTasks = allTasks.filter((t) => t.status === "pending").length;

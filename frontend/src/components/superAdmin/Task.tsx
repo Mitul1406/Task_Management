@@ -190,7 +190,6 @@ useEffect(() => {
     try {
       const res = await getUsers();
       setUsers(res);
-      console.log(users)
     } catch {
       toast.error("Failed to load users");
     }
@@ -276,8 +275,6 @@ const fetchTasksByProject = async (id: string) => {
   } else {
     proId = projects.find((p) => p?.id === selectedProject[0]);
   }
-
-    console.log(proId);
     
     setEditMode(true);
     setCurrentTaskId(task.id);

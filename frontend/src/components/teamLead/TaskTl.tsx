@@ -207,18 +207,14 @@ const selectStyles = {
       setTotalPages(1);
       return;
     }
-    console.log(tasks);
     
     let filtered = [...tasks];
-    console.log("----------->",filtered);
-    console.log("---->",selectedProject);
     
     if (!selectedProject.includes("all") && selectedProject.length > 0) {
     filtered = filtered.filter((t) =>
       selectedProject.includes(t.projectId)
     );
   }
-    console.log("----------->000000",filtered);
 
 
     if (!selectedStatus.includes("all") && selectedStatus.length > 0) {
@@ -226,7 +222,6 @@ const selectStyles = {
         selectedStatus.includes(task.status)
       );
     }
-    console.log("----------->000001",filtered);
      
     if (!selectedUser.includes("all")) {
   filtered = filtered.filter(
@@ -236,14 +231,12 @@ const selectStyles = {
   );
 }
 
-    console.log("----------->000002",filtered);
 
     if (startDate) {
       filtered = filtered.filter(
         (t) => new Date(t.startDate) >= new Date(startDate)
       );
     }
-    console.log("----------->000003",filtered);
 
 
     if (endDate) {
@@ -251,7 +244,6 @@ const selectStyles = {
         (t) => new Date(t.endDate) <= new Date(endDate)
       );
     }
-    console.log("----------->000004",filtered);
 
 
     setFilteredTasks(filtered);
@@ -281,7 +273,6 @@ const selectStyles = {
         const parsed = jwtDecode<any>(token);
         data.push(parsed);
       }
-      console.log(data);
       setUsers(data);
     } catch {
       toast.error("Failed to load users");

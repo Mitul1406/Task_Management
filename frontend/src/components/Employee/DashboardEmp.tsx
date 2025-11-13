@@ -38,7 +38,6 @@ const DashboardEmp: React.FC = () => {
   const fetchTasks = async () => {
     try {
       const res = await getUserTasks();
-      console.log("Fetched Tasks:", res);
       setProjects(res || []);
     } catch (error) {
       toast.error("Failed to fetch tasks");
