@@ -48,6 +48,9 @@ const SuperAdminProject: React.FC = () => {
     const errors: { name?: string; description?: string } = {};
     if (!newProjectName.trim()) errors.name = "Project name is required";
     if (!newProjectDescription.trim()) errors.description = "Project description is required";
+    
+    if (newProjectName.length>50) errors.name = "Project name cannot exceed 50 characters";
+    if (newProjectDescription.length>50) errors.description = "Project description cannot exceed 50 characters";
     if (Object.keys(errors).length > 0) {
       setError(errors);
       return;
@@ -100,6 +103,7 @@ const SuperAdminProject: React.FC = () => {
           className="form-control w-auto"
           placeholder="Search by project name..."
           value={searchTerm}
+          maxLength={30}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ minWidth: "250px" }}
         /></div>
@@ -117,28 +121,59 @@ const SuperAdminProject: React.FC = () => {
               </div>
 
               <div className="modal-body">
+                <div className="mb-2">
                 <input
                   type="text"
                   placeholder="Project Name"
-                  className="form-control mb-2"
+                  className="form-control "
                   value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
+                  maxLength={50}
+                  onChange={(e) => {
+      const value = e.target.value;
+      setNewProjectName(value);
+
+      if (!value.trim()) {
+        setError((prev) => ({ ...prev, name: "Project name is required" }));
+      } else if (value.length > 50) {
+        setError((prev) => ({ ...prev, name: "Project name cannot exceed 50 characters" }));
+      } else {
+        setError((prev) => ({ ...prev, name: "" }));
+      }
+    }}
                 />
-                {error.name && <small className="text-danger">{error.name}</small>}
+                {error.name && <small className="text-danger ">{error.name}</small>}
+                </div>
+                <div className="mb-1">
                 <input
                   type="text"
+                  maxLength={50}
                   placeholder="Project Description"
-                  className="form-control mb-2"
+                  className="form-control"
                   value={newProjectDescription}
-                  onChange={(e) => setNewProjectDescription(e.target.value)}
+                  onChange={(e) => {
+      const value = e.target.value;
+      setNewProjectDescription(value);
+
+      if (!value.trim()) {
+        setError((prev) => ({ ...prev, description: "Description is required" }));
+      } else if (value.length > 50) {
+        setError((prev) => ({ ...prev, description: "Project description cannot exceed 50 characters" }));
+      } else {
+        setError((prev) => ({ ...prev, description: "" }));
+      }
+    }}
                 />
                 {error.description && (
                   <small className="text-danger">{error.description}</small>
-                )}
+                )}</div>
               </div>
 
               <div className="modal-footer justify-content-between">
-                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                <button className="btn btn-secondary" onClick={() => {
+                  setNewProjectName("")
+                  setNewProjectDescription("")
+                  setError({name:"",description:""})
+                  setShowModal(false)}}>
                   Cancel
                 </button>
                 <button className="btn btn-primary" onClick={handleCreateProject}>
@@ -155,7 +190,7 @@ const SuperAdminProject: React.FC = () => {
           <p>No projects found.</p>
         ) : (
           <div className="table-responsive">
-            <table className="table table-hover align-middle text-start">
+            <table className="table table-hover table-bordered align-middle text-start" style={{border:"1px solid #000"}}>
               <thead>
                 <tr>
                   <th>Project Name</th>

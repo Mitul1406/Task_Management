@@ -159,7 +159,7 @@ const DashboardEmp: React.FC = () => {
           Create Your Own Task
         </button></div>
       <div className="table-responsive">
-        <table className="table table-hover align-middle text-left">
+        <table className="table table-hover table-bordered align-middle text-left" style={{border:"1px solid #000"}}>
           <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
             <tr>
               <th>Project</th>

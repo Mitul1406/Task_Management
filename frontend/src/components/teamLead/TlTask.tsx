@@ -488,7 +488,7 @@ useEffect(() => {
 
 
       <div className="table-responsive card p-3 border-0 bg-light">
-        <table className="table table-hover align-middle text-left">
+        <table className="table table-hover table-bordered align-middle text-left" style={{border:"1px solid #000"}} >
           <thead style={{ backgroundColor: "#1b263b", color: "#fff" }}>
             <tr>
               <th>Project</th>

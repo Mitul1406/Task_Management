@@ -84,36 +84,53 @@ const UserPage: React.FC = () => {
     setCurrentPage(1);
   }, [search, roleFilter, users]);
 
-  // 🔹 Validation
   const validateForm = () => {
     const newErrors: { username?: string; email?: string } = {};
 
     if (!formData.username.trim()) newErrors.username = "Username is required.";
+    if (formData.username.length>50) newErrors.username = "Username cannot exceed 50 characters";
     if (!formData.email.trim()) newErrors.email = "Email is required.";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Invalid email format.";
-
+    else if(formData.email.length>50) newErrors.email = "Email cannot exceed 50 characters";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 🔹 Handle input + live validation
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Live error removal / correction
-    setErrors((prev) => {
-      const updated = { ...prev };
-      if (name === "username" && value.trim()) delete updated.username;
-      if (name === "email") {
-        if (value.trim() && /\S+@\S+\.\S+/.test(value)) delete updated.email;
+  setErrors((prev) => {
+    const updated = { ...prev };
+
+    if (name === "username") {
+      if (!value.trim()) {
+        updated.username = "Username is required";
+      }else if(value.length>50){
+         updated.username="Username cannot exceed 50 characters"
+      } else {
+        delete updated.username;
       }
-      return updated;
-    });
-  };
+    }
 
-  // 🔹 Submit form
+    if (name === "email") {
+      if (!value.trim()) {
+        updated.email = "Email is required";
+      } else if (!/\S+@\S+\.\S+/.test(value)) {
+        updated.email = "Invalid email format";
+      }else if(value.length>50){
+          updated.email = "Email cannot exceed 50 characters";
+      } else {
+        delete updated.email;
+      }
+    }
+
+    return updated;
+  });
+};
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -202,6 +219,7 @@ const UserPage: React.FC = () => {
             placeholder="Search by username..."
             className="form-control"
             value={search}
+            maxLength={30}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
@@ -236,7 +254,7 @@ const UserPage: React.FC = () => {
           ) : (
             <>
               <div className="table-responsive">
-                <table className="table table-hover align-middle">
+                <table style={{border:"1px solid #000"}} className="table table-hover table-bordered align-middle" >
                   <thead>
                     <tr>
                       <th>Username</th>
@@ -306,6 +324,7 @@ const UserPage: React.FC = () => {
                   className={`form-control mb-1 ${errors.username ? "is-invalid" : ""}`}
                   placeholder="Username"
                   value={formData.username}
+                  maxLength={50}
                   onChange={handleChange}
                 />
                 {errors.username && (
@@ -313,12 +332,13 @@ const UserPage: React.FC = () => {
                 )}
 
                 <input
-                  type="email"
+                  type="input"
                   name="email"
                   className={`form-control mb-1 ${errors.email ? "is-invalid" : ""}`}
                   placeholder="Email"
                   value={formData.email}
                   onChange={handleChange}
+                  maxLength={50}
                 />
                 {errors.email && (
                   <div className="text-danger mb-2">{errors.email}</div>

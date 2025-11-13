@@ -416,6 +416,7 @@ const selectStyles = {
 
       if (!taskForm.projectId) newErrors.projectId = "Please select a project.";
       if (!taskForm.title.trim()) newErrors.title = "Task name is required.";
+      if (taskForm.title.length>100) newErrors.title = "Task name cannot exceed 100 characters";
       if (!taskForm.assignedUserId)
         newErrors.assignedUserId = "Please select a user.";
 
@@ -617,7 +618,7 @@ const selectStyles = {
           whiteSpace: "nowrap",
         }}
       >
-        <table className="table table-hover align-middle">
+        <table className="table table-hover table-bordered align-middle" style={{border:"1px solid #000"}}>
           <thead>
             <tr>
               <th>Title</th>
@@ -758,11 +759,27 @@ const selectStyles = {
                   type="text"
                   className={`form-control ${errors.title ? "is-invalid" : ""}`}
                   value={taskForm.title}
+                  maxLength={100}
                   onChange={(e) => {
-                    setTaskForm({ ...taskForm, title: e.target.value });
-                    if (errors.title && e.target.value.trim())
-                      setErrors((prev: any) => ({ ...prev, title: "" }));
-                  }}
+  const value = e.target.value;
+
+  setTaskForm({ ...taskForm, title: value });
+
+  setErrors((prev: any) => {
+    const updated = { ...prev };
+
+    if (!value.trim()) {
+      updated.title = "Task name is required";
+    } else if (value.length > 100) {
+      updated.title = "Task name cannot exceed 100 characters";
+    } else {
+      updated.title = "";
+    }
+
+    return updated;
+  });
+}}
+
                 />
                 {errors.title && (
                   <small className="text-danger">{errors.title}</small>

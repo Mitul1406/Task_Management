@@ -442,9 +442,9 @@ useEffect(() => {
       </div>
 
       {/* 🔹 Single Table for All Tasks */}
-      <div className="table-responsive card p-3">
-        <table className="table table-hover align-middle">
-          <thead className="table-light">
+      <div className="table-responsive card p-3 bg-light">
+        <table className="table table-hover table-bordered align-middle" style={{border:"1px solid #000"}}>
+          <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
             <tr>
               <th>Project</th>
               <th style={{minWidth:"300px"}}>Task</th>

@@ -88,10 +88,18 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
   const handleClose = () => onClose();
 
-  const handleTitleChange = (value: string) => {
-    setTitle(value);
-    setTitleError(value.trim() ? "" : "Task name is required");
-  };
+const handleTitleChange = (value: string) => {
+  setTitle(value);
+
+  if (!value.trim()) {
+    setTitleError("Task name is required");
+  } else if (value.length > 100) {
+    setTitleError("Task name cannot exceed 100 characters");
+  } else {
+    setTitleError("");
+  }
+};
+
 
   const handleStartDateChange = (value: string) => {
     setStartDate(value);
@@ -147,7 +155,6 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     try {
       setLoading(true);
 
-      // ✅ Pass selectedProject — backend handles fallback to Shared Tasks
       const task = await createTaskAdmin(
         selectedProject || "",
         title,
@@ -216,6 +223,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   type="text"
                   className="form-control"
                   value={title}
+                  maxLength={100}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder="Enter task name"
                 />
