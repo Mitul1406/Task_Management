@@ -68,7 +68,7 @@ const selectedProjectOptions = selectedProject.includes("all")
     alignItems: "flex-start",
     paddingTop: "4px",
     paddingBottom: "4px",
-    maxHeight: "35px", 
+    // maxHeight: "35px", 
     overflowY: "auto", 
     scrollbarWidth: "none", 
     msOverflowStyle: "none", 
@@ -427,65 +427,65 @@ useEffect(() => {
 
       {/* Filters */}
       <div className="d-flex flex-wrap gap-3 mb-3">
-        <div>
-          <label className="form-label fw-bold">Project</label>
-          <div style={{maxWidth:"200px",minWidth:"200px"}}>
-          <Select
-              isMulti
-              options={projectOptions}
-              value={selectedProjectOptions}
-              onChange={(selected: any) => {
-    const values = selected ? selected.map((s: any) => s.value) : [];
+  {/* First row: Project + Status */}
+  <div className="d-flex flex-wrap gap-3 w-100 mb-3">
+    <div style={{ minWidth: "200px",flex: "1" }}>
+      <label className="form-label fw-bold">Project</label>
+      <Select
+        isMulti
+        options={projectOptions}
+        value={selectedProjectOptions}
+        onChange={(selected: any) => {
+          const values = selected ? selected.map((s: any) => s.value) : [];
+          if (values.includes("all")) setSelectedProject(["all"]);
+          else if (values.length === 0) setSelectedProject([]);
+          else setSelectedProject(values);
+        }}
+        placeholder="Select Projects..."
+        styles={selectStyles}
+      />
+    </div>
 
-    if (values.includes("all")) {
-      setSelectedProject(["all"]);
-    } else if (values.length === 0) {
-      setSelectedProject([]);
-    } else {
-      setSelectedProject(values);
-    }
-  }}
-              placeholder="Select Projects..."
-              styles={selectStyles}
-          /> </div>
-        </div>
-      <div>
-  <label className="form-label fw-bold">Status:</label>
-          <div style={{maxWidth:"200px",minWidth:"200px"}}>
+    <div style={{ minWidth: "200px",flex: "1" }}>
+      <label className="form-label fw-bold">Status</label>
+      <Select
+        isMulti
+        options={statusOptions}
+        value={statusOptions.filter((opt) => statusFilter.includes(opt.value))}
+        onChange={(selected: any) => {
+          const values = selected ? selected.map((s: any) => s.value) : [];
+          setStatusFilter(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Status..."
+        styles={selectStyles}
+      />
+    </div>
+  </div>
 
-  <Select
-  isMulti
-  options={statusOptions}
-  value={statusOptions.filter((opt) => statusFilter.includes(opt.value))}
-  onChange={(selected: any) => {
-    const values = selected ? selected.map((s: any) => s.value) : [];
-    setStatusFilter(values.includes("all") ? ["all"] : values);
-  }}
-  placeholder="Select Status..."
-  styles={selectStyles}
-/>
-          </div>
-        </div>
-        <div>
-          <label className="form-label fw-bold">Start Date</label>
-          <input
-            type="date"
-            className="form-control"
-            value={filterStartDate}
-            onChange={(e) => setFilterStartDate(e.target.value)}
-          />
-        </div>
+  {/* Second row: Start Date + End Date */}
+  <div className="d-flex flex-wrap gap-3 w-100">
+    <div style={{ minWidth: "200px" }}>
+      <label className="form-label fw-bold">Start Date</label>
+      <input
+        type="date"
+        className="form-control"
+        value={filterStartDate}
+        onChange={(e) => setFilterStartDate(e.target.value)}
+      />
+    </div>
 
-        <div>
-          <label className="form-label fw-bold">End Date</label>
-          <input
-            type="date"
-            className="form-control"
-            value={filterEndDate}
-            onChange={(e) => setFilterEndDate(e.target.value)}
-          />
-        </div>
-      </div>
+    <div style={{ minWidth: "200px"}}>
+      <label className="form-label fw-bold">End Date</label>
+      <input
+        type="date"
+        className="form-control"
+        value={filterEndDate}
+        onChange={(e) => setFilterEndDate(e.target.value)}
+      />
+    </div>
+  </div>
+</div>
+
 
       <div className="table-responsive card p-3 border-0 bg-light">
         <table className="table table-hover align-middle text-left">

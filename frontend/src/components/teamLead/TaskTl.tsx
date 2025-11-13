@@ -78,53 +78,49 @@ const TaskTl: React.FC = () => {
       )
     : projectOptions.filter((opt) => selectedProject.includes(opt.value));
 
-  const selectStyles = {
-    control: (base: any, state: any) => ({
-      ...base,
-      borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
-      borderRadius: "6px",
-      boxShadow: state.isFocused
-        ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)"
-        : "none",
-      minHeight: "35px",
-      alignItems: "flex-start",
-    }),
-    valueContainer: (base: any) => ({
-      ...base,
-      flexWrap: "wrap",
-      alignItems: "flex-start",
-      paddingTop: "4px",
-      paddingBottom: "4px",
-      maxHeight: "35px",
-      overflowY: "auto",
-      scrollbarWidth: "none",
-      msOverflowStyle: "none",
-    }),
-    multiValue: (base: any) => ({
-      ...base,
-      backgroundColor: "#e9f2ff",
-      margin: "2px",
-      borderRadius: "4px",
-    }),
-    multiValueLabel: (base: any) => ({
-      ...base,
-      color: "#0d6efd",
-      whiteSpace: "normal",
-      wordBreak: "break-word",
-    }),
-    multiValueRemove: (base: any) => ({
-      ...base,
-      color: "#0d6efd",
-      ":hover": {
-        backgroundColor: "#0d6efd",
-        color: "white",
-      },
-    }),
-    menu: (base: any) => ({
-      ...base,
-      zIndex: 9999,
-    }),
-  };
+const selectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
+    borderRadius: "6px",
+    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)" : "none",
+    // minHeight: "35px",
+    alignItems: "flex-start",
+  }),
+  valueContainer: (base: any) => ({
+    ...base,
+    flexWrap: "wrap",
+    alignItems: "center",
+    paddingTop: "4px",
+    paddingBottom: "4px",
+    // maxHeight: "80px", // allow multi-value wrapping
+    overflowY: "auto",
+  }),
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#e9f2ff",
+    margin: "2px",
+    borderRadius: "4px",
+  }),
+  multiValueLabel: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    // whiteSpace: "normal",
+    // wordBreak: "break-word",
+  }),
+  multiValueRemove: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    ":hover": {
+      backgroundColor: "#0d6efd",
+      color: "white",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
 
   const style = document.createElement("style");
   style.innerHTML = `
@@ -527,16 +523,16 @@ const TaskTl: React.FC = () => {
   return (
     <div className="container mt-4">
       <h3>Tasks</h3>
-  <div className="row g-3 align-items-end mb-3">
-    {/* Filter By Project */}
-    <div className="col-12 col-md-4 col-lg-2">
+ <div className="container-fluid mb-3">
+  <div className="d-flex flex-wrap row g-3 mb-3">
+    <div className="col-12 col-md-4 col-lg-2 flex-grow-1">
       <label className="fw-bold mb-1">Filter By Project:</label>
       <Select
         isMulti
         options={projectOptions}
         value={selectedProjectOptions}
         onChange={(selected: any) => {
-          let values = selected ? selected.map((s: any) => s.value) : [];
+          const values = selected ? selected.map((s: any) => s.value) : [];
           setSelectedProject(values.includes("all") ? ["all"] : values);
         }}
         placeholder="Select Projects..."
@@ -544,8 +540,7 @@ const TaskTl: React.FC = () => {
       />
     </div>
 
-    {/* Filter By Status */}
-    <div className="col-12 col-md-4 col-lg-2">
+    <div className="col-12 col-md-4 col-lg-2 flex-grow-1">
       <label className="fw-bold mb-1">Filter By Status:</label>
       <Select
         isMulti
@@ -562,7 +557,7 @@ const TaskTl: React.FC = () => {
       />
     </div>
 
-    <div className="col-12 col-md-4 col-lg-2">
+    <div className="col-12 col-md-4 col-lg-2 flex-grow-1">
       <label className="fw-bold mb-1">Filter By User:</label>
       <Select
         isMulti
@@ -576,7 +571,10 @@ const TaskTl: React.FC = () => {
         styles={selectStyles}
       />
     </div>
+  </div>
 
+  {/* Second line: Dates + Add Task */}
+  <div className="d-flex flex-wrap row g-3 align-items-end">
     <div className="col-6 col-md-2 col-lg-2">
       <label className="fw-bold mb-1">Start Date:</label>
       <input
@@ -587,7 +585,6 @@ const TaskTl: React.FC = () => {
       />
     </div>
 
-    {/* End Date */}
     <div className="col-6 col-md-2 col-lg-2">
       <label className="fw-bold mb-1">End Date:</label>
       <input
@@ -598,8 +595,8 @@ const TaskTl: React.FC = () => {
       />
     </div>
 
-    {/* Add Task Button */}
-    <div className="col-12 col-md-2 col-lg-2 text-md-end">
+    {/* Push button to right */}
+    <div className="col-12 col-md-2 col-lg-2 ms-auto text-md-end">
       <button
         className="btn btn-primary w-100 mt-2 mt-md-0"
         onClick={handleAddTask}
@@ -608,6 +605,8 @@ const TaskTl: React.FC = () => {
       </button>
     </div>
   </div>
+</div>
+
 
 
       <div
@@ -952,21 +951,31 @@ const TaskTl: React.FC = () => {
 
                 <div className="col-md-6">
                   <label>Status</label>
-                  <select
-                    className="form-select"
-                    value={taskForm.status}
-                    onChange={(e) => {
-                      const newStatus = e.target.value;
-                      setTaskForm({ ...taskForm, status: newStatus });
-                      handleStatusChange(currentTaskId, e.target.value);
-                    }}
-                  >
-                    {Object.entries(statusMap).map(([key, { label }]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                  {editMode ? (
+  <select
+    className="form-select"
+    value={taskForm.status}
+    onChange={(e) => {
+      const newStatus = e.target.value;
+      setTaskForm({ ...taskForm, status: newStatus });
+      handleStatusChange(currentTaskId, newStatus);
+    }}
+  >
+    {Object.entries(statusMap).map(([key, { label }]) => (
+      <option key={key} value={key}>
+        {label}
+      </option>
+    ))}
+  </select>
+) : (
+  <input
+    type="text"
+    className="form-control bg-light text-muted"
+    value={statusMap["pending"].label}
+    readOnly
+  />
+)}
+
                 </div>
               </div>
             </div>
