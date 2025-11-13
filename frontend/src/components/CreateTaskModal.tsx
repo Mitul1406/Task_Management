@@ -45,7 +45,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     const loadProjects = async () => {
       try {
         const data = await getProjects();
-        const newData:any = data.filter((p:any)=>p.name !== "Shared Tasks")
+        const newData:any = data.filter((p:any)=>p.name !== "User Created Taskss")
         setProjects(newData || []);
       } catch {
         toast.error("Failed to load projects");
@@ -207,7 +207,7 @@ const handleTitleChange = (value: string) => {
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
                 >
-                  <option value="">Shared Tasks (default)</option>
+                  <option value="">User Created Taskss (default)</option>
                   {projects.map((proj) => (
                     <option key={proj.id} value={proj.id}>
                       {proj.name}

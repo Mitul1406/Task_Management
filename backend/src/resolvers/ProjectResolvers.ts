@@ -13,7 +13,7 @@ export const projectResolver ={
   adminsprojects: async (args: { userId: string }) => {
   const projects = await Project.find({ adminId: args.userId });
 
-  const sharedProject = await Project.findOne({ name: "Shared Tasks" });
+  const sharedProject = await Project.findOne({ name: "User Created Taskss" });
 
   if (
     sharedProject &&
