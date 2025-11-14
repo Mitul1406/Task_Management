@@ -256,6 +256,15 @@ document.head.appendChild(style);
         return;
       }
 
+      const IsAnyRunningTasks =projects.some((p) =>
+                p.tasks.some((t: any) => t.isRunning && t.id !== task.id)
+              );
+            if(IsAnyRunningTasks)
+            {
+              toast.warn("You already have a running task. Please stop it first.");
+              return;
+            }
+
       let hasPermission = screenshotRef.current?.hasPermission;
       if (!hasPermission) {
         const granted = await screenshotRef.current?.requestScreenShare?.();
@@ -507,6 +516,7 @@ useEffect(() => {
                 <tr
                   key={task.id}
                   id={`task-${task.id}`}
+                  onClick={()=>setFocusedTaskId(null)}
                   className={task.id === focusedTaskId ? "table-warning" : ""}
                 >
                   <td>{task.projectName}</td>

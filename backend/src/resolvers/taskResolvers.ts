@@ -149,12 +149,21 @@ tasks: async ({
       isRunning: !!runningTimer,
     };
   },
+
   createTask: async ({ projectId, title, estimatedTime, assignedUserId, startDate, endDate }: any) => {
   let validProjectId = projectId;
 
   if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
     const sharedProject = await getOrCreateDefaultProject();
     validProjectId = sharedProject._id;
+  }
+
+  if(projectId)
+  {
+  const projectExists = await Project.exists({ _id: projectId });
+  if (!projectExists) {
+    throw new Error(`Project not found.`);
+  }
   }
 
   const newTask = new Task({

@@ -222,12 +222,12 @@ const ProjectTl: React.FC = () => {
                   >
                     Report
                   </button>
-                  <button
+                  {project.name !=="User Created Tasks"&&<button
                     className="btn btn-outline-danger btn-sm"
                     onClick={() => handleDeleteProject(project.id)}
                   >
                     Delete
-                  </button>
+                  </button>}
                 </div>
               </td>
             </tr>

@@ -53,7 +53,14 @@ const Pagination: React.FC<PaginationProps> = ({
           <button
             className="btn btn-outline-primary btn-sm me-2"
             disabled={currentPage === 1}
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => {onPageChange(currentPage - 1)
+              setTimeout(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth", 
+    });
+  }, 0);
+            }}
           >
             {"<"}
           </button>
@@ -66,7 +73,15 @@ const Pagination: React.FC<PaginationProps> = ({
               >
                 <button
                   className="page-link"
-                  onClick={() => onPageChange(page)}
+                  onClick={() =>{
+  onPageChange(page);
+  setTimeout(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth", 
+    });
+  }, 0);
+                  }}
                 >
                   {page}
                 </button>
@@ -78,7 +93,14 @@ const Pagination: React.FC<PaginationProps> = ({
           <button
             className="btn btn-outline-primary btn-sm ms-2"
             disabled={currentPage === totalPages}
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => {onPageChange(currentPage + 1)
+              setTimeout(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth", 
+    });
+  }, 0);
+            }}
           >
             {">"}
           </button>

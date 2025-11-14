@@ -190,14 +190,23 @@ const TaskEmp: React.FC = () => {
               : p
           )
         );
-        const anyRunningTasks = Object.values(intervalsRef.current).length > 0;
-
+        const anyRunningTasks =projects.some((p) =>
+          p.tasks.some((t: any) => t.isRunning && t.id !== task.id)
+        );
         if (!anyRunningTasks) {
         setShowStopPermissionModal(true);
       }
         return;
       }
 
+      const IsAnyRunningTasks =projects.some((p) =>
+          p.tasks.some((t: any) => t.isRunning && t.id !== task.id)
+        );
+      if(IsAnyRunningTasks)
+      {
+        toast.warn("You already have a running task. Please stop it first.");
+        return;
+      }
       let hasPermission = screenshotRef.current?.hasPermission;
       if (!hasPermission) {
         const granted = await screenshotRef.current?.requestScreenShare?.();
@@ -461,7 +470,8 @@ useEffect(() => {
               paginatedTasks.map((task: any) => (
                 <tr
                   key={task.id}
-                  className={highlightTaskId === task.id ? "table-warning fw-bold" : ""}
+                  onClick={()=>setHighlightTaskId(null)}
+                  className={highlightTaskId === task.id ? "table-warning" : ""}
                 >
                   <td>{task.projectName}</td>
                   <td className="text-wrap text-break">{task.title}</td>
