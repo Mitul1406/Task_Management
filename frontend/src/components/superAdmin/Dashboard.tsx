@@ -236,7 +236,7 @@ useEffect(() => {
         <div className="row g-3">
           {paginatedProjects.map((project) => (
             <div key={project.projectId} className="col-md-4 col-sm-6">
-  <div className="card p-3 shadow-sm h-100 border-0">
+  <div className="card p-3 shadow-sm h-100 border-0" onClick={()=>navigate(`/projects?name=`+project.projectName)} style={{cursor:"pointer"}}>
     <div className="d-flex justify-content-between align-items-center mb-2">
       <h5 className="mb-0 text-dark">{project.projectName}</h5>
       <span className="badge bg-primary">
