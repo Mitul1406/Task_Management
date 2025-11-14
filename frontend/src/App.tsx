@@ -31,6 +31,7 @@ import TaskEmp from "./components/Employee/TaskEmp";
 import Dashboard from "./components/superAdmin/Dashboard";
 import DashboardTl from "./components/teamLead/DashboardTl";
 import DashboardEmp from "./components/Employee/DashboardEmp";
+import UserView from "./components/superAdmin/UserView";
 
 function App() {
   return (
@@ -137,6 +138,16 @@ function App() {
               <ProtectedRoute allowedRoles={["superAdmin"]}>
                 <Layout>
                 <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/userData"
+            element={
+              <ProtectedRoute allowedRoles={["superAdmin","teamLead"]}>
+                <Layout>
+                <UserView />
                 </Layout>
               </ProtectedRoute>
             }

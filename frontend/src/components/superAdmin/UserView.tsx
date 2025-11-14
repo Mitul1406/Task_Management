@@ -12,25 +12,20 @@ import {
 } from "../../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../Pagination";
-import { InputActionMeta } from "react-select";
 import Select from "react-select";
 import Swal from "sweetalert2";
 
-const SuperAdminTask: React.FC = () => {
+const UserView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const projectIdFromURL = queryParams.get("projectId");
-  const status:any = queryParams.get("status");
+  const userId = queryParams.get("userId");
+  const username = queryParams.get("username");
 
   const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
-  
-  const [selectedProject, setSelectedProject] = useState(
-  projectIdFromURL ? [projectIdFromURL] : ["all"]
-);
-
+  const [selectedProject, setSelectedProject] = useState(["all"]);
   const [loading, setLoading] = useState(false);
   const [filteredCount, setFilteredCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -60,10 +55,12 @@ const projectOptions = [
   ...projects.map((p) => ({ value: p.id, label: p.name })),
 ];
 
-const userOptions = [
-  { value: "all", label: "All Users" },
-  ...users.map((u) => ({ value: u.id, label: u.username })),
-];
+const userOptions = users
+  .filter((u) => u.id === userId)
+  .map((u) => ({
+    value: u.id,
+    label: u.username,  
+  }));
 
 const selectStyles = {
   control: (base: any, state: any) => ({
@@ -122,10 +119,6 @@ const selectedProjectOptions = selectedProject.includes("all")
   ? [projectOptions[0]]
   : projectOptions.filter((opt) => selectedProject.includes(opt.value));
 
-const selectedUserOptions = selectedUser.includes("all")
-  ? [userOptions[0]]
-  : userOptions.filter((opt) => selectedUser.includes(opt.value));
-
   const [taskForm, setTaskForm] = useState({
     title: "",
     projectId: "",
@@ -156,12 +149,7 @@ const selectedUserOptions = selectedUser.includes("all")
         toast.error("Failed to update status");
       }
     };
-    useEffect(()=>{
-       if(status)
-       {
-        setSelectedStatus(status)
-       }
-    },[status])
+
   useEffect(() => {
     fetchProjects();
     fetchUsers();
@@ -252,7 +240,7 @@ const fetchTasksByProject = async (id: string) => {
     setTaskForm({
       title: "",
       projectId,
-      assignedUserId: "",
+      assignedUserId: userOptions[0]?.value,
       startDate: today(),
       endDate: today(),
       status: "pending",
@@ -433,10 +421,11 @@ useEffect(() => {
     filtered = filtered.filter((task) => selectedStatus.includes(task.status));
   }
 
-  if (!selectedUser.includes("all") && selectedUser.length > 0) {
-    filtered = filtered.filter(
-      (t) => selectedUser.includes(t.assignedUser?.id || t.assignedUserId || "")
-    );
+  if (userId) {
+    filtered = filtered.filter((t) => {
+    const uid = t.assignedUser?.id || t.assignedUserId || "";
+    return uid === userId;
+  });
   }
 
   if (startDate) {
@@ -459,7 +448,7 @@ useEffect(() => {
   const paginated = filtered.slice(start, start + tasksPerPage);
   setFilteredCount(filtered.length);
   setFilteredTasks(paginated);
-}, [tasks, selectedStatus, selectedUser, selectedProject, startDate, endDate, currentPage]);
+}, [tasks, selectedStatus, userId, selectedProject, startDate, endDate, currentPage]);
 
 useEffect(() => {
   setCurrentPage(1);
@@ -467,12 +456,15 @@ useEffect(() => {
 
   return (
     <div className="container-fluid mt-4">
-          <div className="d-flex justify-content-between">        
-          <h3>Tasks</h3>
-
-        <button className="btn btn-sm btn-outline-dark" onClick={()=>navigate(-1)}>{"<"}- Back</button>
-      </div>
-<div className="container-fluid mb-3">
+        <div className="d-flex justify-content-between">
+    <h3>User Data - {username}</h3>
+    <div className="gap-2">
+        <button className="btn btn-sm btn-outline-warning me-2" onClick={()=>navigate("/screenshots?userId="+userId+"&username="+username)}>View ScreenShots</button>
+        <button className="btn btn-sm btn-outline-success me-2" onClick={()=>navigate("/alluser-timesheet-report?userId="+userId+"&username="+username)}>View User Timesheet</button>
+        <button className="btn btn-sm btn-outline-dark " onClick={()=>navigate(-1)}>{"<"}- Back</button>
+    </div>
+    </div>
+<div className="container-fluide mb-3">
   <div className="d-flex flex-wrap gap-3 mb-3">
     <div style={{ minWidth: "200px", flex: "1" }}>
       <label className="fw-bold mb-1">Filter By Project:</label>
@@ -510,22 +502,17 @@ useEffect(() => {
       />
     </div>
 
-    <div style={{ minWidth: "200px", flex: "1" }}>
+    {/* <div style={{ minWidth: "200px", flex: "1" }}>
       <label className="fw-bold mb-1">Filter By Assigned User:</label>
       <Select
-        isMulti
         options={userOptions}
-        value={selectedUserOptions}
-        onChange={(selected: any) => {
-          const values = selected ? selected.map((s: any) => s.value) : [];
-          setSelectedUser(values.includes("all") ? ["all"] : values);
-        }}
+        value={userOptions[0]}
         placeholder="Select Users..."
         styles={selectStyles}
         menuPortalTarget={document.body}
         menuPosition="fixed"
       />
-    </div>
+    </div> */}
   </div>
 
   <div className="d-flex flex-wrap gap-3 align-items-end">
@@ -853,27 +840,21 @@ useEffect(() => {
 
         <div className="row g-3">
           <div className="col-md-6">
-            <label>Assign User</label>
-            <select
-  className={`form-select ${errors.assignedUserId ? "is-invalid" : ""}`}
-  value={taskForm.assignedUserId}
-  onChange={(e) => {
-    setTaskForm({ ...taskForm, assignedUserId: e.target.value });
-    if (errors.assignedUserId && e.target.value)
-      setErrors((prev: any) => ({ ...prev, assignedUserId: "" }));
-  }}
->
-  <option value="">Select User</option>
-  {users.map((u) => (
-    <option key={u.id} value={u.id}>
-      {u.username}
-    </option>
-  ))}
-</select>
-{errors.assignedUserId && (
-  <small className="text-danger">{errors.assignedUserId}</small>
-)}
-          </div>
+  <label>Assign User</label>
+  
+  <select
+    className={`form-select ${errors.assignedUserId ? "is-invalid" : ""}`}
+    value={users[0]?.id}
+    disabled
+  >
+    <option value={users[0]?.id}>{users[0]?.username}</option>
+  </select>
+
+  {errors.assignedUserId && (
+    <small className="text-danger">{errors.assignedUserId}</small>
+  )}
+</div>
+
 
           <div className="col-md-6">
             <label>Status</label>
@@ -927,4 +908,4 @@ useEffect(() => {
   );
 };
 
-export default SuperAdminTask;
+export default UserView;

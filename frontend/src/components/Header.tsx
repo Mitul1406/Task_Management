@@ -43,6 +43,7 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("activeMenu");
     toast.success("Logout successfully...");
     navigate("/login");
   };

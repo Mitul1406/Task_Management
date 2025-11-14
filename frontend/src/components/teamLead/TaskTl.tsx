@@ -514,7 +514,11 @@ const selectStyles = {
   };
   return (
     <div className="container mt-4">
-      <h3>Tasks</h3>
+      <div className="d-flex justify-content-between">        
+          <h3>Tasks</h3>
+
+        <button className="btn btn-sm btn-outline-dark" onClick={()=>navigate(-1)}>{"<"}- Back</button>
+      </div>
  <div className="container-fluid mb-3">
   <div className="d-flex flex-wrap row g-3 mb-3">
     <div className="col-12 col-md-4 col-lg-2 flex-grow-1">

@@ -16,7 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import { useSidebar } from "../context/SideBarContext";
 // import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
@@ -52,7 +52,7 @@ const statusMap: Record<string, { label: string; bgColor: string }> = {
 };
 
 const SuperAdminDashboard: React.FC = () => {
-  const {logout} = useAuth()
+  const {logout} = useSidebar()
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 

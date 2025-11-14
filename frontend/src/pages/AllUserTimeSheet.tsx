@@ -3,6 +3,7 @@ import html2pdf from "html2pdf.js";
 import { getAllTimesheet, getUsers } from "../services/api";
 import {jwtDecode} from "jwt-decode";
 import Pagination from "../components/Pagination";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const statusMap: Record<string, { label: string; bgColor: string }> = {
   pending: { label: "Pending", bgColor: "#064393ff" },
@@ -52,10 +53,24 @@ const AllUserTimeSheet: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [renderPdf, setRenderPdf] = useState(false);
+  const location=useLocation()
+  const qp= new URLSearchParams(location.search)
+  const userId=qp.get("userId")
+  const username=qp.get("username")
   const itemsPerPage = 10; 
+  const navigate=useNavigate()
   let totalResults=0;
   let totalPagesCalc=0;
-    useEffect(() => {
+  useEffect(()=>{
+     if(userId){
+      setSelectedUser(userId)
+    }
+    if(username)
+      setSelectedUserName(username)
+      
+  },[userId])
+
+  useEffect(() => {
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -250,34 +265,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   const foundUser = users1.find((u: any) => u.id === userId);
   setSelectedUserName(foundUser ? foundUser.username : "");
 };
-  const tableStyle: React.CSSProperties = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  border: '1px solid #000',
-  margin: 0,
-  fontSize: '10.5px',
-};
-
-const headerRowStyle: React.CSSProperties = {
-  backgroundColor: '#1b263b',
-  color: 'white',
-};
-
-const thStyle: React.CSSProperties = {
-  border: '1px solid #000',
-  padding: '6px 4px',
-  textAlign: 'left',
-  fontWeight: 'bold',
-  fontSize: '10.5px',
-};
-
-const tdStyle: React.CSSProperties = {
-  border: '1px solid #000',
-  padding: '5px 4px',
-  fontSize: '10.5px',
-  verticalAlign: 'top',
-};
-
+  
 const badgeStyle = (status: string) => ({
   backgroundColor: statusMap[status]?.bgColor || "#6c757d",
   fontSize: "12px",
@@ -325,7 +313,7 @@ const badgeStyle = (status: string) => ({
     </div>
 
     <div className="d-flex flex-wrap align-items-end justify-content-end gap-3 no-print">
-      <div style={{ minWidth: "160px" }}>
+      {/* <div style={{ minWidth: "160px" }}>
         <label className="form-label mb-1">User</label>
         <select
           className="form-select form-select-sm"
@@ -339,7 +327,7 @@ const badgeStyle = (status: string) => ({
             </option>
           ))}
         </select>
-      </div>
+      </div> */}
 
       <div style={{ minWidth: "140px" }}>
         <label className="form-label mb-1">Start Date</label>
@@ -361,12 +349,15 @@ const badgeStyle = (status: string) => ({
           onChange={(e) => setEndDate(e.target.value)}
         />
       </div>
-
+      
       <div>
         <label className="form-label mb-1 d-block">&nbsp;</label>
         <button className="btn btn-primary" onClick={handleDownload}>
           📄 Download PDF
         </button>
+      </div>
+      <div>        
+        <button className="btn btn-outline-dark me-2" onClick={()=>navigate(-1)}>{"<"}- Back</button>
       </div>
     </div>
   </div>

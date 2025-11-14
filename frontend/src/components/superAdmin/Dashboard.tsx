@@ -3,6 +3,7 @@ import { getSuperAdminDashboardCount, getAllTimesheet, getUsers } from "../../se
 import Pagination from "../Pagination";
 import { FaClock, FaProjectDiagram, FaSpinner, FaTasks, FaUsers } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useSidebar } from "../../context/SideBarContext";
 
 interface UserContribution {
   userId: string;
@@ -42,6 +43,7 @@ interface TimesheetRow {
 }
 
 const Dashboard: React.FC = () => {
+  const {activePath,setActivePath} =useSidebar()
   const [filteredTimesheet, setFilteredTimesheet] = useState<TimesheetRow[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [data, setData] = useState<DashboardData | null>(null);
@@ -157,7 +159,9 @@ useEffect(() => {
   {/* <h4 className="mb-4 text-dark">l</h4> */}
   <div className="row g-4 text-center">
 
-    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/projects")} style={{cursor:"pointer"}}>
+    <div className="col-md-3 col-sm-6" onClick={()=>{
+      setActivePath("/projects")
+      navigate("/projects")}} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
         <span className="text-success mb-2">
           <FaProjectDiagram size={36} />
@@ -197,7 +201,9 @@ useEffect(() => {
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/userView")} style={{cursor:"pointer"}}>
+    <div className="col-md-3 col-sm-6" onClick={()=>{
+      setActivePath("/userView")
+      navigate("/userView")}} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-secondary rounded">
         <span className="text-secondary mb-2">
           <FaUsers size={36} />
@@ -207,7 +213,9 @@ useEffect(() => {
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/userView?role=teamLead")} style={{cursor:"pointer"}}>
+    <div className="col-md-3 col-sm-6" onClick={()=>{
+      setActivePath("/userView")
+      navigate("/userView?role=teamLead")}} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
         <span className="text-info mb-2">
           <FaUsers size={36} />
@@ -217,7 +225,9 @@ useEffect(() => {
       </div>
     </div>
 
-    <div className="col-md-3 col-sm-6" onClick={()=>navigate("/userView?role=user")} style={{cursor:"pointer"}}>
+    <div className="col-md-3 col-sm-6" onClick={()=>{
+      setActivePath("/userView")
+      navigate("/userView?role=user")}} style={{cursor:"pointer"}}>
       <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
         <span className="text-info mb-2">
           <FaUsers size={36} />
@@ -236,7 +246,9 @@ useEffect(() => {
         <div className="row g-3">
           {paginatedProjects.map((project) => (
             <div key={project.projectId} className="col-md-4 col-sm-6">
-  <div className="card p-3 shadow-sm h-100 border-0" onClick={()=>navigate(`/projects?name=`+project.projectName)} style={{cursor:"pointer"}}>
+  <div className="card p-3 shadow-sm h-100 border-0" onClick={()=>{
+    setActivePath("/projects")
+    navigate(`/projects?name=`+project.projectName)}} style={{cursor:"pointer"}}>
     <div className="d-flex justify-content-between align-items-center mb-2">
       <h5 className="mb-0 text-dark">{project.projectName}</h5>
       <span className="badge bg-primary">
