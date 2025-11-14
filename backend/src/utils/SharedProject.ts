@@ -2,11 +2,11 @@ import { Project } from "../models/Project.js";
 import mongoose from "mongoose";
 
 export const getOrCreateDefaultProject = async () => {
-  let project = await Project.findOne({ name: "Shared Tasks" });
+  let project = await Project.findOne({ name: "User Created Tasks" });
 
   if (!project) {
     project = await Project.create({
-      name: "Shared Tasks",
+      name: "User Created Tasks",
       description: "A shared project for general users tasks",
       adminId: new mongoose.Types.ObjectId("68f7179575313d92ad2ba758"),
     });

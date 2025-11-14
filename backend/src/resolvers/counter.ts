@@ -117,7 +117,7 @@ teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
         totalWorkedToday: 0,
       };
     }
-    const sharedProject = await Project.findOne({ name: "Shared Tasks" }).select("_id");
+    const sharedProject = await Project.findOne({ name: "User Created Tasks" }).select("_id");
 
     const projectIds = [
       ...projects.map((p) => p._id),
@@ -188,7 +188,6 @@ empDashboardCount: async ({ userId }: { userId: string }) => {
       startDate: { $lte: todayEnd },
       endDate: { $gte: todayStart },
     }).select("status");
-    console.log(allTasks);
     
     const totalTasks = allTasks.length;
     const pendingTasks = allTasks.filter((t) => t.status === "pending").length;

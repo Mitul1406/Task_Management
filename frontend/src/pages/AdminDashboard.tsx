@@ -23,6 +23,7 @@ import { useAuth } from "../context/AuthContext";
 import CreateTaskModal from "../components/CreateTaskModal";
 import AutoScreenshot from "./ScreenShot";
 import NotificationPermissionBanner, { notifyUser } from "../components/notifyUser";
+import Swal from "sweetalert2";
 // import AutoScreenshot from "./ScreenShot";
 interface Task {
   status: string;
@@ -536,11 +537,18 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
   const handleDeleteTask = async (taskId: string, projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
     const task = project?.tasks?.find((t) => t.id === taskId);
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete the task "${task?.title}"...?`
-    );
-
-    if (!confirmDelete) return;
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `This action permanently delete the task "${task?.title}"...?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
+      });
+    if (!result.isConfirmed) return;
     await deleteTask(taskId);
     toast.success("Task deleted successfully...");
     setProjects((prev) =>
@@ -576,12 +584,19 @@ const handleStartStopTimerAssigned = async (task: any, projectId: string) => {
 
   const handleDeleteProject = async (id: string) => {
     const project = projects.find((p) => p.id === id);
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete the project "${project?.name}"..? 
-This will also delete all its tasks.`
-    );
-
-    if (!confirmDelete) return;
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `Are you sure you want to delete the project "${project?.name}"..? 
+This will also delete all its tasks.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+      });
+    
+    if (!result.isConfirmed) return;
     await deleteProject(id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
     toast.success("Project deleted successfully...");
@@ -849,7 +864,7 @@ const handleScreenShareStopped = useCallback(async () => {
                     <th>Estimated Time</th>
                     <th>Time Consumed</th>
                     <th>Saved Time</th>
-                    <th>Overtime</th>
+                    <th>Time Extension</th>
                     <th>Start Date</th>
                     <th>End Date</th>
                     <th>Status</th>
@@ -1184,7 +1199,7 @@ const handleScreenShareStopped = useCallback(async () => {
                         <th style={{ width: "6%" }}>SS</th>
                         <th style={{ width: "12%" }}>Time Consume</th>
                         <th style={{ width: "12%" }}>Saved Time</th>
-                        <th style={{ width: "12%" }}>Overtime</th>
+                        <th style={{ width: "12%" }}>Time Extension</th>
                         <th style={{ width: "12%" }}>Start Date</th>
                         <th style={{ width: "12%" }}>End Date</th>
                         <th style={{ width: "10%" }}>Assigned User</th>

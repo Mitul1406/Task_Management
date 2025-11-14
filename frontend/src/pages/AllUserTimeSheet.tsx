@@ -51,6 +51,7 @@ const AllUserTimeSheet: React.FC = () => {
   const [selectedUserName, setSelectedUserName] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [renderPdf, setRenderPdf] = useState(false);
   const itemsPerPage = 10; 
   let totalResults=0;
   let totalPagesCalc=0;
@@ -82,7 +83,7 @@ const AllUserTimeSheet: React.FC = () => {
   };
 
   fetchData();
-}, [startDate, endDate, selectedUser, currentPage]);
+}, [startDate, endDate, selectedUser]);
 
 useEffect(() => {
   setCurrentPage(1);
@@ -107,28 +108,17 @@ useEffect(() => {
 
   const totalHours = () => {
     const start = new Date(startDate);
-    const end = new Date(endDate);
+  const end = new Date(endDate);
+  let workDays = 0;
 
-    const diffDays =
-      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dayOfWeek = d.getDay(); 
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      workDays++;
+    }
+  }
 
-    return diffDays * 8 * 3600; 
-  };
-
-  const handleDownload = () => {
-    if (!pdfRef.current) return;
-    html2pdf()
-      .from(pdfRef.current)
-      .set({
-        margin: 5,
-        filename: `Timesheet_${startDate}_to_${endDate}.pdf`,
-        html2canvas: { scale: 2,
-          ignoreElements: (element:HTMLButtonElement) => {
-          return element.classList.contains("no-print");
-        }, },
-        jsPDF: { orientation: "landscape", unit: "mm", format: "a4" },
-      })
-      .save();
+    return workDays * 8 * 3600; 
   };
 
   if (loading)
@@ -177,6 +167,37 @@ useEffect(() => {
   });
 
 const allRows = Object.values(mergedTasks);
+const sortedRows = allRows
+  .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+const handleDownload = () => {
+  setRenderPdf(true);
+  setTimeout(() => {
+    if (!pdfRef.current) return;
+
+    const opt:any = {
+      margin: [2,2,2,2],
+      filename: `Timesheet_${startDate}_to_${endDate}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 4,
+        useCORS: true,
+        logging: false,
+        windowWidth: 1000,
+        ignoreElements: (el: HTMLElement) => el.classList.contains("no-print")
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "landscape"
+      },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+    };
+
+    html2pdf().from(pdfRef.current).set(opt).save()
+      .finally(() => setRenderPdf(false));
+  }, 300);
+};
 const seenEstimateKeys = new Set<string>();
 const totalEstimated = allRows.reduce((sum: number, r: any) => {
   const estKey = `${r.project}_${r.task}`;
@@ -229,9 +250,45 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   const foundUser = users1.find((u: any) => u.id === userId);
   setSelectedUserName(foundUser ? foundUser.username : "");
 };
+  const tableStyle: React.CSSProperties = {
+  width: '100%',
+  borderCollapse: 'collapse',
+  border: '1px solid #000',
+  margin: 0,
+  fontSize: '10.5px',
+};
 
+const headerRowStyle: React.CSSProperties = {
+  backgroundColor: '#1b263b',
+  color: 'white',
+};
+
+const thStyle: React.CSSProperties = {
+  border: '1px solid #000',
+  padding: '6px 4px',
+  textAlign: 'left',
+  fontWeight: 'bold',
+  fontSize: '10.5px',
+};
+
+const tdStyle: React.CSSProperties = {
+  border: '1px solid #000',
+  padding: '5px 4px',
+  fontSize: '10.5px',
+  verticalAlign: 'top',
+};
+
+const badgeStyle = (status: string) => ({
+  backgroundColor: statusMap[status]?.bgColor || "#6c757d",
+  fontSize: "12px",
+  padding: "5px",
+  borderRadius: "3px",
+  color: "#fff",
+  display: "inline-block",
+  minWidth:"85px"
+});
   return (
-    <div className="container-fluid mt-4 position-relative" style={{ padding: "10px 30px" }}>
+    <div className="container-fluid mt-3" >
       <style>
       {`
         @media print {
@@ -241,8 +298,34 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         }
       `}
     </style>
-      <div className="d-flex align-items-end gap-3 mb-4" style={{position:"absolute",right:"20px", justifyContent: "flex-end" }}>
-        <div>
+      
+      <div>
+  <div className="d-flex flex-wrap justify-content-between align-items-start mb-1 gap-3">
+    <div>
+      <h4 className="fw-bold mb-2">
+        Timesheet Summary
+        {selectedUserName && (
+          <span
+            style={{
+              fontWeight: 600,
+              color: "#0d6efd",
+              marginLeft: "8px",
+            }}
+          >
+            — {selectedUserName}
+          </span>
+        )}
+      </h4>
+
+      <div>
+          <p>
+            Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
+          </p>
+        </div>
+    </div>
+
+    <div className="d-flex flex-wrap align-items-end justify-content-end gap-3 no-print">
+      <div style={{ minWidth: "160px" }}>
         <label className="form-label mb-1">User</label>
         <select
           className="form-select form-select-sm"
@@ -257,43 +340,38 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
           ))}
         </select>
       </div>
-        <div>
-          <label className="form-label mb-1">Start Date</label>
-          <input
-            type="date"
-            className="form-control form-control-sm"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="form-label mb-1">End Date</label>
-          <input
-            type="date"
-            className="form-control form-control-sm"
-            min={startDate}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
+
+      <div style={{ minWidth: "140px" }}>
+        <label className="form-label mb-1">Start Date</label>
+        <input
+          type="date"
+          className="form-control form-control-sm"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+      </div>
+
+      <div style={{ minWidth: "140px" }}>
+        <label className="form-label mb-1">End Date</label>
+        <input
+          type="date"
+          className="form-control form-control-sm"
+          min={startDate}
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="form-label mb-1 d-block">&nbsp;</label>
         <button className="btn btn-primary" onClick={handleDownload}>
           📄 Download PDF
         </button>
       </div>
+    </div>
+  </div>
 
-      <div ref={pdfRef}>
-        <h4 className="fw-bold text-left mb-2">Timesheet Summary{selectedUserName ? (
-    <span style={{ fontWeight: "600", color: "#0d6efd", marginLeft: "8px" }}>
-      — {selectedUserName}
-    </span>
-  ) : (
-    ""
-  )}</h4>
-        <div>
-          <p>
-            Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
-          </p>
-        </div>
+        
         <div className="row mb-4">
           <div className="col-md-5 mt-3">
             <div className="card p-4 shadow-sm h-100">
@@ -331,7 +409,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
                           <li className="mt-1"><strong>Estimated:</strong> {formatTime(u.totalEstimated)}</li>
                           <li className="mt-1"><strong>Used:</strong> {formatTime(u.totalSpent)}</li>
                           <li className="text-success mt-1"><strong>Saved:</strong> {formatTime(u.totalSaved)}</li>
-                          <li className="text-danger mt-1"><strong>Overtime:</strong> {formatTime(u.totalOvertime)}</li>
+                          {totalOvertime>0 && <li className="text-danger mt-1"><strong>Time Extension:</strong> {formatTime(u.totalOvertime)}</li>}
                         </ul>
                       </div>
                     </div>
@@ -355,7 +433,7 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
                 <th>Estimated</th>
                 <th>Spent</th>
                 <th>Saved</th>
-                <th>Overtime</th>
+                <th>Time Extension</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -397,17 +475,146 @@ const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
             </tbody>
           </table>
 
-          <Pagination
+      
+        </div>
+            <Pagination
       currentPage={currentPage}
       onPageChange={setCurrentPage}
       totalPages={totalPagesCalc}
       pageSize={itemsPerPage}
       totalResults={allRows.length}
-    />
-        </div>
-        
-        
+    />   
       </div>
+{renderPdf && (
+  <div className="pdf-render-container">
+    <div ref={pdfRef} className="pdf-content">
+      <style>{`
+        .pdf-content * { box-sizing: border-box; }
+
+        @page {
+          size: A4 landscape;
+          margin: 8mm;
+        }
+
+        .pdf-header h4 { font-size: 16px; margin-bottom: 4px; }
+        .pdf-header .user-name { color: #0d6efd; }
+        .info-text { margin: 2px 0; font-size: 11px; }
+
+        .pdf-card {
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          padding: 8px 10px;
+          background: #fff;
+          page-break-inside: avoid;
+        }
+
+        .pdf-card ul { list-style: none; padding: 0; margin: 0; font-size: 10.5px; }
+        .pdf-card li { margin: 1px 0; }
+
+        .pdf-table-wrapper { margin-top: 10px; overflow-x: auto; }
+        .pdf-table {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: fixed;
+          font-size: 10.5px;
+        }
+        .pdf-table th, .pdf-table td { border: 1px solid #000; padding: 3px 2px; word-wrap: break-word; text-align: left; }
+        .pdf-table th { background: #1b263b !important; color: white !important; }
+
+        /* Optional: badges small for PDF */
+        .pdf-table .badge { font-size: 10px; padding: 2px 4px; min-width: auto; }
+
+        /* Grid for user totals inside PDF */
+        .pdf-user-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 6px;
+        }
+      `}</style>
+
+      {/* Header */}
+      <div className="pdf-header">
+        <h4>
+          Timesheet Summary
+          {selectedUserName && <span className="user-name"> — {selectedUserName}</span>}
+        </h4>
+        <p className="info-text">
+          Date Range: <strong>{startDate}</strong> to <strong>{endDate}</strong>
+        </p>
+      </div>
+
+      {/* Totals */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", margin: "8px 0", pageBreakInside: "avoid" }}>
+        <div style={{ flex: "1 1 38%", minWidth: "220px" }}>
+          <div className="pdf-card">
+            <h5>Overall Totals</h5>
+            <ul>
+              <li><strong>Total Hours:</strong> {formatTime(totalHours())}</li>
+              <li><strong>Total Used:</strong> {formatTime(totalSpent)}</li>
+              <li><strong>Total Estimated:</strong> {formatTime(totalEstimated)}</li>
+              <li className="text-success"><strong>Total Saved:</strong> {formatTime(totalSaved)}</li>
+              {totalOvertime > 0 && <li className="text-danger"><strong>Time Extension:</strong> {formatTime(totalOvertime)}</li>}
+            </ul>
+          </div>
+        </div>
+
+        {showUserTotals && (
+          <div style={{ flex: "1 1 60%", minWidth: "220px" }}>
+            <div className="pdf-card">
+              <h5>User-wise Totals</h5>
+              <div className="pdf-user-grid">
+                {userSummaryRows.map((u, i) => (
+                  <div key={i} style={{ border: "1px solid #ddd", borderRadius: "3px", padding: "4px", background: "#f8f9fa" }}>
+                    <strong style={{ fontSize: "10px" }}>{u.assignee}</strong>
+                    <ul style={{ margin: "2px 0 0", fontSize: "9.5px" }}>
+                      <li><strong>Est:</strong> {formatTime(u.totalEstimated)}</li>
+                      <li><strong>Used:</strong> {formatTime(u.totalSpent)}</li>
+                      <li className="text-success"><strong>Saved:</strong> {formatTime(u.totalSaved)}</li>
+                      {u.totalOvertime > 0 && <li className="text-danger"><strong>Ext:</strong> {formatTime(u.totalOvertime)}</li>}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="pdf-table-wrapper">
+        <table className="pdf-table">
+          <thead>
+            <tr>
+              {["Assignee", "Project", "Task", "Date", "Est", "Spent", "Saved", "Ext", "Status"].map((h, i) => (
+                <th key={i}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRows.map((r, i) => (
+              <tr key={i}>
+                <td>{r.assignee}</td>
+                <td>{r.project}</td>
+                <td>{r.task}</td>
+                <td>{r.date}</td>
+                <td>{formatTime(r.estimated)}</td>
+                <td>{formatTime(r.spent)}</td>
+                <td className="text-success">{formatTime(r.saved)}</td>
+                <td className="text-danger">{formatTime(r.overtime)}</td>
+                <td>
+                  <span className="badge" style={badgeStyle(r.status)}>{statusMap[r.status]?.label || r.status}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 };

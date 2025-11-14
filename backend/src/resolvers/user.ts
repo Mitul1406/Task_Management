@@ -6,6 +6,7 @@ import { User } from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken'
 import nodemailer from "nodemailer";
+import { Project } from "../models/Project.js";
 
 const sendResetPasswordMail = async (email: string, token: string, username: string) => {
   try {
@@ -132,27 +133,45 @@ await newUser.save();
     };
   }
 },
+
 deleteUser: async ({ id }: { id: string }) => {
   try {
     const user = await User.findByIdAndDelete(id);
     if (!user) throw new Error("User not found");
 
-    const tasks = await Task.find({ userId: id });
+    const userProjects = await Project.find({ adminId: id });
+    const userProjectIds = userProjects.map((p) => p._id);
 
-    const taskIds = tasks.map((task) => task._id);
+    const userTasks = await Task.find({
+      $or: [
+        { assignedUserId: id }, 
+        { projectId: { $in: userProjectIds } },
+      ],
+    });
+
+    const taskIds = userTasks.map((t) => t._id);
+
     if (taskIds.length > 0) {
       await Timer.deleteMany({ taskId: { $in: taskIds } });
     }
 
-    await Task.deleteMany({ userId: id });
+    if (taskIds.length > 0) {
+      await Task.deleteMany({ _id: { $in: taskIds } });
+    }
 
-    return { message: "User, their tasks, and timers deleted successfully" };
+    if (userProjectIds.length > 0) {
+      await Project.deleteMany({ _id: { $in: userProjectIds } });
+    }
+
+    return {
+      message:
+        "User, their projects, assigned/created tasks, and timers deleted successfully",
+    };
   } catch (err: any) {
     console.error("Error deleting user and related data:", err);
     throw new Error(err.message || "Failed to delete user and related data");
   }
 },
-
 
 changePassword: async (
   { id, oldPassword, newPassword }: { id: string; oldPassword: string; newPassword: string }

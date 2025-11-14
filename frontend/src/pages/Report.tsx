@@ -165,20 +165,41 @@ const userTasks = useMemo(() => {
 //   return acc;
 // }, {});
 
-  const handleDownloadPDF=()=>{
-    if(reportRef.current)
-    {
-        const el:any=reportRef.current
-        const opt:any={
-            margin:0.1,
-            filename:`${project.name}-report.pdf`,
-            image:{type:"jpeg",quality:0.98},
-            html2canvas:{scale:2},
-            jsPDF:{unit:"in",format:"a4",orientation:"portrait"}
-        };
-        html2pdf().set(opt).from(el).save()
-    }
-  }
+  const handleDownloadPDF = () => {
+  if (!reportRef.current) return;
+
+  const el = reportRef.current;
+
+  const opt: any = {
+    margin: [2,2,2,2], // top, left, bottom, right in mm
+    filename: `${project?.name || "Project"}_Report.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0,
+      windowWidth: el.scrollWidth,
+      windowHeight: el.scrollHeight,
+      logging: false,
+    },
+    jsPDF: {
+      unit: "mm",          
+      format: "a4",
+      orientation: "portrait",
+    },
+    pagebreak: {
+      mode: ["avoid-all", "css", "legacy"],
+      before: ".page-break-before", 
+      after: ".page-break-after",
+      avoid: ".avoid-page-break",
+    },
+  };
+
+  setTimeout(() => {
+    html2pdf().from(el).set(opt).save();
+  }, 100);
+};
+
 return (
   <>
   <div className="mt-4">
@@ -350,7 +371,7 @@ return (
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Task Status</th>
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Estimated</th>
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Used</th>
-            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Overtime</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Time Extension</th>
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Saved</th>
             <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Start</th>
             <th style={{ width: "10%", border: "1px solid #dee2e6" }}>End</th>

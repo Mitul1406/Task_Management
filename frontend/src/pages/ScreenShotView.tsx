@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import { getUsers, getUserScreenshots } from "../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../components/Pagination";
+import Swal from "sweetalert2";
 
 interface Screenshot {
   id: string;
@@ -130,7 +131,7 @@ export default function ScreenShotView() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
+  
   const openModal = (url: string) => {
     setCurrentImage(url);
     setModalOpen(true);
@@ -151,9 +152,25 @@ export default function ScreenShotView() {
   };
 
   const confirmDelete = (ids: string[]) => {
-    setDeleteIds(ids);
-    setDeleteModalOpen(true);
-  };
+  if (ids.length === 0) return;
+
+  Swal.fire({
+    title: 'Are you sure?',
+    text: `You are about to delete ${ids.length} screenshot${ids.length > 1 ? "s" : ""}. This action cannot be undone!`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Yes, delete!',
+    cancelButtonText: 'Cancel',
+    reverseButtons: true,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      deleteScreenshots(ids);
+    }
+  });
+};
+
 
   const deleteScreenshots = async (ids: string[]) => {
     if (!["projectManager", "teamLead", "superAdmin"].includes(userRole) || ids.length === 0)
@@ -340,7 +357,7 @@ export default function ScreenShotView() {
     totalPages={totalPages}
     onPageChange={setCurrentPage}
     pageSize={itemsPerPage}
-    totalResults={(screenshots.length-1)}
+    totalResults={(screenshots.length)}
   />
 )}
         </>
@@ -410,50 +427,6 @@ export default function ScreenShotView() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
-        <div
-          className="modal fade show"
-          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
-          onClick={() => setDeleteModalOpen(false)}
-        >
-          <div
-            className="modal-dialog modal-dialog-centered"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirm Delete</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setDeleteModalOpen(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  Are you sure you want to delete {deleteIds.length} screenshot
-                  {deleteIds.length > 1 ? "s" : ""}?
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setDeleteModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-danger"
-                  onClick={() => deleteScreenshots(deleteIds)}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

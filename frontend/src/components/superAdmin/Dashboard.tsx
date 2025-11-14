@@ -349,7 +349,7 @@ useEffect(() => {
 
   <div className="table-responsive py-3">
     <table
-      className="table table-hover align-middle text-left"
+      className="table table-hover table-bordered align-middle text-left"
       style={{ border: "1px solid #000", fontSize: "13px"}}
     >
       <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
@@ -361,7 +361,7 @@ useEffect(() => {
           <th>Estimated</th>
           <th>Spent</th>
           <th>Saved</th>
-          <th>Overtime</th>
+          <th>Time Extension</th>
           <th>Status</th>
         </tr>
       </thead>

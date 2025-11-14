@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import "../css/Userpage.css";
 import Pagination from "../components/Pagination";
 import { useLocation } from "react-router-dom";
+import Swal from "sweetalert2";
 
 interface User {
   id: string;
@@ -18,9 +19,10 @@ interface DecodedUser {
 }
 
 const UserPage: React.FC = () => {
-  const location=useLocation()
-  const url=new URLSearchParams(location.search)
-  const filterRole=url.get("role")
+  const location = useLocation();
+  const url = new URLSearchParams(location.search);
+  const filterRole = url.get("role");
+
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
@@ -28,6 +30,7 @@ const UserPage: React.FC = () => {
     email: "",
     role: "user",
   });
+  const [errors, setErrors] = useState<{ username?: string; email?: string }>({});
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -38,6 +41,7 @@ const UserPage: React.FC = () => {
 
   const usersPerPage = 10;
 
+  // Fetch users
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -50,11 +54,13 @@ const UserPage: React.FC = () => {
       setLoading(false);
     }
   };
-  useEffect(()=>{
-   if(filterRole){
-    setRoleFilter(filterRole)
-   }
-  },[filterRole])
+
+  useEffect(() => {
+    if (filterRole) {
+      setRoleFilter(filterRole);
+    }
+  }, [filterRole]);
+
   useEffect(() => {
     fetchUsers();
     const token = localStorage.getItem("token");
@@ -78,12 +84,57 @@ const UserPage: React.FC = () => {
     setCurrentPage(1);
   }, [search, roleFilter, users]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const validateForm = () => {
+    const newErrors: { username?: string; email?: string } = {};
+
+    if (!formData.username.trim()) newErrors.username = "Username is required.";
+    if (formData.username.length>50) newErrors.username = "Username cannot exceed 50 characters";
+    if (!formData.email.trim()) newErrors.email = "Email is required.";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      newErrors.email = "Invalid email format.";
+    else if(formData.email.length>50) newErrors.email = "Email cannot exceed 50 characters";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
+
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  setFormData((prev) => ({ ...prev, [name]: value }));
+
+  setErrors((prev) => {
+    const updated = { ...prev };
+
+    if (name === "username") {
+      if (!value.trim()) {
+        updated.username = "Username is required";
+      }else if(value.length>50){
+         updated.username="Username cannot exceed 50 characters"
+      } else {
+        delete updated.username;
+      }
+    }
+
+    if (name === "email") {
+      if (!value.trim()) {
+        updated.email = "Email is required";
+      } else if (!/\S+@\S+\.\S+/.test(value)) {
+        updated.email = "Invalid email format";
+      }else if(value.length>50){
+          updated.email = "Email cannot exceed 50 characters";
+      } else {
+        delete updated.email;
+      }
+    }
+
+    return updated;
+  });
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     try {
       setLoading(true);
       if (editingUser) {
@@ -96,6 +147,7 @@ const UserPage: React.FC = () => {
       setShowModal(false);
       setEditingUser(null);
       setFormData({ username: "", email: "", role: "user" });
+      setErrors({});
       fetchUsers();
     } catch (err: any) {
       toast.error(err.message || "Failed to save user");
@@ -111,11 +163,21 @@ const UserPage: React.FC = () => {
       email: user.email,
       role: user.role,
     });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+    const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This action will permanently delete this user.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Yes, delete it!",
+  });
+    if(result.isConfirmed) {
       try {
         await deleteUser(id);
         toast.success("User deleted successfully");
@@ -130,6 +192,7 @@ const UserPage: React.FC = () => {
     setShowModal(false);
     setEditingUser(null);
     setFormData({ username: "", email: "", role: "user" });
+    setErrors({});
   };
 
   // Pagination
@@ -139,7 +202,7 @@ const UserPage: React.FC = () => {
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   return (
-    <div className="user-page container mt-4">
+    <div className="user-page container mt-1">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Users</h2>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
@@ -148,38 +211,38 @@ const UserPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-<div className="filters row mb-3">
-  <div className="col-md-3 mb-3">
-    <label className="form-label fw-bold">Search Here:</label>
-    <input
-      type="text"
-      placeholder="Search by username..."
-      className="form-control"
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-    />
-  </div>
+      <div className="filters row mb-3">
+        <div className="col-md-3 mb-3">
+          <label className="form-label fw-bold">Search Here:</label>
+          <input
+            type="text"
+            placeholder="Search by username..."
+            className="form-control"
+            value={search}
+            maxLength={30}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-  <div className="col-md-3 mb-3">
-    <label className="form-label fw-bold">Filter by Roles:</label>
-    <select
-      className="form-select"
-      value={roleFilter}
-      onChange={(e) => setRoleFilter(e.target.value)}
-    >
-      {loggedInRole === "teamLead" ? (
-      <option value="user">Employee</option>
-    ) : (
-      <>
-        
-        <option value="">Select Role</option>
-        <option value="user">Employee</option>
-        <option value="teamLead">Team Lead</option>
-      </>
-    )}
-    </select>
-  </div>
-</div>
+        <div className="col-md-3 mb-3">
+          <label className="form-label fw-bold">Filter by Roles:</label>
+          <select
+            className="form-select"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
+            {loggedInRole === "teamLead" ? (
+              <option value="user">Employee</option>
+            ) : (
+              <>
+                <option value="">Select Role</option>
+                <option value="user">Employee</option>
+                <option value="teamLead">Team Lead</option>
+              </>
+            )}
+          </select>
+        </div>
+      </div>
 
       {/* Card + Table */}
       <div className="card shadow-sm border-0 bg-light">
@@ -191,8 +254,8 @@ const UserPage: React.FC = () => {
           ) : (
             <>
               <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead >
+                <table style={{border:"1px solid #000"}} className="table table-hover table-bordered align-middle" >
+                  <thead>
                     <tr>
                       <th>Username</th>
                       <th>Email</th>
@@ -228,31 +291,12 @@ const UserPage: React.FC = () => {
 
               {/* Pagination */}
               <Pagination
-              currentPage={currentPage}
-              onPageChange={setCurrentPage}
-              totalPages={totalPages}
-              pageSize={usersPerPage}
-              totalResults={users.length}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                totalPages={totalPages}
+                pageSize={usersPerPage}
+                totalResults={users.length}
               />
-              {/* <div className="pagination-container">
-                <button
-                  className="btn btn-light"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Prev
-                </button>
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  className="btn btn-light"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </div> */}
             </>
           )}
         </div>
@@ -268,35 +312,38 @@ const UserPage: React.FC = () => {
         <div className="modal-dialog modal-dialog-centered" role="document">
           <div className="modal-content">
             <div className="modal-header justify-content-center">
-              <h5 className="modal-title ">
+              <h5 className="modal-title">
                 {editingUser ? "Edit User" : "Add New User"}
               </h5>
-              {/* <button
-                type="button"
-                className="btn-close"
-                onClick={handleCancel}
-              ></button> */}
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <input
                   type="text"
                   name="username"
-                  className="form-control mb-3"
+                  className={`form-control mb-1 ${errors.username ? "is-invalid" : ""}`}
                   placeholder="Username"
                   value={formData.username}
+                  maxLength={50}
                   onChange={handleChange}
-                  required
                 />
+                {errors.username && (
+                  <div className="text-danger mb-2">{errors.username}</div>
+                )}
+
                 <input
-                  type="email"
+                  type="input"
                   name="email"
-                  className="form-control mb-3"
+                  className={`form-control mb-1 ${errors.email ? "is-invalid" : ""}`}
                   placeholder="Email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
+                  maxLength={50}
                 />
+                {errors.email && (
+                  <div className="text-danger mb-2">{errors.email}</div>
+                )}
+
                 <select
                   name="role"
                   className="form-select mb-3"
@@ -321,14 +368,14 @@ const UserPage: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={loading}> 
+                <button type="submit" className="btn btn-primary" disabled={loading}>
                   {loading
-    ? editingUser
-      ? "Updating..."
-      : "Adding..."
-    : editingUser
-      ? "Update"
-      : "Add"}
+                    ? editingUser
+                      ? "Updating..."
+                      : "Adding..."
+                    : editingUser
+                    ? "Update"
+                    : "Add"}
                 </button>
               </div>
             </form>
