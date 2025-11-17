@@ -130,8 +130,30 @@ document.head.appendChild(style);
   };
 
   useEffect(() => {
-    fetchTasks();
-    return () => Object.values(intervalsRef.current).forEach(clearInterval);
+    const initialize = async () => {
+      try {
+        const userTasks = await getUserTasks();
+  
+        const running = userTasks
+          .flatMap((p: any) => p.tasks)
+          .filter((t: any) => t.isRunning);
+  
+        for (const task of running) {
+          await stopTimer(task.id);
+          notifyUser("Timer Stopped","Running timer stopped due to refresh")
+        }
+  
+        fetchTasks();
+      } catch (error) {
+        console.error("Error during initialization:", error);
+      }
+    };
+  
+    initialize();
+  
+    return () => {
+      Object.values(intervalsRef.current).forEach(clearInterval);
+    };
   }, []);
 
   const formatDuration = (seconds: number) => {
