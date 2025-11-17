@@ -40,7 +40,6 @@ const DashboardTl: React.FC = () => {
   done: { label: "Done", bgColor: "#2bc22bff" },    
 };
   useEffect(() => {
-    fetchDashboardData();
     fetchTasks();
   }, []);
 
@@ -65,6 +64,8 @@ const DashboardTl: React.FC = () => {
   const fetchTasks = async () => {
     try {
       const res = await getUserTasks();
+    fetchDashboardData();
+
       setProjects(res || []);
     } catch (error) {
       toast.error("Failed to fetch tasks");

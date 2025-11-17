@@ -518,6 +518,9 @@ query GetUserScreenshots($userId: ID!) {
     name
     description
     createdAt
+    adminId{
+     id
+    }
   }
 }
 

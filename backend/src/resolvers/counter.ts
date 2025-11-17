@@ -135,7 +135,7 @@ teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
     
     const allTasks = await Task.find({
       assignedUserId:new mongoose.Types.ObjectId(userId),
-      projectId: { $in: projectIds },
+      // projectId: { $in: projectIds },
       startDate: { $lte: todayEnd },
       endDate: { $gte: todayStart },
     }).select("status");
