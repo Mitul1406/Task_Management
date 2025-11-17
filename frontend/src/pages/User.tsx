@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { getUsers, createUser, updateUser, deleteUser } from "../services/api";
+import { getUsers, createUser, updateUser, deleteUser,getEmpData } from "../services/api";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
 import "../css/Userpage.css";
 import Pagination from "../components/Pagination";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 interface User {
@@ -22,7 +22,7 @@ const UserPage: React.FC = () => {
   const location = useLocation();
   const url = new URLSearchParams(location.search);
   const filterRole = url.get("role");
-
+  const navigate=useNavigate()
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
@@ -45,7 +45,9 @@ const UserPage: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await getUsers();
+      const token:any=localStorage.getItem("token")
+      const decode:any=jwtDecode(token)
+      const data = decode.role==="teamLead"?await getEmpData(decode.id):await getUsers();
       setUsers(data);
       setFilteredUsers(data);
     } catch {
@@ -202,7 +204,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   return (
-    <div className="user-page container mt-1">
+    <div className="user-page container-fluid mt-1">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Users</h2>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
@@ -265,20 +267,24 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                   </thead>
                   <tbody>
                     {currentUsers.map((user) => (
-                      <tr key={user.id}>
+                      <tr key={user.id} onClick={()=>navigate("/userData?userId="+user.id+"&username="+user.username)} style={{cursor:"pointer"}}>
                         <td>{user.username}</td>
                         <td>{user.email}</td>
                         <td>{user.role === "user" ? "Employee" : "Team Lead"}</td>
                         <td>
                           <button
                             className="btn btn-sm btn-outline-warning me-2"
-                            onClick={() => handleEdit(user)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEdit(user)}}
                           >
                             Edit
                           </button>
                           <button
                             className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDelete(user.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(user.id)}}
                           >
                             Delete
                           </button>

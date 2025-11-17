@@ -226,6 +226,7 @@ type AuthResponse {
   superAdminDashboardCount: DashboardCount
   teamLeadDashboardCount(userId: ID!): DashboardCountTl
   empDashboardCount(userId: ID!): DashboardCountTl
+  empGet(userId: ID!):[User]
     }
 
     type Mutation{

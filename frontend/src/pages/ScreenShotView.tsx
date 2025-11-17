@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { getUsers, getUserScreenshots } from "../services/api";
 import { toast } from "react-toastify";
@@ -24,11 +24,12 @@ interface JwtPayload {
 }
 
 export default function ScreenShotView() {
-  const params = useParams<{ id: string }>();
-  const currentUserId = params.id;
-
+  const location=useLocation()
+    const qp= new URLSearchParams(location.search)
+    const userId=qp.get("userId")
+    const username=qp.get("username")
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>(currentUserId || "");
+  const [selectedUserId, setSelectedUserId] = useState<string>(userId || "");
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [filteredScreenshots, setFilteredScreenshots] = useState<Screenshot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,7 @@ export default function ScreenShotView() {
   const [selectedScreenshots, setSelectedScreenshots] = useState<string[]>([]);
   const [userRole, setUserRole] = useState<"projectManager" | "teamLead" | "superAdmin" | "user">("user");
   const [selectMode, setSelectMode] = useState(false);
-
+  const navigate=useNavigate()
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState<string>(today);
   const [endDate, setEndDate] = useState<string>(today);
@@ -63,7 +64,7 @@ export default function ScreenShotView() {
   }, []);
 
   useEffect(() => {
-    if (currentUserId) return;
+    if (userId) return;
     if (!["teamLead", "superAdmin"].includes(userRole)) return;
 
     const fetchUsers = async () => {
@@ -76,7 +77,7 @@ export default function ScreenShotView() {
       }
     };
     fetchUsers();
-  }, [currentUserId, selectedUserId, userRole]);
+  }, [userId, selectedUserId, userRole]);
 
   // Fetch screenshots
   useEffect(() => {
@@ -120,12 +121,10 @@ export default function ScreenShotView() {
     setCurrentPage(1);
   }, [screenshots, startDate, endDate]);
 
-  // Reset pagination when user changes
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedUserId]);
 
-  // Pagination logic
   const totalPages = Math.ceil(filteredScreenshots.length / itemsPerPage);
   const paginatedScreenshots = filteredScreenshots.slice(
     (currentPage - 1) * itemsPerPage,
@@ -203,12 +202,18 @@ export default function ScreenShotView() {
   };
 
   return (
-    <div className="container mt-4">
-      <h3 className="mb-3">Employee Screenshots</h3>
+    <div className="container-fluid mt-4">
+      <div className="d-flex justify-content-between">
+        <h3 className="mb-3">Employee Screenshots {username && (` - ${username}`)}</h3>
+        <div>
+          
+        <button className="btn btn-sm btn-outline-dark me-2" onClick={()=>navigate(-1)}>{"<"}- Back</button>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="mb-4 d-flex flex-wrap align-items-center gap-3 position-relative">
-        {!currentUserId &&
+        {!userId &&
           ["teamLead", "projectManager", "superAdmin"].includes(userRole) &&
           users.length > 0 && (
             <div>

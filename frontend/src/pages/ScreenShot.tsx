@@ -123,7 +123,7 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
           setStatus("Stopped");
           setStream(null);
           onPermissionDenied?.();
-          setShowInstructionModal(true); // 🔁 Show modal again
+          // setShowInstructionModal(true); // 🔁 Show modal again
         };
       } catch (err) {
         console.error("Permission denied", err);
@@ -178,14 +178,13 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
           stream.getTracks().forEach((t) => t.stop());
           setStream(null);
           setStatus("Stopped");
-          setShowInstructionModal(true);
+          // setShowInstructionModal(true);
         }
       },
     }));
 
     return (
       <>
-        {/* ✅ Instruction Modal */}
         {showInstructionModal && (
   <div
     style={{

@@ -467,7 +467,11 @@ useEffect(() => {
 
   return (
     <div className="container-fluid mt-4">
+          <div className="d-flex justify-content-between">        
           <h3>Tasks</h3>
+
+        <button className="btn btn-sm btn-outline-dark" onClick={()=>navigate(-1)}>{"<"}- Back</button>
+      </div>
 <div className="container-fluid mb-3">
   <div className="d-flex flex-wrap gap-3 mb-3">
     <div style={{ minWidth: "200px", flex: "1" }}>

@@ -518,6 +518,9 @@ query GetUserScreenshots($userId: ID!) {
     name
     description
     createdAt
+    adminId{
+     id
+    }
   }
 }
 
@@ -567,7 +570,30 @@ const EMPCOUNT = gql`
     }
   }
 `;
+
+const EMPDATA=gql`query($userId: ID!) {
+    empGet(userId: $userId) {
+      id
+      username
+      role
+      email
+    }
+  }`
 // API Functions
+export const getEmpData = async (userId: string) => {
+  try {
+    const res = await client.query({
+      query: EMPDATA,
+      variables: { userId },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.empGet;
+  } catch (err) {
+    console.error("Failed to fetch User Data:", err);
+    throw err;
+  }
+};
 export const getEmpDashboardCount = async (userId: string) => {
   try {
     const res = await client.query({

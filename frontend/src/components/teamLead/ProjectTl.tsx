@@ -9,6 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import Swal from "sweetalert2";
 
 interface Project {
+  adminId: any;
   id: string;
   name: string;
   description?: string;
@@ -22,6 +23,7 @@ const ProjectTl: React.FC = () => {
   const [error, setError] = useState<{ name?: string; description?: string }>({});
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [id, setId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
@@ -33,7 +35,8 @@ const ProjectTl: React.FC = () => {
     const token = localStorage.getItem("token");
       if (!token) return;
 
-      const decoded: any = jwtDecode(token);
+    const decoded: any = jwtDecode(token);
+    setId(decoded.id)
     const res = await getAdminProjects(decoded.id);
     setProjects(res);
   };
@@ -203,32 +206,66 @@ const ProjectTl: React.FC = () => {
               {/* <td>{(project as any).adminId?.username || "Unknown"}</td> */}
               <td>
                 <div className="d-flex flex-wrap justify-content-start gap-2">
-                  <button
-                    className="btn btn-outline-info btn-sm"
-                    onClick={() => navigate(`/taskTls?projectId=${project.id}`)}
-                    // ?projectId=${project.id}
-                  >
-                    Details
-                  </button>
-                  <button
-                    className="btn btn-outline-success btn-sm"
-                    onClick={() => window.open(`/timesheet-report/${project.id}`,"_blank")}
-                  >
-                    Timesheet
-                  </button>
-                  <button
-                    className="btn btn-outline-warning btn-sm"
-                    onClick={() => window.open(`/project-report/${project.id}`, "_blank")}
-                  >
-                    Report
-                  </button>
-                  {project.name !=="User Created Tasks"&&<button
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={() => handleDeleteProject(project.id)}
-                  >
-                    Delete
-                  </button>}
-                </div>
+
+  <td>
+  <div className="d-flex flex-wrap justify-content-start gap-2">
+    
+    {(project.adminId?.id === id || project.name === "User Created Tasks") ? (
+      <>
+        <button
+          className="btn btn-outline-info btn-sm"
+          onClick={() => navigate(`/taskTls?projectId=${project.id}`)}
+        >
+          Details
+        </button>
+
+        <button
+          className="btn btn-outline-success btn-sm"
+          onClick={() =>
+            window.open(`/timesheet-report/${project.id}`, "_blank")
+          }
+        >
+          Timesheet
+        </button>
+
+        <button
+          className="btn btn-outline-warning btn-sm"
+          onClick={() =>
+            window.open(`/project-report/${project.id}`, "_blank")
+          }
+        >
+          Report
+        </button>
+      </>
+    ) : (
+      <span className="text-muted">Project by Super Admin</span>
+    )}
+
+    {/* DELETE only if not shared */}
+    {(project.name !== "User Created Tasks" && project.adminId?.id === id) && (
+      <button
+        className="btn btn-outline-danger btn-sm"
+        onClick={() => handleDeleteProject(project.id)}
+      >
+        Delete
+      </button>
+    )}
+  </div>
+</td>
+
+
+  {/* Delete only when NOT shared project */}
+  {/* {(project.name !== "User Created Tasks" && project.adminId?.id === id) && (
+    <button
+      className="btn btn-outline-danger btn-sm"
+      onClick={() => handleDeleteProject(project.id)}
+    >
+      Delete
+    </button>
+  )} */}
+
+</div>
+
               </td>
             </tr>
           ))}

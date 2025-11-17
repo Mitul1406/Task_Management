@@ -130,8 +130,30 @@ document.head.appendChild(style);
   };
 
   useEffect(() => {
-    fetchTasks();
-    return () => Object.values(intervalsRef.current).forEach(clearInterval);
+    const initialize = async () => {
+      try {
+        const userTasks = await getUserTasks();
+  
+        const running = userTasks
+          .flatMap((p: any) => p.tasks)
+          .filter((t: any) => t.isRunning);
+  
+        for (const task of running) {
+          await stopTimer(task.id);
+          notifyUser("Timer Stopped","Running timer stopped due to refresh")
+        }
+  
+        fetchTasks();
+      } catch (error) {
+        console.error("Error during initialization:", error);
+      }
+    };
+  
+    initialize();
+  
+    return () => {
+      Object.values(intervalsRef.current).forEach(clearInterval);
+    };
   }, []);
 
   const formatDuration = (seconds: number) => {
@@ -221,67 +243,21 @@ document.head.appendChild(style);
       setProjects(refreshed);
     }, 1000);
   }, []);
-  const handleStartStopTimer = async (task: any, projectId: string) => {
-    try {
-      if (task.isRunning) {
-        await stopTimer(task.id);
-        clearInterval(intervalsRef.current[task.id]);
-        delete intervalsRef.current[task.id];
+  
+ const handleStartStopTimer = async (task: any, projectId: string) => {
+  try {
+    const runningTask = projects
+      .flatMap((p) => p.tasks)
+      .find((t: any) => t.isRunning);
 
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === projectId
-              ? {
-                  ...p,
-                  tasks: p.tasks.map((t: any) =>
-                    t.id === task.id
-                      ? {
-                          ...t,
-                          isRunning: false,
-                          totalTime:
-                            (t.totalTime || 0) + (t.runningDuration || 0),
-                          runningDuration: 0,
-                        }
-                      : t
-                  ),
-                }
-              : p
-          )
-        );
+    // --------------------------
+    // CASE A: STOP CURRENT TASK
+    // --------------------------
+    if (task.isRunning) {
 
-        const anyRunning = projects.some((p) =>
-          p.tasks.some((t: any) => t.isRunning && t.id !== task.id)
-        );
-        if (!anyRunning) setShowStopPermissionModal(true);
-        return;
-      }
-
-      const IsAnyRunningTasks =projects.some((p) =>
-                p.tasks.some((t: any) => t.isRunning && t.id !== task.id)
-              );
-            if(IsAnyRunningTasks)
-            {
-              toast.warn("You already have a running task. Please stop it first.");
-              return;
-            }
-
-      let hasPermission = screenshotRef.current?.hasPermission;
-      if (!hasPermission) {
-        const granted = await screenshotRef.current?.requestScreenShare?.();
-        if (!granted) {
-          toast.error("You must share your ENTIRE SCREEN to start a task.");
-          return;
-        }
-        hasPermission = true;
-      }
-
-      const res = await startTimer(task.id);
-      if (!res.success) {
-        toast.error(res.message || "Failed to start timer");
-        return;
-      }
-
-      const updatedTask = await updateTaskStatus(task.id, "in_progress");
+      await stopTimer(task.id);
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
 
       setProjects((prev) =>
         prev.map((p) =>
@@ -292,9 +268,9 @@ document.head.appendChild(style);
                   t.id === task.id
                     ? {
                         ...t,
-                        isRunning: true,
+                        isRunning: false,
+                        totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
                         runningDuration: 0,
-                        status: updatedTask.status,
                       }
                     : t
                 ),
@@ -303,26 +279,107 @@ document.head.appendChild(style);
         )
       );
 
-      intervalsRef.current[task.id] = setInterval(() => {
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === projectId
-              ? {
-                  ...p,
-                  tasks: p.tasks.map((t: any) =>
-                    t.id === task.id
-                      ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
-                      : t
-                  ),
-                }
-              : p
-          )
-        );
-      }, 1000);
-    } catch (error) {
-      toast.error("Error while starting/stopping timer.");
+      // 🔥 SHOW MODAL ONLY IF NO OTHER TASK IS RUNNING AFTER STOP
+      const stillRunning = projects
+        .flatMap((p) => p.tasks)
+        .some((t: any) => t.isRunning && t.id !== task.id);
+
+      if (!stillRunning) {
+        setShowStopPermissionModal(true);
+      }
+
+      return;
     }
-  };
+
+    // --------------------------
+    // CASE B: START NEW TASK
+    // --------------------------
+
+    // If another task is running → STOP IT AUTOMATICALLY (no popup)
+    if (runningTask && runningTask.id !== task.id) {
+      await stopTimer(runningTask.id);
+      clearInterval(intervalsRef.current[runningTask.id]);
+      delete intervalsRef.current[runningTask.id];
+
+      setProjects((prev) =>
+        prev.map((p) => ({
+          ...p,
+          tasks: p.tasks.map((t: any) =>
+            t.id === runningTask.id
+              ? {
+                  ...t,
+                  isRunning: false,
+                  totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+                  runningDuration: 0,
+                }
+              : t
+          ),
+        }))
+      );
+    }
+
+    // Now start the new task immediately
+    let hasPermission = screenshotRef.current?.hasPermission;
+    if (!hasPermission) {
+      const granted = await screenshotRef.current?.requestScreenShare?.();
+      if (!granted) {
+        toast.error("You must share your ENTIRE SCREEN to start a task.");
+        return;
+      }
+      hasPermission = true;
+    }
+
+    const res = await startTimer(task.id);
+    if (!res.success) {
+      toast.error(res.message || "Failed to start timer");
+      return;
+    }
+
+    const updatedTask = await updateTaskStatus(task.id, "in_progress");
+
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              tasks: p.tasks.map((t: any) =>
+                t.id === task.id
+                  ? {
+                      ...t,
+                      isRunning: true,
+                      runningDuration: 0,
+                      status: updatedTask.status,
+                    }
+                  : t
+              ),
+            }
+          : p
+      )
+    );
+
+    intervalsRef.current[task.id] = setInterval(() => {
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                tasks: p.tasks.map((t: any) =>
+                  t.id === task.id
+                    ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+                    : t
+                ),
+              }
+            : p
+        )
+      );
+    }, 1000);
+
+  } catch (error) {
+    console.error("Error in timer:", error);
+    toast.error("Something went wrong while starting/stopping timer.");
+  }
+};
+
 
   const handleStatusClick = async (taskId: string, projectId: string) => {
     const project = projects.find((p) => p.id === projectId);

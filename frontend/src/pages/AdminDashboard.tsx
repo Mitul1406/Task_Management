@@ -19,7 +19,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import { useSidebar } from "../context/SideBarContext";
 import CreateTaskModal from "../components/CreateTaskModal";
 import AutoScreenshot from "./ScreenShot";
 import NotificationPermissionBanner, { notifyUser } from "../components/notifyUser";
@@ -59,7 +59,7 @@ const statusMap: Record<string, { label: string; bgColor: string }> = {
 };
 
 const AdminDashboard: React.FC = () => {
-  const { logout } = useAuth();
+  const { logout } = useSidebar();
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 

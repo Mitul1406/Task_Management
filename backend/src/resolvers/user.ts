@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken'
 import nodemailer from "nodemailer";
 import { Project } from "../models/Project.js";
+import mongoose from "mongoose";
 
 const sendResetPasswordMail = async (email: string, token: string, username: string) => {
   try {
@@ -202,5 +203,23 @@ changePassword: async (
   }
 },
 
-
+empGet:async({userId}:{userId:string})=>{
+    console.log(userId);
+   
+   const users = await User.find({
+    
+    $or: [
+      { role: "user" },
+      { _id: new mongoose.Types.ObjectId(userId) }
+    ]
+  });
+   console.log(users);
+   
+      return users.map((u) => ({
+        id: (u as any)._id.toString(),
+        username: u.username,
+        email: u.email,
+        role: u.role,
+      }));
+}
 };

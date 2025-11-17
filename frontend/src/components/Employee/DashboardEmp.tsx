@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import CreateTaskModal from "../CreateTaskModal";
 import { jwtDecode } from "jwt-decode";
 import { FaClock, FaRegCalendarCheck, FaSpinner, FaTasks } from "react-icons/fa";
+import { useSidebar } from "../../context/SideBarContext";
 
 interface DashboardData {
   totalTasks: number;
@@ -15,6 +16,7 @@ interface DashboardData {
   totalWorkedToday: number;
 }
 const DashboardEmp: React.FC = () => {
+  const {setActivePath}=useSidebar()
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
  const [showTaskModal, setShowTaskModal] = useState(false);
@@ -127,6 +129,8 @@ const DashboardEmp: React.FC = () => {
   };
 
   const openTask = (task: any) => {
+    setActivePath("/empTask")
+
     const url = `/empTask?taskId=${task.id}`;
     navigate(url);
   };
@@ -194,7 +198,8 @@ const DashboardEmp: React.FC = () => {
                   <td>
                     <button
                       className="btn btn-sm btn-outline-info"
-                      onClick={() => openTask(task)}
+                      onClick={() => {openTask(task)
+                      }}
                     >
                       View
                     </button>
@@ -235,7 +240,9 @@ const DashboardEmp: React.FC = () => {
               <div className="row g-4 text-center">      
                 <div
                   className="col-md-3 col-sm-6"
-                  onClick={() => navigate("/empTask")}
+                  onClick={() => {
+                    setActivePath("/empTask")
+                    navigate("/empTask")}}
                   style={{ cursor: "pointer" }}
                 >
                   <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
@@ -250,7 +257,9 @@ const DashboardEmp: React.FC = () => {
                 {/* Pending Tasks */}
                 <div
                   className="col-md-3 col-sm-6"
-                  onClick={() => navigate(`/empTask?status=pending`)}
+                  onClick={() => {
+                    setActivePath("/empTask")
+                    navigate(`/empTask?status=pending`)}}
                   style={{ cursor: "pointer" }}
                 >
                   <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
@@ -265,7 +274,9 @@ const DashboardEmp: React.FC = () => {
                 {/* In Progress Tasks */}
                 <div
                   className="col-md-3 col-sm-6"
-                  onClick={() => navigate(`/empTask?status=in_progress`)}
+                  onClick={() => {
+                    setActivePath("/empTask")
+                    navigate(`/empTask?status=in_progress`)}}
                   style={{ cursor: "pointer" }}
                 >
                   <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">

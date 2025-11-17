@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { getProjects, createProject, deleteProject } from "../../services/api";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Pagination from "../../components/Pagination";
 import Swal from "sweetalert2";
 
@@ -25,7 +25,15 @@ const SuperAdminProject: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+   const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const name = queryParams.get("name");
 
+  useEffect(()=>{
+    if(name)  
+    setSearchTerm(name);
+  },[name])
+  
   useEffect(() => {
     fetchProjects();
   }, []);

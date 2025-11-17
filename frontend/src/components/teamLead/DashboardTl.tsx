@@ -8,6 +8,7 @@ import { jwtDecode } from "jwt-decode";
 import { FaClock, FaProjectDiagram, FaRegCalendarCheck, FaSpinner, FaTasks } from "react-icons/fa";
 import { log } from "console";
 import CreateTaskModal from "../CreateTaskModal";
+import { useSidebar } from "../../context/SideBarContext";
 interface DashboardData {
   totalProjects: number;
   totalTasks: number;
@@ -16,6 +17,7 @@ interface DashboardData {
   totalWorkedToday: number;
 }
 const DashboardTl: React.FC = () => {
+  const {activePath,setActivePath} = useSidebar()
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -38,7 +40,6 @@ const DashboardTl: React.FC = () => {
   done: { label: "Done", bgColor: "#2bc22bff" },    
 };
   useEffect(() => {
-    fetchDashboardData();
     fetchTasks();
   }, []);
 
@@ -63,6 +64,8 @@ const DashboardTl: React.FC = () => {
   const fetchTasks = async () => {
     try {
       const res = await getUserTasks();
+    fetchDashboardData();
+
       setProjects(res || []);
     } catch (error) {
       toast.error("Failed to fetch tasks");
@@ -129,6 +132,7 @@ const DashboardTl: React.FC = () => {
   };
 
   const openTask = (task: any) => {
+    setActivePath("/tlTask")
     const url = `/tlTask?taskId=${task.id}`;
     navigate(url);
   };
@@ -238,7 +242,9 @@ const DashboardTl: React.FC = () => {
           {/* Total Projects */}
           <div
             className="col-md-3 col-sm-6"
-            onClick={() => navigate("/projectsTl")}
+            onClick={() => {
+              setActivePath("/projectsTl")
+              navigate("/projectsTl")}}
             style={{ cursor: "pointer" }}
           >
             <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
@@ -253,7 +259,9 @@ const DashboardTl: React.FC = () => {
           {/* Total Tasks */}
           <div
             className="col-md-3 col-sm-6"
-            onClick={() => navigate(`/taskTls?user=${id}`)}
+            onClick={() => {
+              // setActivePath("/taskTls")
+              navigate(`/taskTls?user=${id}`)}}
             style={{ cursor: "pointer" }}
           >
             <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
@@ -268,7 +276,9 @@ const DashboardTl: React.FC = () => {
           {/* Pending Tasks */}
           <div
             className="col-md-3 col-sm-6"
-            onClick={() => navigate(`/taskTls?status=pending&user=${id}`)}
+            onClick={() => {
+              // setActivePath("/taskTls")
+              navigate(`/taskTls?status=pending&user=${id}`)}}
             style={{ cursor: "pointer" }}
           >
             <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
@@ -283,7 +293,9 @@ const DashboardTl: React.FC = () => {
           {/* In Progress Tasks */}
           <div
             className="col-md-3 col-sm-6"
-            onClick={() => navigate(`/taskTls?status=in_progress&user=${id}`)}
+            onClick={() => {
+              // setActivePath("/taskTls")
+              navigate(`/taskTls?status=in_progress&user=${id}`)}}
             style={{ cursor: "pointer" }}
           >
             <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">
