@@ -255,14 +255,14 @@ const ProjectTl: React.FC = () => {
 
 
   {/* Delete only when NOT shared project */}
-  {(project.name !== "User Created Tasks" && project.adminId?.id === id) && (
+  {/* {(project.name !== "User Created Tasks" && project.adminId?.id === id) && (
     <button
       className="btn btn-outline-danger btn-sm"
       onClick={() => handleDeleteProject(project.id)}
     >
       Delete
     </button>
-  )}
+  )} */}
 
 </div>
 
