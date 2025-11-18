@@ -118,8 +118,16 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
         setStatus("Sharing...");
         internalResolve?.(true);
 
-        // --- Handle user manually stopping sharing ---
-        track.onended = () => {
+        track.onended = async() => {
+          try {
+      await fetch("http://localhost:4040/broadcast-stop-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+    } catch (err) {
+      console.error("Failed to broadcast stop confirmation", err);
+    }
           setStatus("Stopped");
           setStream(null);
           onPermissionDenied?.();
@@ -296,8 +304,6 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
   </div>
 )}
 
-
-        {/* ✅ Status Badge */}
         <div
           style={{
             position: "fixed",

@@ -40,31 +40,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   }, []);
 
 useEffect(() => {
-  const saved = localStorage.getItem("activeMenu");
+  const current = location.pathname;
 
-  if (saved) {
-    setActivePath(saved);
-    return;
+  let sidebarPaths: string[] = [];
+  if (role === "superAdmin") sidebarPaths = superAdminLinks.map(l => l.path);
+  else if (role === "teamLead") sidebarPaths = teamLeadLinks.map(l => l.path);
+  else if (role === "user") sidebarPaths = userLinks.map(l => l.path);
+
+  const isInSidebar = sidebarPaths.includes(current);
+
+  if (isInSidebar) {
+    setActivePath(current);
+    localStorage.setItem("activeMenu", current);
   }
 
-  // first time login → set proper default
-  const token = localStorage.getItem("token");
-  if (token) {
-    const decoded = jwtDecode<User>(token);
-
-    const defaultPath =
-      decoded.role === "superAdmin" ? "/superAdmin" :
-      decoded.role === "teamLead" ? "/admin" :
-      decoded.role === "user" ? "/user" :
-      "";
-
-    setActivePath(defaultPath);
-    localStorage.setItem("activeMenu", defaultPath);
-  }
-}, []); // <-- run only once
-
-
-
+}, [location.pathname, role, setActivePath]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);

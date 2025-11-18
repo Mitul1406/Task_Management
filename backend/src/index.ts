@@ -10,6 +10,8 @@ import { Screenshot } from "./models/ScreenShot.ts";
 import path from "path";
 import fs from "fs"
 import multer from "multer";
+import type { Response } from "express-serve-static-core";
+import { loadavg } from "os";
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -86,6 +88,56 @@ app.use(
     },
   }))
 );
+
+let clients:any = {}; 
+
+app.get("/events/:userId", (req, res) => {
+  const userId:any = req.params.userId;
+  res.set({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.flushHeaders();
+
+  if (!clients[userId]) clients[userId] = [];
+  clients[userId].push(res);
+
+  req.on("close", () => {
+    clients[userId] = clients[userId].filter((r: Response<any, Record<string, any>, number>) => r !== res);
+  });
+});
+
+app.post("/broadcast-task-update", (req, res) => {
+  const { userId, task } = req.body;
+
+  if (!userId || !task) return res.status(400).send("Missing userId or task");
+   console.log(task.projectId,"--------->",task);
+   
+  (clients[userId] || []).forEach((clientRes: { write: (arg0: string) => void; }) => {
+    clientRes.write(
+  `data: ${JSON.stringify({
+    ...task,
+    projectId: task.projectId
+  })}\n\n`
+);
+
+  });
+
+  res.json({ success: true });
+});
+
+app.post("/broadcast-stop-confirm", (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).send("Missing userId");
+
+  (clients[userId] || []).forEach((clientRes: any) => {
+    clientRes.write(`data: ${JSON.stringify({ stopConfirmed: true })}\n\n`);
+  });
+
+  res.json({ success: true });
+});
 
 app.listen(4040, () => {
   console.log(`Server running at port 4040`);

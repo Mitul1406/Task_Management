@@ -15,6 +15,7 @@ import StopPermissionModal from "../StopPermissionModel";
 import Pagination from "../Pagination";
 import { useLocation } from "react-router-dom";
 import Select from "react-select";
+import { jwtDecode } from "jwt-decode";
 
 const TlTask: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
@@ -108,6 +109,108 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
+
+ useEffect(() => {
+  const token: any = localStorage.getItem("token");
+  const data: any = jwtDecode(token);
+  const userId = data.id;
+
+  let es: EventSource;
+
+  const connectSSE = () => {
+    es = new EventSource(`http://localhost:4040/events/${userId}`);
+
+    es.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("SSE event:", data);
+
+      if (data.stopConfirmed) {
+        screenshotRef.current?.stopScreenShare();
+
+        Object.keys(intervalsRef.current).forEach((taskId) => {
+          clearInterval(intervalsRef.current[taskId]);
+          delete intervalsRef.current[taskId];
+        });
+
+        setProjects((prev) =>
+          prev.map((proj) => ({
+            ...proj,
+            tasks: proj.tasks.map((t: any) =>
+              t.isRunning
+                ? {
+                    ...t,
+                    isRunning: false,
+                    totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+                    runningDuration: 0,
+                  }
+                : t
+            ),
+          }))
+        );
+
+        return;
+      }
+
+      if (data.id && data.projectId) {
+        const updatedTask = data;
+
+        setProjects((prev) =>
+          prev.map((proj) =>
+            proj.id === updatedTask.projectId
+              ? {
+                  ...proj,
+                  tasks: proj.tasks.map((task: any) => {
+                    if (task.id === updatedTask.id) {
+                      if (!updatedTask.isRunning && intervalsRef.current[task.id]) {
+                        clearInterval(intervalsRef.current[task.id]);
+                        delete intervalsRef.current[task.id];
+                      }
+
+                      if (updatedTask.isRunning && !intervalsRef.current[task.id]) {
+                        intervalsRef.current[task.id] = setInterval(() => {
+                          setProjects((prevProjects) =>
+                            prevProjects.map((projItem) =>
+                              projItem.id === updatedTask.projectId
+                                ? {
+                                    ...projItem,
+                                    tasks: projItem.tasks.map((taskItem: any) =>
+                                      taskItem.id === updatedTask.id
+                                        ? {
+                                            ...taskItem,
+                                            runningDuration:
+                                              (taskItem.runningDuration || 0) + 1,
+                                          }
+                                        : taskItem
+                                    ),
+                                  }
+                                : projItem
+                            )
+                          );
+                        }, 1000);
+                      }
+
+                      return { ...task, ...updatedTask };
+                    }
+                    return task;
+                  }),
+                }
+              : proj
+          )
+        );
+      }
+    };
+
+    es.onerror = () => {
+      es.close();
+      setTimeout(connectSSE, 2000);
+    };
+  };
+
+  connectSSE();
+
+  return () => es.close();
+}, []);
+
   useEffect(() => {
     projectsRef.current = projects;
   }, [projects]);
@@ -118,28 +221,79 @@ document.head.appendChild(style);
     if (taskId) setFocusedTaskId(taskId);
   }, [location.search]);
 
-  const fetchTasks = async () => {
-    try {
-      const res = await getUserTasks();
-      setProjects(res || []);
-    } catch (error) {
-      toast.error("Failed to fetch tasks");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchTasks = async () => {
+  try {
+    const res = await getUserTasks();
 
+    // Ensure each task has projectId attached
+    const tasksWithProjectId = res.map((project: any) => ({
+      ...project,
+      tasks: project.tasks.map((task: any) => ({
+        ...task,
+        projectId: project.id      // IMPORTANT FIX
+      }))
+    }));
+
+    setProjects(tasksWithProjectId);
+
+    // Start intervals for running tasks
+    tasksWithProjectId.forEach((project: any) => {
+      project.tasks.forEach((task: any) => {
+        if (task.isRunning && !intervalsRef.current[task.id]) {
+          intervalsRef.current[task.id] = setInterval(() => {
+            setProjects((prev) =>
+              prev.map((p) =>
+                p.id === project.id
+                  ? {
+                      ...p,
+                      tasks: p.tasks.map((t: any) =>
+                        t.id === task.id
+                          ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+                          : t
+                      )
+                    }
+                  : p
+              )
+            );
+          }, 1000);
+        }
+      });
+    });
+
+    return tasksWithProjectId;  // IMPORTANT: return tasks
+  } catch (error) {
+    toast.error("Failed to fetch tasks");
+    return [];
+  } finally {
+    setLoading(false);
+  }
+};
+  
   useEffect(() => {
     const initialize = async () => {
       try {
-        const userTasks = await getUserTasks();
-  
+        const userTasks:any = await fetchTasks();
+        const token:any=localStorage.getItem("token")
+        const data:any=jwtDecode(token)
+        const userId = data.id
         const running = userTasks
           .flatMap((p: any) => p.tasks)
           .filter((t: any) => t.isRunning);
-  
+        console.log("---------->",running);
+        
         for (const task of running) {
           await stopTimer(task.id);
+          broadcastTaskUpdate(
+  {
+    ...task,
+    projectId: task.projectId, 
+    isRunning: false,
+    runningDuration: 0,
+    totalTime: task.totalTime + (task.runningDuration || 0)
+  },
+  userId
+);
+
           notifyUser("Timer Stopped","Running timer stopped due to refresh")
         }
   
@@ -244,17 +398,27 @@ document.head.appendChild(style);
     }, 1000);
   }, []);
   
- const handleStartStopTimer = async (task: any, projectId: string) => {
+  const broadcastTaskUpdate = async (task: any, userId: string) => {
   try {
-    const runningTask = projects
-      .flatMap((p) => p.tasks)
-      .find((t: any) => t.isRunning);
+    await fetch("http://localhost:4040/broadcast-task-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, task }),
+    });
+  } catch (err) {
+    console.error("Failed to broadcast task update", err);
+  }
+};
 
-    // --------------------------
-    // CASE A: STOP CURRENT TASK
-    // --------------------------
+const handleStartStopTimer = async (task: any, projectId: string) => {
+  try {
+    const token: any = localStorage.getItem("token");
+    const data:any =jwtDecode(token)
+    const userId = data.id;
+
+    const runningTask = projects.flatMap((p) => p.tasks).find((t: any) => t.isRunning);
+
     if (task.isRunning) {
-
       await stopTimer(task.id);
       clearInterval(intervalsRef.current[task.id]);
       delete intervalsRef.current[task.id];
@@ -279,23 +443,20 @@ document.head.appendChild(style);
         )
       );
 
-      // 🔥 SHOW MODAL ONLY IF NO OTHER TASK IS RUNNING AFTER STOP
+      broadcastTaskUpdate(
+        { ...task, isRunning: false, runningDuration: 0, totalTime: task.totalTime + (task.runningDuration || 0) },
+        userId
+      );
+
       const stillRunning = projects
         .flatMap((p) => p.tasks)
         .some((t: any) => t.isRunning && t.id !== task.id);
 
-      if (!stillRunning) {
-        setShowStopPermissionModal(true);
-      }
-
+      if (!stillRunning) setShowStopPermissionModal(true);
       return;
     }
 
-    // --------------------------
     // CASE B: START NEW TASK
-    // --------------------------
-
-    // If another task is running → STOP IT AUTOMATICALLY (no popup)
     if (runningTask && runningTask.id !== task.id) {
       await stopTimer(runningTask.id);
       clearInterval(intervalsRef.current[runningTask.id]);
@@ -316,9 +477,20 @@ document.head.appendChild(style);
           ),
         }))
       );
+
+      // Broadcast stop of previous running task
+      broadcastTaskUpdate(
+        {
+          ...runningTask,
+          isRunning: false,
+          runningDuration: 0,
+          totalTime: runningTask.totalTime + (runningTask.runningDuration || 0),
+        },
+        userId
+      );
     }
 
-    // Now start the new task immediately
+    // Request screen permission if needed
     let hasPermission = screenshotRef.current?.hasPermission;
     if (!hasPermission) {
       const granted = await screenshotRef.current?.requestScreenShare?.();
@@ -357,6 +529,13 @@ document.head.appendChild(style);
       )
     );
 
+    // Broadcast start
+    broadcastTaskUpdate(
+      { ...task, isRunning: true, runningDuration: 0, status: updatedTask.status },
+      userId
+    );
+
+    // Start interval
     intervalsRef.current[task.id] = setInterval(() => {
       setProjects((prev) =>
         prev.map((p) =>
@@ -373,13 +552,11 @@ document.head.appendChild(style);
         )
       );
     }, 1000);
-
   } catch (error) {
     console.error("Error in timer:", error);
     toast.error("Something went wrong while starting/stopping timer.");
   }
 };
-
 
   const handleStatusClick = async (taskId: string, projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
@@ -648,10 +825,25 @@ useEffect(() => {
 
       <StopPermissionModal
         show={showStopPermissionModal}
-        onConfirm={() => {
-          screenshotRef.current?.stopScreenShare();
-          setShowStopPermissionModal(false);
-        }}
+        onConfirm={async () => {
+            screenshotRef.current?.stopScreenShare();
+        
+            const token: any = localStorage.getItem("token");
+            const data: any = jwtDecode(token);
+            const userId = data.id;
+        
+            try {
+              await fetch("http://localhost:4040/broadcast-stop-confirm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId }),
+              });
+            } catch (err) {
+              console.error("Failed to broadcast stop confirmation", err);
+            }
+        
+            setShowStopPermissionModal(false);
+          }}
         onCancel={() => setShowStopPermissionModal(false)}
       />
 

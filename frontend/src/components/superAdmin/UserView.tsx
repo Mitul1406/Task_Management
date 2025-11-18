@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import Pagination from "../Pagination";
 import Select from "react-select";
 import Swal from "sweetalert2";
+import { useSidebar } from "../../context/SideBarContext";
 
 const UserView: React.FC = () => {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ const UserView: React.FC = () => {
   const [endDate, setEndDate] = useState("");
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
   const [errors, setErrors] = useState<any>({});
+  const {setActivePath}=useSidebar()
   const statusOptions = [
   { value: "all", label: "All Status" },
   { value: "pending", label: "Pending" },
@@ -151,6 +153,7 @@ const selectedProjectOptions = selectedProject.includes("all")
     };
 
   useEffect(() => {
+    setActivePath("/userView")
     fetchProjects();
     fetchUsers();
   },[]);
