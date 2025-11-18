@@ -268,7 +268,6 @@ useEffect(() => {
         const running = userTasks
           .flatMap((p: any) => p.tasks)
           .filter((t: any) => t.isRunning);
-        console.log("---------->",running);
         
         for (const task of running) {
           await stopTimer(task.id);
