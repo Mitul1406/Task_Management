@@ -155,7 +155,7 @@ const DashboardTl: React.FC = () => {
   if (loading) return <p>Loading tasks...</p>;
 
   const TaskTable = ({ title, data, currentPage, onPageChange, totalPages }: any) => (
-    <div className="card shadow-sm p-3 mb-4 border-0 bg-light">
+    <div className="card shadow-sm p-3 mb-4 border-0 main-color">
       <div className="d-flex justify-content-between mb-3 "><h5 className="text-dark fw-bold">{title}</h5>
       <button
           className="btn btn-primary p-1"
@@ -163,9 +163,9 @@ const DashboardTl: React.FC = () => {
         >
           Create Your Own Task
         </button></div>
-      <div className="table-responsive">
-        <table className="table table-hover table-bordered align-middle text-left" style={{border:"1px solid #000"}}>
-          <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
+      <div className="table-responsive second-color" style={{borderRadius:"6px"}}>
+        <table className="table table-hover align-middle text-left second-color" style={{border:"1px solid #000"}}>
+          <thead>
             <tr>
               <th>Project</th>
               <th>Task Title</th>
@@ -236,7 +236,7 @@ const DashboardTl: React.FC = () => {
 
   return (
     <div className="container mt-4">
-      <div className="card p-4 mb-4 shadow-sm border-0 bg-light">
+      <div className="card p-4 mb-4 shadow-sm border-0 main-color">
         <div className="row g-4 text-center">
 
           {/* Total Projects */}
@@ -247,7 +247,7 @@ const DashboardTl: React.FC = () => {
               navigate("/projectsTl")}}
             style={{ cursor: "pointer" }}
           >
-            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded">
               <span className="text-success mb-2">
                 <FaProjectDiagram size={36} />
               </span>
@@ -264,7 +264,7 @@ const DashboardTl: React.FC = () => {
               navigate(`/taskTls?user=${id}`)}}
             style={{ cursor: "pointer" }}
           >
-            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-primary rounded">
               <span className="text-primary mb-2">
                 <FaTasks size={36} />
               </span>
@@ -281,7 +281,7 @@ const DashboardTl: React.FC = () => {
               navigate(`/taskTls?status=pending&user=${id}`)}}
             style={{ cursor: "pointer" }}
           >
-            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-warning rounded">
               <span className="text-warning mb-2">
                 <FaClock size={36} />
               </span>
@@ -298,7 +298,7 @@ const DashboardTl: React.FC = () => {
               navigate(`/taskTls?status=in_progress&user=${id}`)}}
             style={{ cursor: "pointer" }}
           >
-            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-info rounded">
               <span className="text-danger mb-2">
                 <FaSpinner size={36} />
               </span>
@@ -309,7 +309,7 @@ const DashboardTl: React.FC = () => {
 
           {/* Worked Today */}
           <div className="col-md-3 col-sm-6" style={{ cursor: "default" }}>
-            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-success rounded">
+            <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-success rounded">
               <span className="text-success mb-2">
                 <FaRegCalendarCheck size={36} />
               </span>

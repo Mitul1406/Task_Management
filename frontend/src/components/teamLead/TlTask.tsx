@@ -650,7 +650,7 @@ useEffect(() => {
   if (loading) return <p>Loading tasks...</p>;
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{minHeight:"100vh"}}>
       <NotificationPermissionBanner />
       <AutoScreenshot
         ref={screenshotRef}
@@ -729,9 +729,9 @@ useEffect(() => {
 </div>
 
 
-      <div className="table-responsive card p-3 border-0 bg-light">
-        <table className="table table-hover table-bordered align-middle text-left" style={{border:"1px solid #000"}} >
-          <thead style={{ backgroundColor: "#1b263b", color: "#fff" }}>
+      <div className="table-responsive card border-0 second-color">
+        <table className="table table-hover align-middle text-left second-color" style={{borderRadius:"6px",border:"1px solid #000"}} >
+          <thead>
             <tr>
               <th>Project</th>
               <th style={{minWidth:"300px"}}>Task</th>

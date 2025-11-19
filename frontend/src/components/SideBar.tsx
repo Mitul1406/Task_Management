@@ -100,38 +100,58 @@ const isActive = (linkPath: string) => {
 
   return (
     <div className={`sidebar d-flex flex-column ${collapsed ? "collapsed" : ""}`}>
-      <div className="d-flex align-items-center p-3" style={{justifyContent:collapsed ? "center":"space-between",minWidth:collapsed ? "0":"210px"}}>
-        {!collapsed && <h5 className="m-0 ms-4">Task Tracker</h5>}
-        <div
-          onClick={toggleSidebar}
-          style={{ cursor: "pointer", fontSize: "1.2rem" }}
-        >
-          <FaBars title={collapsed ? "Expand" : "Collapse"} />
-        </div>
-      </div>
+  {/* Header */}
+  <div
+    className="header d-flex align-items-center"
+    style={{
+      justifyContent: collapsed ? "center" : "space-between",
+      minWidth: collapsed ? "0" : "210px",
+    }}
+  >
+    {!collapsed && <h5 className="m-0 ms-4">Task Tracker</h5>}
 
-      <ul className="nav flex-column mb-auto">
-        {linksToRender.map((link) => (
-          <li key={link.path} className="nav-item">
-            <button
-              className={`w-100 text-start d-flex align-items-center px-3 py-2 sidebar-btn ${
-                isActive(link.path) ? "btn-active" : ""
-              }`}
-              style={{justifyContent:collapsed ? "center":""}}
-              onClick={() => {
-                // localStorage.setItem("activeMenu", link.path);
-                setActivePath(link.path);
-                navigate(link.path)
-              }}
-              title={collapsed ? link.label : ""}
-            >
-              <span className="me-2">{link.icon}</span>
-              {!collapsed && <span>{link.label}</span>}
-            </button>
-          </li>
-        ))}
-      </ul>
+    <div
+      onClick={toggleSidebar}
+      className="toggle-btn"
+      title={collapsed ? "Expand" : "Collapse"}
+    >
+      <FaBars />
     </div>
+  </div>
+
+  {/* Scrollable Menu */}
+  <div style={{ flex: 1 }}>
+    <ul className="nav flex-column mb-auto">
+      {linksToRender.map((link) => (
+        <li key={link.path} className="nav-item mb-1">
+          <button
+            className={`w-100 d-flex align-items-center sidebar-btn ${
+              isActive(link.path) ? "btn-active" : ""
+            }`}
+            style={{ justifyContent: collapsed ? "center" : "" }}
+            onClick={() => {
+              setActivePath(link.path);
+              navigate(link.path);
+            }}
+            title={collapsed ? link.label : ""}
+          >
+            {/* Inner Capsule */}
+            <div className="inner d-flex align-items-center">
+              <span className="icon-span">{link.icon}</span>
+
+              {!collapsed && <span>{link.label}</span>}
+
+              {collapsed && (
+                <span className="tooltip-float">{link.label}</span>
+              )}
+            </div>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>
+
   );
 };
 

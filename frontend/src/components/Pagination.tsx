@@ -41,7 +41,7 @@ const Pagination: React.FC<PaginationProps> = ({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="card mt-3 mb-3 bg-light border-0 px-3 py-2">
+    <div className="card mt-3 mb-3 bg-light border-0 px-3 py-2 second-color">
       <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div className="text-muted small">
           Showing <strong>{start}</strong>–<strong>{end}</strong> of{" "}

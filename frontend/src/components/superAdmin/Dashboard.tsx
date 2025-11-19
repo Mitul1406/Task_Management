@@ -155,14 +155,14 @@ useEffect(() => {
 
   return (
     <div className="container mt-3">
-<div className="card p-4 mb-4 shadow-sm border-0 bg-light">
+<div className="card p-4 mb-4 shadow-sm border-0 main-color">
   {/* <h4 className="mb-4 text-dark">l</h4> */}
   <div className="row g-4 text-center">
 
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/projects")
       navigate("/projects")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded">
         <span className="text-success mb-2">
           <FaProjectDiagram size={36} />
         </span>
@@ -172,7 +172,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-primary rounded">
         <span className="text-primary mb-2">
           <FaTasks size={36} />
         </span>
@@ -182,7 +182,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=pending")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-warning rounded">
         <span className="text-warning mb-2">
           <FaClock size={36} />
         </span>
@@ -192,7 +192,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=in_progress")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-info rounded">
         <span className="text-danger mb-2">
           <FaSpinner size={36} />
         </span>
@@ -204,7 +204,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-secondary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-secondary rounded">
         <span className="text-secondary mb-2">
           <FaUsers size={36} />
         </span>
@@ -216,7 +216,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView?role=teamLead")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded">
         <span className="text-info mb-2">
           <FaUsers size={36} />
         </span>
@@ -228,7 +228,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView?role=user")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded">
         <span className="text-info mb-2">
           <FaUsers size={36} />
         </span>
@@ -241,12 +241,12 @@ useEffect(() => {
 </div>
 <hr className="my-4 border-2 border-primary opacity-25" />
 
-      <div className="card p-3 shadow-sm mb-4 border-0 bg-light">
+      <div className="card p-3 shadow-sm mb-4 border-0 main-color">
         <h4 className="mb-3 text-dark">Project Contributions</h4>
         <div className="row g-3">
           {paginatedProjects.map((project) => (
             <div key={project.projectId} className="col-md-4 col-sm-6">
-  <div className="card p-3 shadow-sm h-100 border-0" onClick={()=>{
+  <div className="card p-3 shadow-sm h-100 border-0 second-color" onClick={()=>{
     setActivePath("/projects")
     navigate(`/projects?name=`+project.projectName)}} style={{cursor:"pointer"}}>
     <div className="d-flex justify-content-between align-items-center mb-2">
@@ -260,7 +260,7 @@ useEffect(() => {
       {project.userContributions.slice(0, 3).map((user) => (
         <li
           key={user.userId}
-          className="list-group-item d-flex justify-content-between align-items-center p-2"
+          className="list-group-item d-flex justify-content-between align-items-center p-2  second-color text-black"
         >
           <span>{user.username}</span>
           <span className="fw-semibold text-secondary">
@@ -295,7 +295,7 @@ useEffect(() => {
       </div>
       <hr className="my-4 border-2 border-primary opacity-25" />
 
-      <div className="card p-3 shadow-sm mb-2 border-0 bg-light">
+      <div className="card p-3 shadow-sm mb-2 border-0 main-color">
   <div className="mb-3 row g-2 align-items-end">
     <div className="col-md-4 col-sm-6">
       <label className="form-label fw-bold">User</label>
@@ -361,10 +361,10 @@ useEffect(() => {
 
   <div className="table-responsive py-3">
     <table
-      className="table table-hover table-bordered align-middle text-left"
-      style={{ border: "1px solid #000", fontSize: "13px"}}
+      className="table table-hover second-color align-middle text-left"
+      
     >
-      <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
+      <thead >
         <tr>
           <th>Assignee</th>
           <th>Project</th>

@@ -483,6 +483,9 @@ const selectStyles = {
       confirmButtonText: "Yes, delete it!",
       cancelButtonText: "Cancel",
       reverseButtons: true,
+      customClass:{
+      popup:"main-color"
+    }
     });
     if (!result.isConfirmed) return;
     try {
@@ -513,7 +516,7 @@ const selectStyles = {
     return parts.length > 0 ? parts.join(" ") : "-";
   };
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{minHeight:"100vh"}}>
       <div className="d-flex justify-content-between">        
           <h3>Tasks</h3>
 
@@ -606,14 +609,14 @@ const selectStyles = {
 
 
       <div
-        className="table-responsive card p-4 border-0 shadow-sm bg-light"
+        className="table-responsive card p-4 border-0 shadow-sm main-color"
         style={{
           width: "100%",
           overflowX: "auto",
           whiteSpace: "nowrap",
         }}
       >
-        <table className="table table-hover table-bordered align-middle" style={{border:"1px solid #000"}}>
+        <table className="table table-hover second-color align-middle" style={{border:"1px solid #000"}}>
           <thead>
             <tr>
               <th>Title</th>
@@ -680,7 +683,7 @@ const selectStyles = {
                     ) : (
                       <div className="text-info">
                         {task.assignedUser.id === id
-                          ? "Can't modify your own task"
+                          ? <button className="btn btn-sm btn-primary" onClick={()=>handleStatusChange(task.id,"done")}>Change status to Done</button>
                           : "Can't modify other Team Lead's task"}
                       </div>
                     )}
@@ -709,7 +712,7 @@ const selectStyles = {
           }}
         >
           <div
-            className="bg-white p-4 rounded shadow"
+            className="p-4 rounded shadow main-color"
             style={{ width: "90%", maxWidth: "700px" }}
           >
             <h5 className="mb-3 text-center text-primary">

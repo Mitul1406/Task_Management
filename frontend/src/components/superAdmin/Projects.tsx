@@ -82,6 +82,9 @@ const SuperAdminProject: React.FC = () => {
     cancelButtonColor: "#d33",
     confirmButtonText: "Yes, delete it!",
     cancelButtonText: "Cancel",
+    customClass:{
+      popup:"main-color"
+    }
   });
     if (!result.isConfirmed) return;
     await deleteProject(id);
@@ -94,7 +97,7 @@ const SuperAdminProject: React.FC = () => {
   const paginatedProjects = filteredProjects.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{minHeight:"100vh"}}>
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <h2 className="m-0">Projects</h2>
 
@@ -122,8 +125,8 @@ const SuperAdminProject: React.FC = () => {
           tabIndex={-1}
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0">
+          <div className="modal-dialog modal-dialog-centered ">
+            <div className="modal-content border-0 main-color main-color">
               <div className="modal-header justify-content-center">
                 <h5 className="modal-title ">Create Project</h5>
               </div>
@@ -193,12 +196,12 @@ const SuperAdminProject: React.FC = () => {
         </div>
       )}
 
-      <div className="card p-3 shadow-sm border-0 bg-light">
+      <div className="card shadow-sm border-0 main-color">
         {paginatedProjects.length === 0 ? (
           <p>No projects found.</p>
         ) : (
-          <div className="table-responsive">
-            <table className="table table-hover table-bordered align-middle text-start" style={{border:"1px solid #000"}}>
+          <div className="table-responsive second-color" style={{borderRadius:"6px"}}>
+            <table className="table table-hover align-middle text-start" style={{border:"1px solid #000",borderRadius:"6px"}}>
               <thead>
                 <tr>
                   <th>Project Name</th>
@@ -252,7 +255,9 @@ const SuperAdminProject: React.FC = () => {
           </div>
         )}
 
-        {filteredProjects.length > itemsPerPage && (
+        
+      </div>
+      {filteredProjects.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -261,7 +266,6 @@ const SuperAdminProject: React.FC = () => {
             totalResults={projects.length}
           />
         )}
-      </div>
     </div>
   );
 };

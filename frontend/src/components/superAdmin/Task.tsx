@@ -384,6 +384,9 @@ const handleDeleteTask = async (id: string) => {
     confirmButtonText: "Yes, delete it!",
     cancelButtonText: "Cancel",
     reverseButtons: true,
+    customClass:{
+      popup:"main-color"
+    }
   });
 
   if (!result.isConfirmed) return;
@@ -562,7 +565,7 @@ useEffect(() => {
 
 
   <div
-  className="table-responsive card p-4 shadow-sm border-0 bg-light"
+  className="table-responsive card shadow-sm border-0 main-color"
   style={{
     width: "100%",
     overflowX: "auto",
@@ -570,7 +573,7 @@ useEffect(() => {
   }}
 >
   <table
-    className="table table-hover table-bordered align-middle"
+    className="table table-hover second-color align-middle"
     style={{ border: "1px solid #000", fontSize: "13px"}}
 
   >
@@ -659,7 +662,7 @@ useEffect(() => {
     }}
   >
     <div
-      className="bg-white p-4 rounded shadow"
+      className="main-color p-4 rounded shadow"
       style={{ width: "90%", maxWidth: "700px" }}
     >
       <h5 className="mb-3 text-center text-primary">

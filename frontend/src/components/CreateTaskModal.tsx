@@ -192,7 +192,7 @@ const handleTitleChange = (value: string) => {
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
     >
       <div className="modal-dialog modal-dialog-centered" style={{ width: "450px" }} role="document">
-        <div className="modal-content">
+        <div className="modal-content main-color">
           <form onSubmit={handleSubmit}>
             <div className="modal-header justify-content-center">
               <h5 className="modal-title">Create Your Own Task</h5>

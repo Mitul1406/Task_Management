@@ -178,6 +178,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     confirmButtonColor: "#d33",
     cancelButtonColor: "#6c757d",
     confirmButtonText: "Yes, delete it!",
+    customClass:{
+      popup:"main-color"
+    }
   });
     if(result.isConfirmed) {
       try {
@@ -204,7 +207,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   return (
-    <div className="user-page container-fluid mt-1">
+    <div className="user-page container-fluid mt-1 main-color">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Users</h2>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
@@ -247,7 +250,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
       </div>
 
       {/* Card + Table */}
-      <div className="card shadow-sm border-0 bg-light">
+      <div className="card shadow-sm border-0 main-color">
         <div className="card-body">
           {loading ? (
             <p className="d-flex justify-content-center">Loading...</p>
@@ -256,7 +259,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
           ) : (
             <>
               <div className="table-responsive">
-                <table style={{border:"1px solid #000"}} className="table table-hover table-bordered align-middle" >
+                <table style={{border:"1px solid #000"}} className="table table-hover align-middle second-color" >
                   <thead>
                     <tr>
                       <th>Username</th>
@@ -315,8 +318,8 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
         role="dialog"
         style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
       >
-        <div className="modal-dialog modal-dialog-centered" role="document">
-          <div className="modal-content">
+        <div className="modal-dialog modal-dialog-centered " role="document">
+          <div className="modal-content main-color">
             <div className="modal-header justify-content-center">
               <h5 className="modal-title">
                 {editingUser ? "Edit User" : "Add New User"}

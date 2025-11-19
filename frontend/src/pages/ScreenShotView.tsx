@@ -163,6 +163,9 @@ export default function ScreenShotView() {
     confirmButtonText: 'Yes, delete!',
     cancelButtonText: 'Cancel',
     reverseButtons: true,
+    customClass:{
+      popup:"main-color"
+    }
   }).then((result) => {
     if (result.isConfirmed) {
       deleteScreenshots(ids);
@@ -202,7 +205,7 @@ export default function ScreenShotView() {
   };
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-4" style={{minHeight:"100vh"}}>
       <div className="d-flex justify-content-between">
         <h3 className="mb-3">Employee Screenshots {username && (` - ${username}`)}</h3>
         <div>
