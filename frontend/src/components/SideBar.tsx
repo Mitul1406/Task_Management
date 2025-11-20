@@ -12,6 +12,7 @@ import {
 import "../css/SideBar.css";
 import AdminDashboard from "../pages/AdminDashboard";
 import { useSidebar } from "../context/SideBarContext";
+import { RxDashboard } from "react-icons/rx";
 
 interface User {
   role: string;
@@ -62,7 +63,7 @@ useEffect(() => {
   };
 
   const superAdminLinks = [
-    { label: "Dashboard", icon: <FaTachometerAlt />, path: "/superAdmin" },
+    { label: "Dashboard", icon: <RxDashboard />, path: "/superAdmin" },
     { label: "Users", icon: <FaUsers />, path: "/userView" },
     // { label: "View User Timesheet", icon: <FaClock />, path: "/alluser-timesheet-report" },
     // { label: "View User Screenshot", icon: <FaCamera />, path: "/screenshots" },
@@ -71,7 +72,7 @@ useEffect(() => {
   ];
 
   const teamLeadLinks = [
-    { label: "Dashboard", icon: <FaTachometerAlt />, path: "/admin" },
+    { label: "Dashboard", icon: <RxDashboard />, path: "/admin" },
     { label: "My Task", icon: <FaTasks />, path: "/tlTask" },
     { label: "Users", icon: <FaUsers />, path: "/userView" },
     // { label: "Project Task", icon: <FaTasks />, path: "/admin" },
@@ -83,7 +84,7 @@ useEffect(() => {
   ];
 
   const userLinks = [
-    { label: "Dashboard", icon: <FaTachometerAlt />, path: "/user" },
+    { label: "Dashboard", icon: <RxDashboard />, path: "/user" },
     { label: "My Tasks", icon: <FaTasks />, path: "/empTask" },
     { label: "My Timesheet", icon: <FaClock />, path: "/user-timesheet-report/"+id },
     // { label: "View Screenshot", icon: <FaCamera />, path: "/screenshots/"+id },

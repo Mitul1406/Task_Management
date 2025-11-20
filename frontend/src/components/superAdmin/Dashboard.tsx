@@ -4,6 +4,7 @@ import Pagination from "../Pagination";
 import { FaClock, FaProjectDiagram, FaSpinner, FaTasks, FaUsers } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../context/SideBarContext";
+import Select from "react-select";
 
 interface UserContribution {
   userId: string;
@@ -45,7 +46,7 @@ interface TimesheetRow {
 const Dashboard: React.FC = () => {
   const {activePath,setActivePath} =useSidebar()
   const [filteredTimesheet, setFilteredTimesheet] = useState<TimesheetRow[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<string[]>(["all"]);
   const [data, setData] = useState<DashboardData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentTimesheetPage, setCurrentTimesheetPage] = useState(1);
@@ -55,9 +56,76 @@ const Dashboard: React.FC = () => {
   const dashboardItemsPerPage = 3;
   const timesheetItemsPerPage = 10;
   const [users, setUsers] = useState<any[]>([]);
-  const navigate=useNavigate()
+  const [selectedUser, setSelectedUser] = useState<string[]>(["all"]);
 
-  const [selectedUser, setSelectedUser] = useState<string>("");
+  const navigate=useNavigate()
+  const statusOptions = [
+  { value: "all", label: "All Statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "code_review", label: "Code Review" },
+  { value: "done", label: "Done" }
+];
+  const userOptions = [
+  { value: "all", label: "All Users" },
+  ...users.map((u) => ({ value: u.id, label: u.username })),
+];
+  const selectedUserOptions = selectedUser.includes("all")
+  ? [userOptions[0]]
+  : userOptions.filter((opt) => selectedUser.includes(opt.value));
+
+  const selectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
+    borderRadius: "6px",
+    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)" : "none",
+    // minHeight: "35px",
+    alignItems: "flex-start",
+  }),
+  valueContainer: (base: any) => ({
+    ...base,
+    flexWrap: "wrap",
+    alignItems: "center",
+    paddingTop: "4px",
+    paddingBottom: "4px",
+    // maxHeight: "80px", // allow multi-value wrapping
+    overflowY: "auto",
+  }),
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#e9f2ff",
+    margin: "2px",
+    borderRadius: "4px",
+  }),
+  multiValueLabel: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    // whiteSpace: "normal",
+    // wordBreak: "break-word",
+  }),
+  multiValueRemove: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    ":hover": {
+      backgroundColor: "#0d6efd",
+      color: "white",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
+const style = document.createElement("style");
+style.innerHTML = `
+  .css-1rhbuit-multiValue { max-width: 100%; }
+  .css-12jo7m5-value-container::-webkit-scrollbar {
+    display: none;
+  }
+`;
+document.head.appendChild(style);
   const formatDuration = (seconds: number) => {
     if (!seconds || seconds <= 0) return "-";
     const h = Math.floor(seconds / 3600);
@@ -125,8 +193,16 @@ useEffect(() => {
       const end = endDate ? new Date(endDate).getTime() : Infinity;
 
       return (
-        (!selectedUser || r.assignee === users.find(u => u.id === selectedUser)?.username) &&
-        (!selectedStatus || r.status === selectedStatus) &&
+        (selectedUser.length === 0 ||selectedUser.includes("all")||
+  selectedUser.includes(
+    users.find(u => u.username === r.assignee)?.id
+  )
+)
+ &&
+        (selectedStatus.length === 0 ||
+ selectedStatus.includes("all") ||
+ selectedStatus.includes(r.status))
+ &&
         date >= start &&
         date <= end
       );
@@ -297,35 +373,40 @@ useEffect(() => {
 
       <div className="card p-3 shadow-sm mb-2 border-0 main-color">
   <div className="mb-3 row g-2 align-items-end">
-    <div className="col-md-4 col-sm-6">
+    <div className="col-md-3 col-sm-6">
       <label className="form-label fw-bold">User</label>
-      <select
-        className="form-select"
-        value={selectedUser}
-        onChange={(e) => setSelectedUser(e.target.value)}
-      >
-        <option value="">All Users</option>
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.username}
-          </option>
-        ))}
-      </select>
+      <Select
+        isMulti
+        options={userOptions}
+        value={selectedUserOptions}
+        onChange={(selected: any) => {
+          const values = selected ? selected.map((s: any) => s.value) : [];
+          setSelectedUser(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Users..."
+        styles={selectStyles}
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+      />
     </div>
 
-    <div className="col-md-2 col-sm-6">
+    <div className="col-md-3 col-sm-6">
   <label className="form-label fw-bold">Status</label>
-  <select
-    className="form-select"
-    value={selectedStatus}
-    onChange={(e) => setSelectedStatus(e.target.value)}
-  >
-    <option value="">All Statuses</option>
-    <option value="pending">Pending</option>
-    <option value="in_progress">In Progress</option>
-    <option value="code_review">Code Review</option>
-    <option value="done">Done</option>
-  </select>
+  <Select
+        isMulti
+        options={statusOptions}
+        value={statusOptions.filter((opt) =>
+          selectedStatus.includes(opt.value)
+        )}
+        onChange={(selected) => {
+          const values:any = selected ? selected.map((s) => s.value) : [];
+          setSelectedStatus(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Status..."
+        styles={selectStyles}
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+      />
 </div>
 
 
