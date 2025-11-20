@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
-  const dashboardItemsPerPage = 3;
+  const dashboardItemsPerPage = 4;
   const timesheetItemsPerPage = 10;
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<string[]>(["all"]);
@@ -233,12 +233,12 @@ useEffect(() => {
     <div className="container mt-3">
 <div className="card p-4 mb-4 shadow-sm border-0 main-color">
   {/* <h4 className="mb-4 text-dark">l</h4> */}
-  <div className="row g-4 text-center">
+  <div className="row g-3 text-center">
 
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/projects")
       navigate("/projects")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded-4">
         <span className="text-success mb-2">
           <FaProjectDiagram size={36} />
         </span>
@@ -248,7 +248,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-primary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-primary rounded-4">
         <span className="text-primary mb-2">
           <FaTasks size={36} />
         </span>
@@ -258,7 +258,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=pending")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-warning rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-warning rounded-4">
         <span className="text-warning mb-2">
           <FaClock size={36} />
         </span>
@@ -268,7 +268,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=in_progress")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-info rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-info rounded-4">
         <span className="text-danger mb-2">
           <FaSpinner size={36} />
         </span>
@@ -280,7 +280,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-secondary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-secondary rounded-4">
         <span className="text-secondary mb-2">
           <FaUsers size={36} />
         </span>
@@ -292,7 +292,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView?role=teamLead")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded-4">
         <span className="text-info mb-2">
           <FaUsers size={36} />
         </span>
@@ -304,7 +304,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView?role=user")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded-4">
         <span className="text-info mb-2">
           <FaUsers size={36} />
         </span>
@@ -315,14 +315,14 @@ useEffect(() => {
 
   </div>
 </div>
-<hr className="my-4 border-2 border-primary opacity-25" />
+{/* <hr className="my-4 border-2 border-primary opacity-25" /> */}
 
       <div className="card p-3 shadow-sm mb-4 border-0 main-color">
         <h4 className="mb-3 text-dark">Project Contributions</h4>
         <div className="row g-3">
           {paginatedProjects.map((project) => (
-            <div key={project.projectId} className="col-md-4 col-sm-6">
-  <div className="card p-3 shadow-sm h-100 border-0 second-color" onClick={()=>{
+            <div key={project.projectId} className="col-md-3 col-sm-6">
+  <div className="card p-3 shadow-sm h-100 border-0 second-color rounded-4" onClick={()=>{
     setActivePath("/projects")
     navigate(`/projects?name=`+project.projectName)}} style={{cursor:"pointer"}}>
     <div className="d-flex justify-content-between align-items-center mb-2">
@@ -369,7 +369,7 @@ useEffect(() => {
             />
         )}
       </div>
-      <hr className="my-4 border-2 border-primary opacity-25" />
+      {/* <hr className="my-4 border-2 border-primary opacity-25" /> */}
 
       <div className="card p-3 shadow-sm mb-2 border-0 main-color">
   <div className="mb-3 row g-2 align-items-end">

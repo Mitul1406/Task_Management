@@ -74,4 +74,144 @@ div {
   background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+.details-btn {
+  border: 1.5px solid #4c728a;      /* outline color */
+  color: #4c728a;
+  background: transparent;
+  transition: all 0.25s ease;
+}
 
+/* Hover */
+.details-btn:hover {
+  background-color: #3b586a;
+  color: #fff;
+  border-color: #4c728a;
+}
+
+/* Active/Pressed */
+.details-btn:active {
+  background-color: #3b586a !important;
+  border-color: #3b586a !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.details-btn:focus {
+  box-shadow: 0 0 0 3px rgba(76, 114, 138, 0.35);
+  background-color: #3b586a !important;
+  border-color: #3b586a !important;
+  color: #fff !important;
+}
+
+.report-btn {
+  border: 1.5px solid #fa6401;   /* warm orange-brown */
+  color: #fa6401;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+.report-btn:hover {
+  background-color: #fa6401;
+  color: #fff;
+  border-color: #fa6401;
+}
+
+/* Active */
+.report-btn:active {
+  background-color: #fa6401 !important;
+  border-color: #fa6401 !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.report-btn:focus {
+  box-shadow: 0 0 0 3px rgba(180, 95, 53, 0.35);
+  background-color: #fa6401 !important;
+  border-color: #fa6401 !important;
+  color: #fff !important;
+}
+
+
+.timesheet-btn {
+  border: 1.5px solid #3ec124;   /* warm orange-brown */
+  color: #3ec124;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+.timesheet-btn:hover {
+  background-color: #3ec124;
+  color: #fff;
+  border-color: #3ec124;
+}
+
+/* Active */
+.timesheet-btn:active {
+  background-color: #3ec124 !important;
+  border-color: #3ec124 !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.timesheet-btn:focus {
+  box-shadow: 0 0 0 3px rgba(180, 95, 53, 0.35);
+  background-color: #3ec124 !important;
+  border-color: #3ec124 !important;
+  color: #fff !important;
+}
+
+.delete-btn {
+  border: 1.5px solid #fe1e1f;   /* warm orange-brown */
+  color: #fe1e1f;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+.delete-btn:hover {
+  background-color: #fe1e1f;
+  color: #fff;
+  border-color: #fe1e1f;
+}
+
+/* Active */
+.delete-btn:active {
+  background-color: #fe1e1f !important;
+  border-color: #fe1e1f !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.delete-btn:focus {
+  box-shadow: 0 0 0 3px rgba(180, 95, 53, 0.35);
+  background-color: #fe1e1f !important;
+  border-color: #fe1e1f !important;
+  color: #fff !important;
+}
+
+.common-btn-out{
+  background-color: #000;
+  color: #fff;
+}
+
+.common-btn-out:hover{
+  background-color: orange;
+  color: #fff;
+}
+
+.common-btn-in{
+  background-color: #000;
+  color: #fff;
+}
+
+.common-btn-in:hover{
+  background-color: #000;
+  color: #fff;
+}
+
+.table-border{
+  border:1px solid #0000003a !important;
+  border-radius:6px !important
+}

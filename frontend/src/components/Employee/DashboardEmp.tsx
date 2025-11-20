@@ -236,8 +236,8 @@ const DashboardEmp: React.FC = () => {
 
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
-      <div className="card p-4 mb-4 shadow-sm border-0 main-color">
-              <div className="row g-4 text-center">      
+      <div className="card p-3 mb-4 shadow-sm border-0 main-color">
+              <div className="row g-3 text-center">      
                 <div
                   className="col-md-3 col-sm-6"
                   onClick={() => {
@@ -245,7 +245,7 @@ const DashboardEmp: React.FC = () => {
                     navigate("/empTask")}}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-primary rounded">
+                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-primary rounded-4">
                     <span className="text-primary mb-2">
                       <FaTasks size={36} />
                     </span>
@@ -262,7 +262,7 @@ const DashboardEmp: React.FC = () => {
                     navigate(`/empTask?status=pending`)}}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-warning rounded">
+                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-warning rounded-4">
                     <span className="text-warning mb-2">
                       <FaClock size={36} />
                     </span>
@@ -279,7 +279,7 @@ const DashboardEmp: React.FC = () => {
                     navigate(`/empTask?status=in_progress`)}}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-info rounded">
+                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-info rounded-4">
                     <span className="text-danger mb-2">
                       <FaSpinner size={36} />
                     </span>
@@ -290,7 +290,7 @@ const DashboardEmp: React.FC = () => {
       
                 {/* Worked Today */}
                 <div className="col-md-3 col-sm-6" style={{ cursor: "default" }}>
-                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-success rounded">
+                  <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-success rounded-4">
                     <span className="text-success mb-2">
                       <FaRegCalendarCheck size={36} />
                     </span>

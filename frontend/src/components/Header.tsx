@@ -75,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
   style={{ marginLeft: collapse ? "50px" : "0px" }}
 >
   {/* Left: Welcome message */}
-  <div className="d-flex align-items-center">
+  <div className="d-flex align-items-center ms-3">
     <h6 className="m-0">
       Welcome{" "}
       {role === "teamLead"

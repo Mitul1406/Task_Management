@@ -90,13 +90,15 @@ const ProjectTl: React.FC = () => {
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2 className="m-0">Projects</h2>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <div><h2 className="m-0">Projects</h2>
+        <p>Manage everything related to projects — view details, check reports,
+  review timesheets.</p></div>
+        <button className="btn common-btn-out" onClick={() => setShowModal(true)}>
           + New Project
         </button>
       </div>
       <div className="mb-3">
-        <label className="fw-bold mb-1">Search By Project Name:</label>
+        <label className="fw-normal mb-1">Search By Project Name:</label>
         <input
           type="text"
           className="form-control w-auto"
@@ -117,7 +119,7 @@ const ProjectTl: React.FC = () => {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content border-0 main-color">
               <div className="modal-header justify-content-center">
-                <h5 className="modal-title ">Create Project</h5>
+                <h3 className="modal-title ">Create Project</h3>
               </div>
 
               <div className="modal-body">
@@ -171,12 +173,13 @@ const ProjectTl: React.FC = () => {
 
               <div className="modal-footer justify-content-between">
                 <button
-                  className="btn btn-secondary"
+                  className="btn"
+                  style={{borderColor:"black"}}
                   onClick={() => setShowModal(false)}
                 >
                   Cancel
                 </button>
-                <button className="btn btn-primary" onClick={handleCreateProject}>
+                <button className="btn common-btn-in" onClick={handleCreateProject}>
                   Create Project
                 </button>
               </div>
@@ -190,14 +193,14 @@ const ProjectTl: React.FC = () => {
     <p>No projects found.</p>
   ) : (
     <div className="table-responsive main-color">
-      <table className="table table-hover align-middle text-start second-color" style={{border:"1px solid #000",borderRadius:"6px"}}>
+      <table className="table table-hover align-middle text-start second-color table-border">
         <thead>
           <tr>
             {/* <th></th> */}
-            <th>Project Name</th>
-            <th>Description</th>
+            <th className="fw-normal">Project Name</th>
+            <th className="fw-normal">Description</th>
             {/* <th>Created By</th> */}
-            <th>Actions</th>
+            <th className="fw-normal">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -216,14 +219,14 @@ const ProjectTl: React.FC = () => {
     {(project.adminId?.id === id || project.name === "User Created Tasks") ? (
       <>
         <button
-          className="btn btn-outline-info btn-sm"
+          className="btn btn-sm details-btn"
           onClick={() => navigate(`/taskTls?projectId=${project.id}`)}
         >
           Details
         </button>
 
         <button
-          className="btn btn-outline-success btn-sm"
+          className="btn timesheet-btn btn-sm"
           onClick={() =>
             window.open(`/timesheet-report/${project.id}`, "_blank")
           }
@@ -232,7 +235,7 @@ const ProjectTl: React.FC = () => {
         </button>
 
         <button
-          className="btn btn-outline-warning btn-sm"
+          className="btn report-btn btn-sm"
           onClick={() =>
             window.open(`/project-report/${project.id}`, "_blank")
           }
@@ -247,7 +250,7 @@ const ProjectTl: React.FC = () => {
     {/* DELETE only if not shared */}
     {(project.name !== "User Created Tasks" && project.adminId?.id === id) && (
       <button
-        className="btn btn-outline-danger btn-sm"
+        className="btn delete-btn btn-sm"
         onClick={() => handleDeleteProject(project.id)}
       >
         Delete

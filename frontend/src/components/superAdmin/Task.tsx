@@ -469,7 +469,7 @@ useEffect(() => {
 }, [selectedStatus, selectedUser, startDate, endDate]);
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-4" style={{minHeight:"100vh"}}>
           <div className="d-flex justify-content-between">        
           <h3>Tasks</h3>
 
