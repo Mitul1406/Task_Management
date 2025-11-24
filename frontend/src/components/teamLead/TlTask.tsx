@@ -82,7 +82,7 @@ const selectedProjectOptions = selectedProject.includes("all")
   }),
   multiValueLabel: (base: any) => ({
     ...base,
-    color: "#0d6efd",
+    color: "#000",
     whiteSpace: "normal",
     wordBreak: "break-word",
   }),
@@ -658,9 +658,11 @@ useEffect(() => {
       />
 
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>Your Tasks</h3>
+        <div><h2 className="m-0">Your Tasks</h2>
+        <p>Manage everything related to users tasks — view details, edit tasks, and also delete unwanteds.</p></div>
+
         <button
-          className="btn btn-primary"
+          className="btn common-btn-out"
           onClick={() => setShowTaskModal(true)}
         >
           Create Your Own Task
@@ -670,9 +672,9 @@ useEffect(() => {
       {/* Filters */}
       <div className="d-flex flex-wrap gap-3 mb-3">
   {/* First row: Project + Status */}
-  <div className="d-flex flex-wrap gap-3 w-100 mb-3">
+  <div className="d-flex flex-wrap gap-3 w-100">
     <div style={{ minWidth: "200px",flex: "1" }}>
-      <label className="form-label fw-bold">Project</label>
+      <label className="form-label fw-normal">Project</label>
       <Select
         isMulti
         options={projectOptions}
@@ -689,7 +691,7 @@ useEffect(() => {
     </div>
 
     <div style={{ minWidth: "200px",flex: "1" }}>
-      <label className="form-label fw-bold">Status</label>
+      <label className="form-label fw-normal">Status</label>
       <Select
         isMulti
         options={statusOptions}
@@ -707,7 +709,7 @@ useEffect(() => {
   {/* Second row: Start Date + End Date */}
   <div className="d-flex flex-wrap gap-3 w-100">
     <div style={{ minWidth: "200px" }}>
-      <label className="form-label fw-bold">Start Date</label>
+      <label className="form-label fw-normal">Start Date</label>
       <input
         type="date"
         className="form-control"
@@ -717,7 +719,7 @@ useEffect(() => {
     </div>
 
     <div style={{ minWidth: "200px"}}>
-      <label className="form-label fw-bold">End Date</label>
+      <label className="form-label fw-normal">End Date</label>
       <input
         type="date"
         className="form-control"
@@ -730,7 +732,7 @@ useEffect(() => {
 
 
       <div className="table-responsive card border-0 second-color">
-        <table className="table table-hover align-middle text-left second-color" style={{borderRadius:"6px",border:"1px solid #000"}} >
+        <table className="table table-hover align-middle text-left second-color table-border" >
           <thead>
             <tr>
               <th>Project</th>
@@ -1188,7 +1190,7 @@ export default TlTask;
 //   {/* === Filters Section === */}
 //   <div className="d-flex align-items-end gap-3 flex-wrap mb-3">
 //     <div>
-//       <label className="form-label fw-bold">Select Project:</label>
+//       <label className="form-label fw-normal">Select Project:</label>
 //       <select
 //         className="form-select"
 //         style={{ width: "200px" }}
@@ -1205,7 +1207,7 @@ export default TlTask;
 //     </div>
 
 //     <div>
-//       <label className="form-label fw-bold">Start Date:</label>
+//       <label className="form-label fw-normal">Start Date:</label>
 //       <input
 //         type="date"
 //         className="form-control"
@@ -1216,7 +1218,7 @@ export default TlTask;
 //     </div>
 
 //     <div>
-//       <label className="form-label fw-bold">End Date:</label>
+//       <label className="form-label fw-normal">End Date:</label>
 //       <input
 //         type="date"
 //         className="form-control"

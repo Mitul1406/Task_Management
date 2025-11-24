@@ -158,7 +158,7 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>
+            <button type="submit" className="btn common-btn-in btn-sm" disabled={loading}>
               {loading ? "Updating..." : "Update"}
             </button>
           </div>

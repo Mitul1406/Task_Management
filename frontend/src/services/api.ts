@@ -155,6 +155,7 @@ const CREATE_PROJECT = gql`
       name
       description
       adminId{
+      id
       username
       }
     }

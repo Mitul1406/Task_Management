@@ -71,7 +71,6 @@ const selectStyles = {
     borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
     borderRadius: "6px",
     boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)" : "none",
-    // minHeight: "35px",
     alignItems: "flex-start",
   }),
   valueContainer: (base: any) => ({
@@ -91,7 +90,7 @@ const selectStyles = {
   }),
   multiValueLabel: (base: any) => ({
     ...base,
-    color: "#0d6efd",
+    color: "#000",
     // whiteSpace: "normal",
     // wordBreak: "break-word",
   }),
@@ -471,14 +470,16 @@ useEffect(() => {
   return (
     <div className="container-fluid mt-4" style={{minHeight:"100vh"}}>
           <div className="d-flex justify-content-between">        
-          <h3>Tasks</h3>
+          <div><h2 className="m-0">Tasks</h2>
+        <p>Manage everything related to users tasks — view details, edit tasks, and also delete unwanteds.</p></div>
 
-        <button className="btn btn-sm btn-outline-dark" onClick={()=>navigate(-1)}>{"<"}- Back</button>
+        <div ><button className="btn btn-sm btn-outline-dark" onClick={()=>navigate(-1)}>{"<"}- Back</button>
+        </div>
       </div>
 <div className="container-fluid mb-3">
   <div className="d-flex flex-wrap gap-3 mb-3">
     <div style={{ minWidth: "200px", flex: "1" }}>
-      <label className="fw-bold mb-1">Filter By Project:</label>
+      <label className="fw-normal mb-1">Filter By Project:</label>
       <Select
         isMulti
         options={projectOptions}
@@ -495,7 +496,7 @@ useEffect(() => {
     </div>
 
     <div style={{ minWidth: "200px", flex: "1" }}>
-      <label className="fw-bold mb-1">Filter By Status:</label>
+      <label className="fw-normal mb-1">Filter By Status:</label>
       <Select
         isMulti
         options={statusOptions}
@@ -514,7 +515,7 @@ useEffect(() => {
     </div>
 
     <div style={{ minWidth: "200px", flex: "1" }}>
-      <label className="fw-bold mb-1">Filter By Assigned User:</label>
+      <label className="fw-normal mb-1">Filter By Assigned User:</label>
       <Select
         isMulti
         options={userOptions}
@@ -533,7 +534,7 @@ useEffect(() => {
 
   <div className="d-flex flex-wrap gap-3 align-items-end">
     <div style={{ minWidth: "150px" }}>
-      <label className="fw-bold mb-1">Start Date:</label>
+      <label className="fw-normal mb-1">Start Date:</label>
       <input
         type="date"
         className="form-control"
@@ -543,7 +544,7 @@ useEffect(() => {
     </div>
 
     <div style={{ minWidth: "150px" }}>
-      <label className="fw-bold mb-1">End Date:</label>
+      <label className="fw-normal mb-1">End Date:</label>
       <input
         type="date"
         className="form-control"
@@ -554,7 +555,7 @@ useEffect(() => {
 
     <div style={{ minWidth: "150px" }} className="ms-auto">
       <button
-        className="btn btn-primary w-100 mt-2"
+        className="btn common-btn-out w-100 mt-2"
         onClick={handleAddTask}
       >
         + Add Task
@@ -573,23 +574,21 @@ useEffect(() => {
   }}
 >
   <table
-    className="table table-hover second-color align-middle"
-    style={{ border: "1px solid #000", fontSize: "13px"}}
-
+    className="table table-hover second-color align-middle table-border"
   >
     <thead>
       <tr>
-        <th style={{minWidth:"300px"}}>Title</th>
-        <th>Project</th>
-        <th>Assigned To</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Estimated</th>
-        <th>Consumed</th>
-        <th>Saved</th>
-        <th>Time Extension</th>
-        <th>Status</th>
-        <th>Actions</th>
+        <th className="fw-500" style={{minWidth:"300px"}}>Title</th>
+        <th className="fw-500">Project</th>
+        <th className="fw-500">Assigned To</th>
+        <th className="fw-500">Start</th>
+        <th className="fw-500">End</th>
+        <th className="fw-500">Estimated</th>
+        <th className="fw-500">Consumed</th>
+        <th className="fw-500">Saved</th>
+        <th className="fw-500">Time Extension</th>
+        <th className="fw-500">Status</th>
+        <th className="fw-500">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -625,13 +624,13 @@ useEffect(() => {
           <td>
             <div className="d-flex gap-2">
               <button
-                className="btn btn-sm btn-outline-primary"
+                className="btn btn-sm report-btn"
                 onClick={() => handleEditTask(task)}
               >
                 Edit
               </button>
               <button
-                className="btn btn-sm btn-outline-danger"
+                className="btn btn-sm delete-btn"
                 onClick={() => handleDeleteTask(task.id)}
               >
                 Delete
@@ -665,7 +664,7 @@ useEffect(() => {
       className="main-color p-4 rounded shadow"
       style={{ width: "90%", maxWidth: "700px" }}
     >
-      <h5 className="mb-3 text-center text-primary">
+      <h3 className="mb-3 text-center text-dark">
         {editMode ? (
           <>
             Edit Task — <span className="text-dark">{taskForm.title}</span>
@@ -673,7 +672,7 @@ useEffect(() => {
         ) : (
           "Add New Task"
         )}
-      </h5>
+      </h3>
 
       <div className="d-flex flex-column gap-3">
         
@@ -911,14 +910,14 @@ useEffect(() => {
       {/* Buttons */}
       <div className="d-flex justify-content-between align-items-center mt-4">
         <button
-          className="btn btn-secondary"
+          className="btn cancel-btn"
           onClick={() => {
             setErrors({})
             setShowModal(false)}}
         >
           Close
         </button>
-        <button className="btn btn-success" onClick={handleSaveTask}>
+        <button className="btn common-btn-in" onClick={handleSaveTask}>
           {editMode ? "Save Changes" : "Add Task"}
         </button>
       </div>

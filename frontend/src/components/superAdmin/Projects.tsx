@@ -97,18 +97,17 @@ const SuperAdminProject: React.FC = () => {
   const paginatedProjects = filteredProjects.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="container mt-4" style={{minHeight:"100vh"}}>
+    <div className="container-fluid mt-4" style={{minHeight:"100vh"}}>
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-        <h2 className="m-0">Projects</h2>
-
-        
-
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <div><h2 className="m-0">Projects</h2>
+        <p>Manage everything related to projects — view details, check reports,
+  review timesheets.</p></div>
+        <button className="btn common-btn-out" onClick={() => setShowModal(true)}>
           + New Project
         </button>
       </div>
       <div className="mb-3">
-        <label className="fw-bold mb-1">Search By Project Name:</label>
+        <label className="fw-normal mb-1">Search By Project Name:</label>
         <input
           type="text"
           className="form-control w-auto"
@@ -128,7 +127,7 @@ const SuperAdminProject: React.FC = () => {
           <div className="modal-dialog modal-dialog-centered ">
             <div className="modal-content border-0 main-color main-color">
               <div className="modal-header justify-content-center">
-                <h5 className="modal-title ">Create Project</h5>
+                <h3 className="modal-title ">Create Project</h3>
               </div>
 
               <div className="modal-body">
@@ -180,14 +179,14 @@ const SuperAdminProject: React.FC = () => {
               </div>
 
               <div className="modal-footer justify-content-between">
-                <button className="btn btn-secondary" onClick={() => {
+                <button className="btn cancel-btn" onClick={() => {
                   setNewProjectName("")
                   setNewProjectDescription("")
                   setError({name:"",description:""})
                   setShowModal(false)}}>
                   Cancel
                 </button>
-                <button className="btn btn-primary" onClick={handleCreateProject}>
+                <button className="btn common-btn-in" onClick={handleCreateProject}>
                   Create Project
                 </button>
               </div>
@@ -198,16 +197,16 @@ const SuperAdminProject: React.FC = () => {
 
       <div className="card shadow-sm border-0 main-color">
         {paginatedProjects.length === 0 ? (
-          <p>No projects found.</p>
+          <p className="text-center">No projects found.</p>
         ) : (
           <div className="table-responsive second-color" style={{borderRadius:"6px"}}>
-            <table className="table table-hover align-middle text-start" style={{border:"1px solid #000",borderRadius:"6px"}}>
+            <table className="table table-hover align-middle text-start table-border">
               <thead>
                 <tr>
-                  <th>Project Name</th>
-                  <th>Description</th>
-                  <th>Created By</th>
-                  <th>Actions</th>
+                  <th className="fw-500">Project Name</th>
+                  <th className="fw-500">Description</th>
+                  <th className="fw-500">Created By</th>
+                  <th className="fw-500">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,13 +218,13 @@ const SuperAdminProject: React.FC = () => {
                     <td>
                       <div className="d-flex flex-wrap justify-content-start gap-2">
                         <button
-                          className="btn btn-outline-info btn-sm"
+                          className="btn details-btn btn-sm"
                           onClick={() => navigate(`/tasks?projectId=${project.id}`)}
                         >
                           Details
                         </button>
                         <button
-                          className="btn btn-outline-success btn-sm"
+                          className="btn timesheet-btn btn-sm"
                           onClick={() =>
                             window.open(`/timesheet-report/${project.id}`, "_blank")
                           }
@@ -233,7 +232,7 @@ const SuperAdminProject: React.FC = () => {
                           Timesheet
                         </button>
                         <button
-                          className="btn btn-outline-warning btn-sm"
+                          className="btn report-btn btn-sm"
                           onClick={() =>
                             window.open(`/project-report/${project.id}`, "_blank")
                           }
@@ -241,7 +240,7 @@ const SuperAdminProject: React.FC = () => {
                           Report
                         </button>
                         <button
-                          className="btn btn-outline-danger btn-sm"
+                          className="btn delete-btn btn-sm"
                           onClick={() => handleDeleteProject(project.id)}
                         >
                           Delete

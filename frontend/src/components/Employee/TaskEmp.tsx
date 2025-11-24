@@ -606,8 +606,9 @@ useEffect(() => {
 
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>Your Tasks</h3>
-        <button className="btn btn-primary" onClick={() => setShowTaskModal(true)}>
+        <div><h3>Your Tasks</h3>
+        <p>Here you can view tasks, start or stop timers, update task status, and create your own tasks.</p></div>
+        <button className="btn common-btn-out" onClick={() => setShowTaskModal(true)}>
           Create Your Own Task
         </button>
         <CreateTaskModal
@@ -620,7 +621,7 @@ useEffect(() => {
       {/* Date Filters */}
       <div className="d-flex align-items-end gap-3 flex-wrap mb-3">
         <div>
-  <label className="form-label fw-bold">Project Name:</label>
+  <label className="form-label fw-normal">Project Name:</label>
   <select
   value={projectFilter}
   onChange={(e) => setProjectFilter(e.target.value)}
@@ -638,7 +639,7 @@ useEffect(() => {
         </div>
  
  <div>
-  <label className="form-label fw-bold">Status:</label>
+  <label className="form-label fw-normal">Status:</label>
  <select
   className="form-select"
   style={{ width: "180px" }}
@@ -654,7 +655,7 @@ useEffect(() => {
 
         </div>
         <div>
-          <label className="form-label fw-bold">Start Date:</label>
+          <label className="form-label fw-normal">Start Date:</label>
           <input
             type="date"
             className="form-control"
@@ -665,7 +666,7 @@ useEffect(() => {
         </div>
 
         <div>
-          <label className="form-label fw-bold">End Date:</label>
+          <label className="form-label fw-normal">End Date:</label>
           <input
             type="date"
             className="form-control"
@@ -679,17 +680,17 @@ useEffect(() => {
 
       {/* 🔹 Single Table for All Tasks */}
       <div className="table-responsive card p-3 main-color">
-        <table className="table table-hover align-middle second-color" style={{border:"1px solid #000"}}>
+        <table className="table table-hover align-middle second-color table-border">
           <thead>
             <tr>
-              <th>Project</th>
-              <th style={{minWidth:"300px"}}>Task</th>
-              <th>Estimated</th>
-              <th>Consumed</th>
-              <th style={{minWidth:"110px"}}>Start</th>
-              <th style={{minWidth:"110px"}}>End</th>
-              <th>Status</th>
-              <th style={{minWidth:"240px"}}>Actions</th>
+              <th className="fw-500">Project</th>
+              <th className="fw-500" style={{minWidth:"300px"}}>Task</th>
+              <th className="fw-500">Estimated</th>
+              <th className="fw-500">Consumed</th>
+              <th className="fw-500" style={{minWidth:"110px"}}>Start</th>
+              <th className="fw-500" style={{minWidth:"110px"}}>End</th>
+              <th className="fw-500">Status</th>
+              <th className="fw-500" style={{minWidth:"240px"}}>Actions</th>
             </tr>
           </thead>
           <tbody>

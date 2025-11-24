@@ -104,7 +104,7 @@ const selectStyles = {
   }),
   multiValueLabel: (base: any) => ({
     ...base,
-    color: "#0d6efd",
+    color: "#000",
     // whiteSpace: "normal",
     // wordBreak: "break-word",
   }),
@@ -518,14 +518,17 @@ const selectStyles = {
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
       <div className="d-flex justify-content-between">        
-          <h3>Tasks</h3>
+          
+          <div><h2 className="m-0">Tasks</h2>
+        <p>Manage everything related to users tasks — view details, edit tasks, and also delete unwanteds.</p></div>
 
-        <button className="btn btn-sm btn-outline-dark" onClick={()=>navigate(-1)}>{"<"}- Back</button>
+        <div><button className="btn btn-sm btn-outline-dark" onClick={()=>navigate(-1)}>{"<"}- Back</button>
+        </div>
       </div>
  <div className="container-fluid mb-3">
   <div className="d-flex flex-wrap row g-3 mb-3">
     <div className="col-12 col-md-4 col-lg-2 flex-grow-1">
-      <label className="fw-bold mb-1">Filter By Project:</label>
+      <label className="fw-normal mb-1">Filter By Project:</label>
       <Select
         isMulti
         options={projectOptions}
@@ -540,7 +543,7 @@ const selectStyles = {
     </div>
 
     <div className="col-12 col-md-4 col-lg-2 flex-grow-1">
-      <label className="fw-bold mb-1">Filter By Status:</label>
+      <label className="fw-normal mb-1">Filter By Status:</label>
       <Select
         isMulti
         options={statusOptions}
@@ -557,7 +560,7 @@ const selectStyles = {
     </div>
 
     <div className="col-12 col-md-4 col-lg-2 flex-grow-1">
-      <label className="fw-bold mb-1">Filter By User:</label>
+      <label className="fw-normal mb-1">Filter By User:</label>
       <Select
         isMulti
         options={userOptions}
@@ -575,7 +578,7 @@ const selectStyles = {
   {/* Second line: Dates + Add Task */}
   <div className="d-flex flex-wrap row g-3 align-items-end">
     <div className="col-6 col-md-2 col-lg-2">
-      <label className="fw-bold mb-1">Start Date:</label>
+      <label className="fw-normal mb-1">Start Date:</label>
       <input
         type="date"
         className="form-control"
@@ -585,7 +588,7 @@ const selectStyles = {
     </div>
 
     <div className="col-6 col-md-2 col-lg-2">
-      <label className="fw-bold mb-1">End Date:</label>
+      <label className="fw-normal mb-1">End Date:</label>
       <input
         type="date"
         className="form-control"
@@ -597,7 +600,7 @@ const selectStyles = {
     {/* Push button to right */}
     <div className="col-12 col-md-2 col-lg-2 ms-auto text-md-end">
       <button
-        className="btn btn-primary w-100 mt-2 mt-md-0"
+        className="btn common-btn-out w-100 mt-2 mt-md-0"
         onClick={handleAddTask}
       >
         + Add Task
@@ -616,7 +619,7 @@ const selectStyles = {
           whiteSpace: "nowrap",
         }}
       >
-        <table className="table table-hover second-color align-middle" style={{border:"1px solid #000"}}>
+        <table className="table table-hover second-color align-middle table-border">
           <thead>
             <tr>
               <th>Title</th>
@@ -668,13 +671,13 @@ const selectStyles = {
                     task.assignedUser?.role !== "teamLead" ? (
                       <div className="d-flex gap-2">
                         <button
-                          className="btn btn-sm btn-outline-primary"
+                          className="btn btn-sm report-btn"
                           onClick={() => handleEditTask(task)}
                         >
                           Edit
                         </button>
                         <button
-                          className="btn btn-sm btn-outline-danger"
+                          className="btn btn-sm delete-btn"
                           onClick={() => handleDeleteTask(task.id)}
                         >
                           Delete
@@ -715,7 +718,7 @@ const selectStyles = {
             className="p-4 rounded shadow main-color"
             style={{ width: "90%", maxWidth: "700px" }}
           >
-            <h5 className="mb-3 text-center text-primary">
+            <h3 className="mb-3 text-center text-dark">
               {editMode ? (
                 <>
                   Edit Task —{" "}
@@ -724,7 +727,7 @@ const selectStyles = {
               ) : (
                 "Add New Task"
               )}
-            </h5>
+            </h3>
 
             <div className="d-flex flex-column gap-3">
               {/* Project */}
@@ -998,7 +1001,7 @@ const selectStyles = {
             {/* Buttons */}
             <div className="d-flex justify-content-between align-items-center mt-4">
               <button
-                className="btn btn-secondary"
+                className="btn cancel-btn"
                 onClick={() => {
                   setErrors({});
                   setShowModal(false);
@@ -1006,7 +1009,7 @@ const selectStyles = {
               >
                 Close
               </button>
-              <button className="btn btn-success" onClick={handleSaveTask}>
+              <button className="btn common-btn-in" onClick={handleSaveTask}>
                 {editMode ? "Save Changes" : "Add Task"}
               </button>
             </div>

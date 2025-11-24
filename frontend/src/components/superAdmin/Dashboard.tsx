@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
   }),
   multiValueLabel: (base: any) => ({
     ...base,
-    color: "#0d6efd",
+    color: "#000",
     // whiteSpace: "normal",
     // wordBreak: "break-word",
   }),
@@ -230,7 +230,7 @@ useEffect(() => {
 );
 
   return (
-    <div className="container mt-3">
+    <div className="container-fluid mt-3">
 <div className="card p-4 mb-4 shadow-sm border-0 main-color">
   {/* <h4 className="mb-4 text-dark">l</h4> */}
   <div className="row g-3 text-center">
@@ -317,7 +317,7 @@ useEffect(() => {
 </div>
 {/* <hr className="my-4 border-2 border-primary opacity-25" /> */}
 
-      <div className="card p-3 shadow-sm mb-4 border-0 main-color">
+      {paginatedProjects.length>0 &&(<div className="card p-3 shadow-sm mb-4 border-0 main-color">
         <h4 className="mb-3 text-dark">Project Contributions</h4>
         <div className="row g-3">
           {paginatedProjects.map((project) => (
@@ -368,13 +368,13 @@ useEffect(() => {
               pageSize={dashboardItemsPerPage}
             />
         )}
-      </div>
+      </div>)}
       {/* <hr className="my-4 border-2 border-primary opacity-25" /> */}
 
       <div className="card p-3 shadow-sm mb-2 border-0 main-color">
   <div className="mb-3 row g-2 align-items-end">
     <div className="col-md-3 col-sm-6">
-      <label className="form-label fw-bold">User</label>
+      <label className="form-label fw-normal">User</label>
       <Select
         isMulti
         options={userOptions}
@@ -391,7 +391,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6">
-  <label className="form-label fw-bold">Status</label>
+  <label className="form-label fw-normal">Status</label>
   <Select
         isMulti
         options={statusOptions}
@@ -411,7 +411,7 @@ useEffect(() => {
 
 
     <div className="col-md-3 col-sm-6">
-      <label className="form-label fw-bold">Start Date</label>
+      <label className="form-label fw-normal">Start Date</label>
       <input
         type="date"
         className="form-control"
@@ -421,7 +421,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6">
-      <label className="form-label fw-bold">End Date</label>
+      <label className="form-label fw-normal">End Date</label>
       <input
         type="date"
         className="form-control"
@@ -442,20 +442,20 @@ useEffect(() => {
 
   <div className="table-responsive py-3">
     <table
-      className="table table-hover second-color align-middle text-left"
+      className="table table-hover second-color align-middle text-left table-border"
       
     >
       <thead >
         <tr>
-          <th>Assignee</th>
-          <th>Project</th>
-          <th>Task</th>
-          <th>Date</th>
-          <th>Estimated</th>
-          <th>Spent</th>
-          <th>Saved</th>
-          <th>Time Extension</th>
-          <th>Status</th>
+          <th className="fw-500">Assignee</th>
+          <th className="fw-500">Project</th>
+          <th className="fw-500">Task</th>
+          <th className="fw-500">Date</th>
+          <th className="fw-500">Estimated</th>
+          <th className="fw-500">Spent</th>
+          <th className="fw-500">Saved</th>
+          <th className="fw-500">Time Extension</th>
+          <th className="fw-500">Status</th>
         </tr>
       </thead>
       <tbody>

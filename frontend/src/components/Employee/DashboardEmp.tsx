@@ -156,22 +156,22 @@ const DashboardEmp: React.FC = () => {
     <div className="card shadow-sm p-3 mb-4 border-0 main-color">
       <div className="d-flex justify-content-between mb-3 "><h5 className="text-dark fw-bold">{title}</h5>
       <button
-          className="btn btn-primary p-1"
+          className="btn common-btn-out p-1"
           onClick={() => setShowTaskModal(true)}
         >
           Create Your Own Task
         </button></div>
       <div className="table-responsive main-color">
-        <table className="table table-hover align-middle text-left second-color" style={{border:"1px solid #000"}}>
+        <table className="table table-hover align-middle text-left second-color table-border">
           <thead>
             <tr>
-              <th>Project</th>
-              <th>Task Title</th>
-              <th>Estimated</th>
-              <th>Spent</th>
-              <th>Status</th>
-              <th>Assignee</th>
-              <th>Action</th>
+              <th className="fw-500">Project</th>
+              <th className="fw-500">Task Title</th>
+              <th className="fw-500">Estimated</th>
+              <th className="fw-500">Spent</th>
+              <th className="fw-500">Status</th>
+              <th className="fw-500">Assignee</th>
+              <th className="fw-500">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -197,7 +197,7 @@ const DashboardEmp: React.FC = () => {
                   <td>{task.assignedUser?.username || "-"}</td>
                   <td>
                     <button
-                      className="btn btn-sm btn-outline-info"
+                      className="btn btn-sm details-btn"
                       onClick={() => {openTask(task)
                       }}
                     >

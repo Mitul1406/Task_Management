@@ -54,6 +54,8 @@ const ProjectTl: React.FC = () => {
     }
 
     const project = await createProject(newProjectName, newProjectDescription);
+    console.log(project);
+    
     setProjects((prev) => [...prev, project]);
     toast.success("Project created successfully!");
     setNewProjectName("");
@@ -190,7 +192,7 @@ const ProjectTl: React.FC = () => {
 
       <div className="card p-3 shadow-sm border-0 main-color">
   {paginatedProjects.length === 0 ? (
-    <p>No projects found.</p>
+    <p className="text-center">No projects found.</p>
   ) : (
     <div className="table-responsive main-color">
       <table className="table table-hover align-middle text-start second-color table-border">

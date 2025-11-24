@@ -209,8 +209,10 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   return (
     <div className="user-page container-fluid mt-1 main-color">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Users</h2>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <div><h2>Users</h2>
+        <p>Manage all users here — create new users, update users, view users, and remove users when needed.</p>
+        </div>
+        <button className="btn common-btn-out" onClick={() => setShowModal(true)}>
           + Add User
         </button>
       </div>
@@ -218,7 +220,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
       {/* Filters */}
       <div className="filters row mb-3">
         <div className="col-md-3 mb-3">
-          <label className="form-label fw-bold">Search Here:</label>
+          <label className="form-label fw-normal">Search Here:</label>
           <input
             type="text"
             placeholder="Search by username..."
@@ -230,7 +232,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
         </div>
 
         <div className="col-md-3 mb-3">
-          <label className="form-label fw-bold">Filter by Roles:</label>
+          <label className="form-label fw-normal">Filter by Roles:</label>
           <select
             className="form-select"
             value={roleFilter}
@@ -259,13 +261,13 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
           ) : (
             <>
               <div className="table-responsive">
-                <table style={{border:"1px solid #000"}} className="table table-hover align-middle second-color" >
+                <table className="table table-hover align-middle second-color table-border" >
                   <thead>
                     <tr>
-                      <th>Username</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th style={{ width: "150px" }}>Actions</th>
+                      <th className="fw-500">Username</th>
+                      <th className="fw-500">Email</th>
+                      <th className="fw-500">Role</th>
+                      <th className="fw-500" style={{ width: "150px" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -276,7 +278,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                         <td>{user.role === "user" ? "Employee" : "Team Lead"}</td>
                         <td>
                           <button
-                            className="btn btn-sm btn-outline-warning me-2"
+                            className="btn btn-sm report-btn me-2"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleEdit(user)}}
@@ -284,7 +286,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                             Edit
                           </button>
                           <button
-                            className="btn btn-sm btn-outline-danger"
+                            className="btn btn-sm delete-btn"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleDelete(user.id)}}
@@ -321,9 +323,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
         <div className="modal-dialog modal-dialog-centered " role="document">
           <div className="modal-content main-color">
             <div className="modal-header justify-content-center">
-              <h5 className="modal-title">
+              <h3 className="modal-title">
                 {editingUser ? "Edit User" : "Add New User"}
-              </h5>
+              </h3>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -372,12 +374,12 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
               <div className="modal-footer justify-content-between">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn cancel-btn"
                   onClick={handleCancel}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button type="submit" className="btn common-btn-in" disabled={loading}>
                   {loading
                     ? editingUser
                       ? "Updating..."
