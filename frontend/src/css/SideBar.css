@@ -1,0 +1,136 @@
+/* --------------------------
+   GLASSMORPHIC GRADIENT SIDEBAR
+--------------------------- */
+
+.sidebar {
+  width: 210px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  backdrop-filter: blur(18px);
+  background: #000;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Collapsed */
+.sidebar.collapsed {
+  width: 70px;
+}
+
+/* Header */
+.sidebar .header {
+  padding: 15px 20px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Title */
+.sidebar h5 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 18px;
+  color: #fff;
+}
+
+/* Sidebar Buttons */
+.sidebar button {
+  background: transparent;
+  border: none;
+  width: 100%;
+  color: #fff;
+  padding: 10px 10px 0px 30px;
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  position: relative;
+  justify-content: flex-start;
+}
+
+.sidebar button .inner {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 50px;
+}
+
+.sidebar:not(.collapsed) button .inner {
+  min-width: 150px;
+}
+
+
+/* Icon alignment wrapper */
+.icon-span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.09rem;
+}
+
+/* Normal mode (icon spacing) */
+.sidebar:not(.collapsed) .icon-span {
+  margin-right: 10px;
+}
+
+/* Hover */
+.sidebar button:hover .inner {
+  background: #ebdfd7;
+  color: #e65f2b;
+}
+
+/* Active (selected) */
+.sidebar button.btn-active .inner {
+  background: #ebdfd7;
+  color: #e65f2b !important;
+}
+
+/* Collapsed adjustments */
+.sidebar.collapsed button {
+  justify-content: center !important;
+  padding: 12px !important;
+}
+
+.sidebar.collapsed button .inner {
+  padding: 10px;
+}
+
+/* Remove icon margin in collapsed mode */
+.sidebar.collapsed .icon-span {
+  margin-right: 0 !important;
+}
+
+/* Tooltip */
+.tooltip-float {
+  position: absolute;
+  left: 90px;
+  background: rgba(193, 11, 11, 0.85);
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-50%);
+  top: 50%;
+  pointer-events: none;
+}
+
+.sidebar.collapsed button:hover .tooltip-float {
+  opacity: 1;
+  left: 95px;
+}
+
+/* Toggle Button */
+.sidebar .toggle-btn {
+  cursor: pointer;
+  font-size: 1.3rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+}

@@ -2,13 +2,51 @@ import { buildSchema } from "graphql";
 // import { Schema } from "mongoose";
 
 export const schema=buildSchema(`
+  type UserContribution {
+  userId: ID!
+  username: String
+  totalWorkTime: Float  # in hours or minutes — your choice
+}
+
+type ProjectContribution {
+  projectId: ID!
+  projectName: String
+  totalProjectWorkTime: Float
+  userContributions: [UserContribution]
+}
+  type DashboardCountTl{
+  totalProjects: Int,
+      totalTasks: Int,
+      pendingTasks: Int,
+      inProgressTasks: Int,
+      totalWorkedToday: Int,
+  }
+  type DashboardCount {
+    totalProjects: Int
+    totalTasks: Int
+    totalUser: Int
+    teamLead: Int
+    employee: Int
+    pendingTasks: Int
+    inProgressTasks: Int
+    projectContributions: [ProjectContribution]
+  }
     type Project{
         id:ID!,
         name:String!,
         description:String,
         createdAt:String,
         tasks:[Task]
+        adminId:User
     }
+        type UserTime {
+  id: ID!
+  username: String!
+  email: String
+  role: String
+  totalTime: Int!
+}
+
     type Task {
     id: ID!
     projectId: ID!
@@ -26,15 +64,19 @@ export const schema=buildSchema(`
     startDate:String
     endDate: String
     status:String
+    users: [UserTime]
   }
    
 
     type Timer{
-    id: ID!
-    taskId: ID!
-    startTime: String!
+    id: ID
+    taskId: ID
+    userId: ID
+    startTime: String
     endTime: String
     duration: Int
+    success: Boolean
+    message: String
     }
     
     type User {
@@ -51,6 +93,10 @@ export const schema=buildSchema(`
       type DeleteResponse {
     message: String!
   }
+    type ChangePasswordResponse {
+  success: Boolean!
+  message: String!
+}
     type StopTimerResponse {
   totalDuration: Int!
   overtime: Int!
@@ -119,7 +165,7 @@ type UserDayWiseInfo {
   role: String!
 }
     #admin all data
-    type AdminUserDayWise {
+type AdminUserDayWise {
   id: ID!
   username: String!
   email: String!
@@ -131,15 +177,33 @@ type UserDayWiseInfo {
 type UserDayWiseAdminResponse {
   users: [AdminUserDayWise!]!
 }
-    type Query{
+
+   type Screenshot {
+  id: ID!
+  url: String!
+  createdAt: String!
+}
+
+type AuthResponse {
+  success: Boolean!
+  message: String!
+}
+ type CreateUserResponse {
+  success: Boolean!
+  message: String!
+  user: User
+}
+
+  type Query{
     projects:[Project]
+    adminsprojects(userId: ID!): [Project]
     project(id:ID!):Project
     tasks(projectId: ID!): [Task]
     task(id:ID!):Task
     users: [User!]!
     tasksForUser(userId: ID!): [Project!]!
 
-    user(id: ID!): User
+    allusers: [User!]!
 
     dayWiseData(
     projectId: ID!
@@ -155,7 +219,14 @@ type UserDayWiseAdminResponse {
     endDate: String!
   ): UserDayWise!
 
-  userDayWiseAdmin(startDate: String!, endDate: String!): UserDayWiseAdminResponse!
+  userDayWiseAdmin(startDate: String!, endDate: String!,userId:ID): UserDayWiseAdminResponse!
+  userDayWiseAdminUser(adminId:String!,startDate: String!, endDate: String!): UserDayWiseAdminResponse!
+  screenshotsByUser(userId: ID!): [Screenshot!]!
+
+  superAdminDashboardCount: DashboardCount
+  teamLeadDashboardCount(userId: ID!): DashboardCountTl
+  empDashboardCount(userId: ID!): DashboardCountTl
+  empGet(userId: ID!):[User]
     }
 
     type Mutation{
@@ -163,23 +234,25 @@ type UserDayWiseAdminResponse {
      updateProject(id: ID!, name: String, description: String): Project
      deleteProject(id: ID!): Boolean
 
-     createUser(username: String!, email: String!, password: String!, role: String): User!
-     updateUser(id: ID!, username: String, email: String, role: String): User!
+     createUser(username: String!, email: String!, role: String): CreateUserResponse!
+     updateUser(id: ID!, username: String, email: String, role: String): CreateUserResponse!
      deleteUser(id: ID!): DeleteResponse!
-     changePassword(id: ID!, oldPassword: String!, newPassword: String!): DeleteResponse!
+     changePassword(id: ID!, oldPassword: String!, newPassword: String!): ChangePasswordResponse!
 
      createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID,startDate: String,endDate: String): Task
      deleteTask(id: ID!): Boolean
      updateTaskStatus(taskId: ID!, status: String!): Task
- 
-     startTimer(taskId: ID!): Timer
-     stopTimer(taskId: ID!): StopTimerResponse!
+
+     startTimer(taskId: ID!, userId: ID!): Timer!
+     stopTimer(taskId: ID!, userId: ID!): StopTimerResponse!
 
      register(username: String!, email: String!, password: String!, role: String): User
      login(email: String!, password: String!): User
      verifyOtp(email: String!, otp: String!): VerifyOtpResponse!
      resendOTP(email: String!):VerifyOtpResponse!
+     forgotPassword(email: String!): AuthResponse!
+     resetPassword(token: String!, newPassword: String!): AuthResponse!
     }
     `
 )

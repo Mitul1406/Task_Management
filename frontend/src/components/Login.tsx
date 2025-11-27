@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { login } from "../services/api"; 
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 interface JwtPayload {
   id: string;
   role: string;
@@ -17,13 +17,15 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const navigateTo = (role: string) => {
-    if (role === "admin") navigate("/admin");
+    if (role === "teamLead" || role === "projectManager") navigate("/admin");
+    else if(role === "superAdmin") navigate("/superAdmin")
     else if (role === "user") navigate("/user");
     else navigate("/");
   };
@@ -35,11 +37,9 @@ const Login: React.FC = () => {
         const decoded = jwtDecode<JwtPayload>(token);
         const now = Date.now() / 1000;
         if (decoded.exp && decoded.exp < now) {
-          console.log(`[Login] Token expired: ${token}`);
           localStorage.removeItem("token");
           return;
         }
-        console.log(`[Login] Token valid, redirecting to ${decoded.role} dashboard`);
         navigateTo(decoded.role);
       } catch (err) {
         console.error("[Login] Invalid token", err);
@@ -52,19 +52,15 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
-    console.log(`[Login] Attempting login for email: ${form.email} at ${new Date().toISOString()}`);
     
     try {
       const user = await login(form.email, form.password);
-      console.log("[Login] API Response:", user);
 
       if (!user) throw new Error("Login failed");
 
       if (!user.isVerified) {
         toast.info("OTP sent to your email");
-        console.log(`[Login] OTP required for email: ${form.email}`);
         
-        // Save email for OTP page
         localStorage.setItem("otpEmail", form.email);
 
         navigate("/otp-verification", { state: { email: form.email } });
@@ -76,7 +72,6 @@ const Login: React.FC = () => {
         localStorage.removeItem("otpEmail");
         toast.success(user.message);
 
-        console.log(`[Login] Login successful for ${form.email}. Navigating to ${user.role}`);
         navigateTo(user.role);
       }
     } catch (err: any) {
@@ -84,7 +79,6 @@ const Login: React.FC = () => {
       toast.error(err.message || "Login failed"); // <-- show error as toast
     } finally {
       setLoading(false);
-      console.log(`[Login] Login attempt finished for ${form.email} at ${new Date().toISOString()}`);
     }
   };
 
@@ -107,19 +101,42 @@ const Login: React.FC = () => {
             />
           </div>
 
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              className="form-control"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
+  <div className="mb-3" style={{ position: "relative" }}>
+      <label htmlFor="password" className="form-label">
+        Password
+      </label>
+      <input
+        type={showPassword ? "text" : "password"}
+        id="password"
+        name="password"
+        value={form.password}
+        onChange={handleChange}
+        className="form-control"
+        placeholder="Enter your password"
+        required
+        style={{ paddingRight: "40px" }} // space for the icon
+      />
+      <span
+        onClick={() => setShowPassword((prev) => !prev)}
+        style={{
+          position: "absolute",
+          right: "15px",
+          top: "70%",
+          transform: "translateY(-50%)",
+          cursor: "pointer",
+          color: "#666",
+        }}
+      >
+        {showPassword ? <FaEyeSlash /> : <FaEye />}
+      </span>
+    </div>
+
+          <div className="mb-3 text-end">
+  <Link to="/forgot-password" className="small">
+    Forgot Password?
+  </Link>
+</div>
+
 
           <button
             type="submit"

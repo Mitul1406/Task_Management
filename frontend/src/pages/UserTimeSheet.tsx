@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
 import { getUserDayWise } from '../services/api';
+import { jwtDecode } from 'jwt-decode';
 
 interface DayWiseTask {
   taskId: string;
@@ -82,7 +83,8 @@ const UserTimeSheet: React.FC = () => {
 const today = new Date().toISOString().split("T")[0];
 const [startDate, setStartDate] = useState<string>(today);
 const [endDate, setEndDate] = useState<string>(today);
-  const sheetRef = useRef<HTMLDivElement>(null);
+const sheetRef = useRef<HTMLDivElement>(null);
+const [username,setUsername]=useState("")
 useEffect(() => {
   const fetchData = async () => {
     try {
@@ -112,7 +114,13 @@ useEffect(() => {
   fetchData();
 }, [userId, startDate, endDate]);
 
-  
+  useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const parsed = jwtDecode<any>(token);
+          setUsername(parsed.username || "");
+        }
+      }, []);
 // const calculateProjectTotals = (data: UserDayWiseResponse): ProjectTotals[] => {
 //   const totalsMap: Record<string, ProjectTotals> = {};
 
@@ -168,7 +176,18 @@ const calculateOverallTotals = (data: UserDayWiseResponse): OverallTotals => {
       }
     });
   });
-  const hours = (data.dayWise.length * 8)*3600;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  let workDays = 0;
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dayOfWeek = d.getDay(); 
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      workDays++;
+    }
+  }
+  const hours = (workDays * 8)*3600;
 
   return { totalTime, totalEstimated, totalSaved, totalOvertime,hours };
 };
@@ -177,20 +196,20 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   return data.projects.map((proj) => {
     const taskTotalsMap: Record<string, TaskTotals> = {};
 
-    // Initialize tasks with unique estimatedTime
+    // Initialize task totals with base estimated time
     proj.tasks.forEach((t) => {
       taskTotalsMap[t.id] = {
         taskId: t.id,
         title: t.title,
         totalTime: 0,
-        totalEstimated: t.estimatedTime, // unique
+        totalEstimated: t.estimatedTime,
         totalSaved: 0,
         totalOvertime: 0,
-        status:(t as any).status,
-      }as any;
+        status: (t as any).status,
+      } as any;
     });
 
-    // Sum daily data for tasks
+    // Add up all day-wise time and overtime
     data.dayWise.forEach((day) => {
       day.tasks.forEach((task) => {
         const t = taskTotalsMap[task.taskId];
@@ -201,26 +220,28 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
       });
     });
 
-    // Recalculate savedTime per task as estimated - totalTime
+    // Compute saved time for each task
     Object.values(taskTotalsMap).forEach((t) => {
       t.totalSaved = Math.max(0, t.totalEstimated - t.totalTime);
     });
 
-    // Calculate project totals by summing task totals
+    // --- 🧮 FIX: derive project totals ---
     const tasks = Object.values(taskTotalsMap);
-    const projectTotalTime = tasks.reduce((sum, t) => sum + t.totalTime, 0);
     const projectTotalEstimated = tasks.reduce((sum, t) => sum + t.totalEstimated, 0);
-    const projectTotalSaved = tasks.reduce((sum, t) => sum + t.totalSaved, 0);
+    const projectTotalTime = tasks.reduce((sum, t) => sum + t.totalTime, 0);
     const projectTotalOvertime = tasks.reduce((sum, t) => sum + t.totalOvertime, 0);
+
+    // ✅ Saved time should be based on remaining total (not sum of individual saves)
+    const projectTotalSaved = Math.max(0, projectTotalEstimated - projectTotalTime);
 
     return {
       projectId: proj.id,
       projectName: proj.name,
-      tasks,
-      totalTime: projectTotalTime,
       totalEstimated: projectTotalEstimated,
+      totalTime: projectTotalTime,
       totalSaved: projectTotalSaved,
       totalOvertime: projectTotalOvertime,
+      tasks,
     };
   });
 };
@@ -249,21 +270,41 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
 
 
   const handleDownload = () => {
-    if (!sheetRef.current) return;
-    html2pdf()
-      .from(sheetRef.current)
-      .set({
-        margin: 2,
-        filename: `UserTimesheet_${new Date().toISOString().split("T")[0]}.pdf`,
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
-      })
-      .save();
+  if (!sheetRef.current) return;
+
+  const element = sheetRef.current;
+
+  const opt: any = {
+    margin: [10, 10, 10, 10], // top, left, bottom, right in mm
+    filename: `UserTimesheet_${new Date().toISOString().split("T")[0]}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0,
+      logging: false,
+      ignoreElements: (el: HTMLElement) => el.classList.contains("no-print"),
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    },
+    pagebreak: {
+      mode: ["css", "legacy"],
+      avoid: ".avoid-page-break",
+    },
   };
+
+  setTimeout(() => {
+    html2pdf().from(element).set(opt).save();
+  }, 100);
+};
+
 
   return (<>   
    <div className='position-relative'>
-    <div style={{position:"absolute",right:"200px"}}>
+    <div style={{position:"absolute",right:"140px"}}>
    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
     
   {/* <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -304,11 +345,11 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
 </div>
 
 </div>
-    <button className="btn btn-primary mb-3" style={{position:"absolute",right:"60px",top:"20px"}} onClick={handleDownload}>
+    <button className="btn status mb-3" style={{position:"absolute",right:"00px",top:"20px"}} onClick={handleDownload}>
         Download PDF
       </button></div>
     <div className="container mt-4" ref={sheetRef}>
-      <h2>User Timesheet</h2>
+      <h2>{username} Timesheet</h2>
       <p>
         Date Range: <strong>{startDate}</strong> to{' '}
         <strong>{endDate}</strong>
@@ -326,146 +367,21 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
       <p>
         <strong>Total Estimated:</strong> {formatTime(overallTotals?.totalEstimated || 0)}
       </p>
-      <p className="text-danger">
-        <strong>Total Overtime:</strong> {formatTime(overallTotals?.totalOvertime || 0)}
-      </p>
+      
       <p className="text-success">
         <strong>Total Saved:</strong> {formatTime(overallTotals?.totalSaved || 0)}
       </p>
+
+      {overallTotals!.totalOvertime > 0 && (
+  <p className="text-danger">
+    <strong>Total Time Extension:</strong>{" "}
+    {formatTime(overallTotals?.totalOvertime || 0)}
+  </p>
+)}
+
     </div>
   </div>
 </div>
-
-{projectTotals.map((proj) => (
-  <div key={proj.projectId} className="card p-3 shadow-sm mb-4">
-    <h5 className="mb-2">{proj.projectName}</h5>
-    <div className="mb-2">
-      <span>Total Estimated: {formatTime(proj.totalEstimated)}</span> |{' '}
-      <span>Total Used: {formatTime(proj.totalTime)}</span> |{' '}
-      <span className="text-success">Total Saved: {formatTime(proj.totalSaved)}</span> |{' '}
-      <span className="text-danger">Total Overtime: {formatTime(proj.totalOvertime)}</span>
-    </div>
-
-    <table
-  className="table table-sm"
-  style={{
-    border: '1px solid #000',
-    borderCollapse: 'collapse',
-    width: '100%',
-    tableLayout: 'fixed', 
-  }}
->
-  <thead>
-    <tr>
-      <th style={{ border: '1px solid #000', padding: '6px', width: '30%' }}>Task</th>
-      <th style={{ border: '1px solid #000', padding: '6px', width: '12 %' }}>Task Status</th>
-      <th style={{ border: '1px solid #000', padding: '6px', width: '15%' }}>Time</th>
-      <th style={{ border: '1px solid #000', padding: '6px', width: '15%' }}>Estimated</th>
-      <th style={{ border: '1px solid #000', padding: '6px', width: '15%' }}>Saved</th>
-      <th style={{ border: '1px solid #000', padding: '6px', width: '15%' }}>Overtime</th>
-    </tr>
-  </thead>
-  <tbody>
-  {(proj as any).tasks && (proj as any).tasks.length > 0 ? (
-    (proj as any).tasks.map((task: any) => (
-      <tr key={task.taskId}>
-        <td
-          style={{
-            border: '1px solid #000',
-            padding: '6px',
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word',
-          }}
-        >
-          {task.title}
-        </td>
-
-        <td style={{ border: '1px solid black', padding: '4px' }}>
-          <span
-            style={{
-              padding: '2px 4px',
-              borderRadius: '4px',
-              color: '#fff',
-              backgroundColor:
-                statusMap[(task as any).status]?.bgColor || '#6c757d',
-              display: 'inline-block',
-              // minWidth: '90px',
-              textAlign: 'center',
-            }}
-          >
-            {statusMap[(task as any).status]?.label ||
-              (task as any).status ||
-              '-'}
-          </span>
-        </td>
-
-        <td
-          style={{
-            border: '1px solid #000',
-            padding: '6px',
-            textAlign: 'left',
-          }}
-        >
-          {formatTime(task.totalTime)}
-        </td>
-
-        <td
-          style={{
-            border: '1px solid #000',
-            padding: '6px',
-            textAlign: 'left',
-          }}
-        >
-          {formatTime(task.totalEstimated)}
-        </td>
-
-        <td
-          style={{
-            border: '1px solid #000',
-            padding: '6px',
-            textAlign: 'left',
-          }}
-          className="text-success"
-        >
-          {formatTime(task.totalSaved)}
-        </td>
-
-        <td
-          style={{
-            border: '1px solid #000',
-            padding: '6px',
-            textAlign: 'left',
-          }}
-          className="text-danger"
-        >
-          {formatTime(task.totalOvertime)}
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-    <td colSpan={6} style={{ padding: 0 }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center', 
-          height:"30px",
-          alignItems: 'center',     
-          color: '#6c757d',
-        }}
-      >
-        No data available
-      </div>
-    </td>
-  </tr>
-  )}
-</tbody>
-
-</table>
-
-  </div>
-  
-))}
 
 <h2 className='mb-3'>
         Date Wise Breakdown
@@ -550,7 +466,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
                   Saved
                 </th>
                 <th style={{ border: '1px solid black', padding: '4px', width: '15%' }}>
-                  Overtime
+                  Time Extension
                 </th>
               </tr>
             </thead>
@@ -570,7 +486,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
                   <td style={{ border: '1px solid black', padding: '4px' }}>
                     {t.title}
                   </td>
-                   <td style={{ border: '1px solid black', padding: '4px' }}>
+                  <td style={{ border: '1px solid black', padding: '4px' }}>
 
                     <span
     style={{
@@ -584,7 +500,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   >
     {(statusMap[(t as any).status]?.label || (t as any).status) || ("-")}
   </span>
-                   </td>
+                  </td>
                   <td style={{ border: '1px solid black', padding: '4px' }}>
                     {formatTime(t.time)}
                   </td>
@@ -615,67 +531,6 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   );
 })}
 
-    {/* {data.dayWise.map((day) => (
-      <tr key={day.date}>
-        <td style={{ border: '1px solid black', padding: '4px', verticalAlign: 'top' }}>
-          {day.date}
-        </td>
-        <td style={{ border: '1px solid black', padding: '10px' }}>
-          {data.projects.map((proj) => {
-            const projTasks = day.tasks.filter((t) =>
-              proj.tasks.some((pt) => pt.id === t.taskId)
-            );
-            if (projTasks.length === 0) return null;
-
-            const projTotals = calculateProjectTotals({
-              projects: [proj],
-              dayWise: [day],
-            })[0];
-
-            return (
-              <div key={proj.id} style={{ marginBottom: '15px' }}>
-                <strong>{proj.name}</strong>
-                <div style={{ fontSize: '12px', margin: '2px 0' }}>
-                  <span>Total Estimated: {formatTime(projTotals.totalEstimated)}</span> |{' '}
-                  <span>Total Time: {formatTime(projTotals.totalTime)}</span> |{' '}
-                  <span className='text-success'>Total Saved: {formatTime(projTotals.totalSaved)}</span> |{' '}
-                  <span className='text-danger'>Total Overtime: {formatTime(projTotals.totalOvertime)}</span>
-                </div>
-                <table
-                  style={{
-                    border: '1px solid black',
-                    borderCollapse: 'collapse',
-                    width: '100%',
-                    tableLayout: 'fixed',
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th style={{ border: '1px solid black', padding: '4px', width: '25%', wordWrap: 'break-word', overflowWrap: 'break-word' }}>Task</th>
-                      <th style={{ border: '1px solid black', padding: '4px', width: '15%', wordWrap: 'break-word', overflowWrap: 'break-word' }}>Time</th>
-                      <th style={{ border: '1px solid black', padding: '4px', width: '15%', wordWrap: 'break-word', overflowWrap: 'break-word' }}>Estimated</th>
-                      <th style={{ border: '1px solid black', padding: '4px', width: '15%', wordWrap: 'break-word', overflowWrap: 'break-word' }}>Saved</th>
-                      <th style={{ border: '1px solid black', padding: '4px', width: '15%', wordWrap: 'break-word', overflowWrap: 'break-word' }}>Overtime</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projTasks.map((t) => (
-                      <tr key={t.taskId}>
-                        <td style={{ border: '1px solid black', padding: '4px', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{t.title}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{formatTime(t.time)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', wordWrap: 'break-word', overflowWrap: 'break-word' }}>{formatTime(t.estimatedTime)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', wordWrap: 'break-word', overflowWrap: 'break-word' }} className='text-success'>{formatTime(t.savedTime)}</td>
-                        <td style={{ border: '1px solid black', padding: '4px', wordWrap: 'break-word', overflowWrap: 'break-word' }} className='text-danger'>{formatTime(t.overtime)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
-        </td>
-      </tr>
-    ))} */}
   </tbody>
 </table>
 

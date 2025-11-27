@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+
+
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getTasksByProject, getProjects } from "../services/api"; 
+import { getTasksByProject, getProjects, getUsers } from "../services/api"; 
 import html2pdf from "html2pdf.js";
 interface Task {
   status: string;
@@ -46,23 +49,43 @@ export default function Report() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null)
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setStartDate(today);
+    setEndDate(today);
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const allUsers = await getUsers();
+        setUsers(allUsers);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+    };
+    fetchUsers();
+  }, []);
   const formatDate = (val: any) => {
   if (!val) return "";
-  // handle case where val is already ISO string like "2025-10-03"
   if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
   const n = Number(val);
   if (isNaN(n)) return "";
   return new Date(n).toISOString().split("T")[0];
 };
+
   useEffect(() => {
     const loadReport = async () => {
       try {
-        // Get project details
         const allProjects = await getProjects();
         const proj = allProjects.find((p: Project) => p.id === projectId);
         setProject(proj);
 
-        // Get tasks for project
         if (projectId) {
           const taskList = await getTasksByProject(projectId);
           setTasks(taskList);
@@ -76,53 +99,186 @@ export default function Report() {
 
     loadReport();
   }, [projectId]);
+const filteredTasks = useMemo(() => {
+  if (!tasks || tasks.length === 0) return [];
+
+  return tasks.filter((task: any) => {
+    const taskStart = new Date(task.startDate);
+    const taskEnd = new Date(task.endDate);
+
+    const startOk = !startDate || new Date(startDate) <= taskEnd;
+    const endOk = !endDate || new Date(endDate) >= taskStart;
+
+    const userOk =
+      !selectedUser || // ✅ Show all when user not selected
+      selectedUser === "all" ||
+      task.users?.some((u: any) => u.id === selectedUser);
+
+    return startOk && endOk && userOk;
+  });
+}, [tasks, selectedUser, startDate, endDate]);
+
+const userTasks = useMemo(() => {
+  return filteredTasks.reduce((acc: Record<string, any[]>, task: any) => {
+    if (!Array.isArray(task.users)) return acc;
+
+    task.users.forEach((user: any) => {
+      const userId = user?.id || user?.username || "unknown";
+      if (!acc[userId]) acc[userId] = [];
+
+      acc[userId].push({
+        id: task.id,
+        title: task.title,
+        estimatedTime: task.estimatedTime || 0,
+        status: task.status,
+        startDate: task.startDate,
+        endDate: task.endDate,
+        username: user.username,
+        userTime: user.totalTime ?? 0,
+        userOvertime: task.overtime ?? 0,
+        userSaved: task.savedTime ?? 0,
+      });
+    });
+
+    return acc;
+  }, {});
+}, [filteredTasks]);
 
   if (loading) return <div>Loading report...</div>;
   if (!project) return <div>Project not found</div>;
 
-  const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
-  const totalUsed = tasks.reduce((sum, t) => sum + (t.totalTime || 0), 0);
+  const totalEstimated = filteredTasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
+  const totalUsed = filteredTasks.reduce((sum, t) => sum + (t.totalTime || 0), 0);
+  const totalOvertime = filteredTasks.reduce((sum, t) => sum + ((t as any).overtime || 0), 0);
+  const totalSaved = filteredTasks.reduce((sum, t) => sum + ((t as any).savedTime || 0), 0);
 
-  // Group by user
-  const userTasks = tasks.reduce((acc: any, task) => {
-    const user = task.assignedUser?.username || "Unassigned";
-    if (!acc[user]) acc[user] = [];
-    acc[user].push(task);
-    return acc;
-  }, {});
-  const handleDownloadPDF=()=>{
-    if(reportRef.current)
-    {
-        const el:any=reportRef.current
-        const opt:any={
-            margin:0.1,
-            filename:`${project.name}-report.pdf`,
-            image:{type:"jpeg",quality:0.98},
-            html2canvas:{scale:2},
-            jsPDF:{unit:"in",format:"a4",orientation:"portrait"}
-        };
-        html2pdf().set(opt).from(el).save()
-    }
-  }
+//   const tasksById = tasks.reduce((acc: Record<string, any>, task: any) => {
+    
+//   acc[task.id] = {
+//     ...task,
+//     users: task.users.map((user: any) => ({
+//       id: user.id,
+//       username: user.username,
+//       totalTime: user.totalTime ?? 0,
+//     })),
+//   };
+//   return acc;
+// }, {});
+
+  const handleDownloadPDF = () => {
+  if (!reportRef.current) return;
+
+  const el = reportRef.current;
+
+  const opt: any = {
+    margin: [2,2,2,2], // top, left, bottom, right in mm
+    filename: `${project?.name || "Project"}_Report.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollY: 0,
+      windowWidth: el.scrollWidth,
+      windowHeight: el.scrollHeight,
+      logging: false,
+    },
+    jsPDF: {
+      unit: "mm",          
+      format: "a4",
+      orientation: "portrait",
+    },
+    pagebreak: {
+      mode: ["avoid-all", "css", "legacy"],
+      before: ".page-break-before", 
+      after: ".page-break-after",
+      avoid: ".avoid-page-break",
+    },
+  };
+
+  setTimeout(() => {
+    html2pdf().from(el).set(opt).save();
+  }, 100);
+};
+
 return (
   <>
-  <div className="mt-4 position-relative">
-      <div className="d-flex justify-content-end mb-3">
-    <button className="btn btn-primary" onClick={handleDownloadPDF} style={{position:"absolute",top:"25px",right:"150px"}}>
-      📄 Download PDF
-    </button>
-  </div>
-    <div className="container mt-4" ref={reportRef}>
+  <div className="mt-4">
+     <div className="d-flex justify-content-end align-items-center position-relative mb-3 flex-wrap gap-2">
+      <div
+        className="d-flex align-items-center flex-wrap gap-3 me-auto"
+        style={{ position: "absolute", top: "0px", right: "0px" }}
+      >
+        <div className="d-flex flex-column">
+          <label htmlFor="userSelect" className="form-label mb-1 fw-semibold">
+            User
+          </label>
+          <select
+            id="userSelect"
+            className="form-select form-select-sm"
+            style={{ minWidth: "180px" }}
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+          >
+            <option value="">Select User</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.username}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="d-flex flex-column">
+          <label htmlFor="startDate" className="form-label mb-1 fw-semibold">
+            Start Date
+          </label>
+          <input
+            type="date"
+            id="startDate"
+            className="form-control form-control-sm"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            style={{ minWidth: "150px" }}
+          />
+        </div>
+
+        <div className="d-flex flex-column">
+          <label htmlFor="endDate" className="form-label mb-1 fw-semibold">
+            End Date
+          </label>
+          <input
+            type="date"
+            id="endDate"
+            className="form-control form-control-sm"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            style={{ minWidth: "150px" }}
+          />
+        </div>
+
+      {/* --- Download Button --- */}
+      
+        <div className="d-flex flex-column mt-3">
+        <button
+          className="btn status"
+          onClick={handleDownloadPDF}
+        >
+          📄 Download PDF
+        </button>
+        </div>
+      </div>
+     </div>
+    <div className="container-fluid   top-0" ref={reportRef}>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center">
         <div>
           <h2 className="mb-0">{project.name} - Report</h2>
           <small className="text-muted">
             Report Period:{" "}
             {(project as any).createdAt
-              ? formatDate((project as any).createdAt)
+              ? formatDate(startDate)
               : "-"}{" "}
-            → {formatDate(new Date())}
+            → {formatDate(endDate)}
           </small>
         </div>
         
@@ -140,14 +296,15 @@ return (
             <h5 className="mb-3">Overall Totals</h5>
             <p><strong>Total Estimated:</strong> {formatDuration(totalEstimated)}</p>
             <p><strong>Total Used:</strong> {formatDuration(totalUsed)}</p>
-            <p className="text-danger">
-              <strong>Total Overtime:</strong>{" "}
-              {formatDuration(tasks.reduce((s, t) => s + ((t as any).overtime || 0), 0))}
-            </p>
+            
             <p className="text-success">
               <strong>Total Saved:</strong>{" "}
-              {formatDuration(tasks.reduce((s, t) => s + ((t as any).savedTime || 0), 0))}
+              {formatDuration(totalSaved)}
             </p>
+            {totalOvertime>0 && <p className="text-danger">
+              <strong>Total Time Extension:</strong>{" "}
+              {formatDuration(totalOvertime)}
+            </p>}
           </div>
         </div>
 
@@ -157,12 +314,17 @@ return (
             <h5 className="mb-3">Worked Users</h5>
             <ul className="list-group list-group-flush">
               {Array.from(
-                new Set(tasks.map((t: any) => t.assignedUser?.username).filter(Boolean))
-              ).map((username, idx) => (
-                <li key={idx} className="list-group-item">
-                  👤 {username}
-                </li>
-              ))}
+    new Set(
+      tasks
+        .flatMap((t: any) => t.users.map((u: any) => u.username)) 
+        .filter(Boolean) 
+    )
+  ).map((username, idx) => (
+    <li key={idx} className="list-group-item">
+      👤 {username}
+    </li>
+  ))}
+
               {tasks.filter((t: any) => !t.assignedUser).length > 0 && (
                 <li className="list-group-item text-muted">
                   Unassigned Tasks Present
@@ -174,101 +336,87 @@ return (
       </div>
 
       {/* User Breakdown */}
-      <h4 className="mb-3">User Breakdown</h4>
-      {Object.entries(userTasks).map(([user, tasks]: any) => {
-        const est = tasks.reduce((s: number, t: Task) => s + (t.estimatedTime || 0), 0);
-        const used = tasks.reduce((s: number, t: Task) => s + (t.totalTime || 0), 0);
-        const overtime = tasks.reduce((s: number, t: Task) => s + ((t as any).overtime || 0), 0);
-        const saved = tasks.reduce((s: number, t: Task) => s + ((t as any).savedTime || 0), 0);
+ {/* User Breakdown */}
+<h4 className="mb-3">User Breakdown</h4>
+{Object.entries(userTasks).map(([userId, userTaskList]: any) => {
+    const username = userTaskList[0]?.username || "Unknown";
+  // Sum per-user values for all tasks
+  const est = userTaskList.reduce((sum: number, t: any) => sum + (t.estimatedTime || 0), 0);
+  const used = userTaskList.reduce((sum: number, t: any) => sum + (t.userTime || 0), 0);
+  const overtime = userTaskList.reduce((sum: number, t: any) => sum + (t.userOvertime || 0), 0);
+  const saved = userTaskList.reduce((sum: number, t: any) => sum + (t.userSaved || 0), 0);
 
-        return (
-          <div key={user} className="card mb-3 p-3 shadow-sm">
-            <h5>{user}</h5>
-            <p>
-              Estimated: {formatDuration(est)} | Used: {formatDuration(used)} <br />
-              <span className="text-danger">Overtime: {formatDuration(overtime)}</span> |{" "}
-              <span className="text-success">Saved: {formatDuration(saved)}</span>
-            </p>
+  return (
+    <div key={userId} className="card mb-3 p-3 shadow-sm">
+      <h5>{username}</h5>
+      <p>
+        Estimated: {formatDuration(est)} | Used: {formatDuration(used)} <br /> 
+        <span className="text-success">Saved: {formatDuration(saved)}</span>{overtime>0 && <>
+        |{" "}
+        <span className="text-danger">Time Extension: {formatDuration(overtime)}</span></>}
+      </p>
 
-<table
-  className="table table-sm align-middle"
-  style={{
-    width: "100%",
-    borderCollapse: "collapse",
-    tableLayout: "fixed",
-    border: "1px solid #dee2e6",
-  }}
->
-  <thead
-    className="table-light"
-    style={{
-      borderBottom: "2px solid #dee2e6",
-    }}
-  >
-    <tr>
-      <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Task</th>
-      <th style={{ width: "15%", border: "1px solid #dee2e6" }}>Task Status</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Estimated</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Used</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Overtime</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Saved</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Start</th>
-      <th style={{ width: "10%", border: "1px solid #dee2e6" }}>End</th>
-    </tr>
-  </thead>
+      <table
+        className="table table-sm align-middle"
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          tableLayout: "fixed",
+          border: "1px solid #dee2e6",
+        }}
+      >
+        <thead className="table-light table-border">
+          <tr>
+            <th style={{ width: "20%", border: "1px solid #dee2e6" }}>Task</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Task Status</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Estimated</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Used</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Time Extension</th>
+            <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Saved</th>
+            <th style={{ width: "10%", border: "1px solid #dee2e6" }}>Start</th>
+            <th style={{ width: "10%", border: "1px solid #dee2e6" }}>End</th>
+          </tr>
+        </thead>
 
-  <tbody>
-    {tasks.map((t: Task) => (
-      <tr key={t.id}>
-        <td
-          className="text-wrap"
-          style={{
-            minWidth: "120px",
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-            border: "1px solid #dee2e6",
-          }}
-        >
-          {t.title}
-        </td>
-        <td>
-  <span
-    style={{
-      padding: "4px 8px",
-      borderRadius: "4px",
-      color: "#fff",
-      backgroundColor: statusMap[t.status]?.bgColor || "#6c757d", 
-      textAlign: "center",
-      display: "inline-block",
-    }}
-  >
-    {statusMap[t.status]?.label || t.status}
-  </span>
-</td>
+        <tbody>
+          {userTaskList.map((t: any) => (
+            <tr key={t.id}>
+              <td style={{ border: "1px solid #dee2e6", wordBreak: "break-word" }}>{t.title}</td>
+              <td>
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    color: "#fff",
+                    backgroundColor: statusMap[t.status]?.bgColor || "#6c757d",
+                    display: "inline-block",
+                  }}
+                >
+                  {statusMap[t.status]?.label || t.status}
+                </span>
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }}>
+                {formatDuration(t.estimatedTime || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }}>
+                {formatDuration(t.userTime || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }} className="text-danger">
+                {formatDuration(t.userOvertime || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }} className="text-success">
+                {formatDuration(t.userSaved || 0)}
+              </td>
+              <td style={{ border: "1px solid #dee2e6" }}>{t.startDate || "-"}</td>
+              <td style={{ border: "1px solid #dee2e6" }}>{t.endDate || "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+})}
 
-        <td style={{ border: "1px solid #dee2e6" }}>
-          {formatDuration(t.estimatedTime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }}>
-          {formatDuration(t.totalTime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }} className="text-danger">
-          {formatDuration((t as any).overtime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }} className="text-success">
-          {formatDuration((t as any).savedTime || 0)}
-        </td>
-        <td style={{ border: "1px solid #dee2e6" }}>{t.startDate || "-"}</td>
-        <td style={{ border: "1px solid #dee2e6" }}>{t.endDate || "-"}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
-
-          </div>
-        );
-      })}
     </div>
     </div>
 

@@ -1,4 +1,5 @@
 import { authResolver } from "./auth.js";
+import { counterResolver } from "./counter.js";
 import {projectResolver} from "./ProjectResolvers.js"
 import { taskResolver } from "./taskResolvers.js";
 import { timerResolver } from "./timerResolvers.js";
@@ -10,4 +11,5 @@ export const rootResolver = {
   ...timerResolver,
   ...authResolver,
   ...userResolver,
+  ...counterResolver
 };

@@ -1,25 +1,30 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { verifyOtp, resendOtp } from "../services/api";
 import { toast } from "react-toastify";
 import {jwtDecode} from "jwt-decode";
+import { useSidebar } from "../context/SideBarContext";
 
 const OTP_LENGTH = 6;
 
 const OtpVerification: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as { email?: string };
-  const email = state?.email || localStorage.getItem("otpEmail") || "";
+  const email = localStorage.getItem("otpEmail") || "";
 
   const [otpValues, setOtpValues] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendLock, setResendLock] = useState(0);
+  const {setActivePath}=useSidebar()
 
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  // Redirect if token exists
+  useEffect(() => {
+    if (!email) {
+      navigate("/login");
+    }
+  }, [email, navigate]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -30,7 +35,9 @@ const OtpVerification: React.FC = () => {
           localStorage.removeItem("token");
           return;
         }
-        if (decoded.role === "admin") navigate("/admin");
+        if (decoded.role === "teamLead") {
+          navigate("/admin")}
+      else if(decoded.role === "superAdmin") navigate("/superAdmin")
         else navigate("/user");
       } catch {
         localStorage.removeItem("token");
@@ -79,15 +86,23 @@ const handleVerify = async () => {
   try {
     const res = await verifyOtp(email, otp);
 
-    // check success properly
     if (res.success) {
       localStorage.setItem("token", res.token);
       localStorage.removeItem("otpEmail");
       toast.success(res.message);
-      if (res.user.role === "admin") navigate("/admin");
-      else navigate("/user");
+      
+      if (res.user.role === "teamLead" || res.user.role === "projectManager") {
+          setActivePath("/admin")
+        
+        navigate("/admin")}
+      else if(res.user.role === "superAdmin") {
+          setActivePath("/superAdmin")
+        
+        navigate("/superAdmin")}
+      else{
+          setActivePath("/user")        
+          navigate("/user")}
     } else {
-      // show server message for invalid OTP, expired, etc.
       toast.error(res.message || "OTP verification failed");
     }
   } catch (err: any) {
@@ -104,7 +119,6 @@ const handleVerify = async () => {
     setVerifyLoading(false);
   }
 };
-
 
   const handleResend = async () => {
     if (resendLock > 0) return;
@@ -131,14 +145,39 @@ const handleVerify = async () => {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  e.preventDefault();
+  const pastedData = e.clipboardData.getData("text").trim();
+
+  if (!/^\d+$/.test(pastedData)) return; 
+
+  const newValues = [...otpValues];
+  pastedData.split("").forEach((char, index) => {
+    if (index < newValues.length) newValues[index] = char;
+  });
+
+  setOtpValues(newValues);
+
+  const nextIndex = pastedData.length >= otpValues.length ? otpValues.length - 1 : pastedData.length;
+  inputRefs.current[nextIndex]?.focus();
+};
+
   const handleBackToLogin = () => {
     localStorage.removeItem("otpEmail");
     navigate("/login");
   };
 
   return (
+ 
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
+      
       <div className="card shadow-lg p-4" style={{ maxWidth: "400px", width: "100%" }}>
+               <form
+  onSubmit={(e) => {
+    e.preventDefault();
+    handleVerify();
+  }}
+>
         <h2 className="text-center mb-3">OTP Verification</h2>
         <p className="text-center text-muted mb-4">
           Enter the OTP sent to <strong>{email}</strong>
@@ -156,17 +195,18 @@ const handleVerify = async () => {
               style={{ width: "45px", height: "45px", fontSize: "20px" }}
               maxLength={1}
               ref={(el) => {inputRefs.current[idx] = el}}
+              onPaste={(e) => handlePaste(e)}
             />
           ))}
         </div>
 
-        <button
-          className="btn btn-primary w-100 py-2 mb-2"
-          onClick={handleVerify}
-          disabled={verifyLoading}
-        >
-          {verifyLoading ? "Verifying..." : "Verify OTP"}
-        </button>
+    
+  {/* your inputs here */}
+  <button type="submit" className="btn btn-primary w-100 py-2 mb-2" disabled={verifyLoading}>
+    {verifyLoading ? "Verifying..." : "Verify OTP"}
+  </button>
+</form>
+
 
         <button
           className="btn btn-outline-secondary w-100 py-2"

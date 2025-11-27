@@ -1,11 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 
 interface ProtectedRouteProps {
   children: React.ReactElement;
-  allowedRoles: string;
+  allowedRoles: string[]; 
 }
 
 interface JwtPayload {
@@ -14,7 +14,6 @@ interface JwtPayload {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  
   const navigate = useNavigate();
   const [authorized, setAuthorized] = React.useState(false);
 
@@ -27,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     }
 
     try {
-      const decoded = jwtDecode<JwtPayload>(token);      
+      const decoded = jwtDecode<JwtPayload>(token);
       const now = Date.now() / 1000;
 
       if (decoded.exp && decoded.exp < now) {
@@ -36,8 +35,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         navigate("/login", { replace: true });
         return;
       }
-            
-      if (allowedRoles !== decoded.role) {
+
+      // ✅ check if user's role is in allowed roles
+      if (!allowedRoles.includes(decoded.role)) {
         toast.error("You are not authorized to access this page.");
         navigate("/login", { replace: true });
         return;

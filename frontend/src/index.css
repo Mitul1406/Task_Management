@@ -19,3 +19,242 @@ div {
   -ms-user-select: none;      
 }
 
+.pdf-root * { margin:0; padding:0; box-sizing:border-box; }
+.pdf-root { font-family:Arial,Helvetica,sans-serif; font-size:10.5px; line-height:1.35; }
+
+.pdf-header h4 { font-size:16px; }
+.pdf-header .user-name { color:#0d6efd; }
+
+.pdf-totals-wrapper .pdf-card {
+  border:1px solid #dee2e6;
+  border-radius:4px;
+  padding:8px 10px;
+  background:#fff;
+}
+.pdf-totals-wrapper .row { --bs-gutter-x:0.75rem; --bs-gutter-y:0.75rem; }
+
+.pdf-table-wrapper { margin-top:8px; }          /* <-- only spacing you want */
+.pdf-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+.pdf-table th,
+.pdf-table td { border:1px solid #000; padding:4px 3px; word-wrap:break-word; }
+
+.header-row { background:#1b263b; color:#fff; font-weight:bold; }
+.header-row th { font-size:10.5px; }
+
+.pdf-table thead { display:table-header-group !important; }
+
+.first-chunk { page-break-inside:avoid !important; }
+
+.data-row { page-break-inside:avoid; page-break-after:auto; }
+
+.pdf-table .badge {
+  font-size:9px; padding:1px 4px; border-radius:3px; color:#fff;
+}
+
+.avoid-break { page-break-inside:avoid !important; }
+
+.page-break { page-break-before:always; break-before:page; height:0; }
+
+.main-color{
+  background: #ebdfd7;
+}
+
+.second-color {
+  background-color: #f2eae5 !important;   /* your theme background */
+}
+
+.second-color td,
+.second-color th,
+.second-color tr {
+  background-color: transparent !important;
+  color: #000 !important;
+}
+
+.second-color tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.details-btn {
+  border: 1.5px solid #4c728a;      /* outline color */
+  color: #4c728a;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+.details-btn:hover {
+  background-color: #3b586a;
+  color: #fff;
+  border-color: #4c728a;
+}
+
+/* Active/Pressed */
+.details-btn:active {
+  background-color: #3b586a !important;
+  border-color: #3b586a !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.details-btn:focus {
+  box-shadow: 0 0 0 3px rgba(76, 114, 138, 0.35);
+  background-color: #3b586a !important;
+  border-color: #3b586a !important;
+  color: #fff !important;
+}
+
+.report-btn {
+  border: 1.5px solid #fa6401;   /* warm orange-brown */
+  color: #fa6401;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+.report-btn:hover {
+  background-color: #fa6401;
+  color: #fff;
+  border-color: #fa6401;
+}
+
+/* Active */
+.report-btn:active {
+  background-color: #fa6401 !important;
+  border-color: #fa6401 !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.report-btn:focus {
+  box-shadow: 0 0 0 3px rgba(180, 95, 53, 0.35);
+  background-color: #fa6401 !important;
+  border-color: #fa6401 !important;
+  color: #fff !important;
+}
+
+.start{
+  background-color: #3ec124 !important;
+  color: #fff !important;
+  border-color: #3ec124 !important;
+}
+
+.stop{
+  
+  background-color: #fe1e1f !important;
+  color: #fff !important;
+  border-color: #fe1e1f !important;
+}
+
+.status{
+
+  
+  background-color: #3b0ce6 !important;
+  color: #fff !important;
+  border-color: #3b0ce6 !important;
+}
+.timesheet-btn {
+  border: 1.5px solid #3ec124;   /* warm orange-brown */
+  color: #3ec124;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+.timesheet-btn:hover {
+  background-color: #3ec124;
+  color: #fff;
+  border-color: #3ec124;
+}
+
+/* Active */
+.timesheet-btn:active {
+  background-color: #3ec124 !important;
+  border-color: #3ec124 !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.timesheet-btn:focus {
+  box-shadow: 0 0 0 3px rgba(180, 95, 53, 0.35);
+  background-color: #3ec124 !important;
+  border-color: #3ec124 !important;
+  color: #fff !important;
+}
+
+.delete-btn {
+  border: 1.5px solid #fe1e1f;   /* warm orange-brown */
+  color: #fe1e1f;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+.delete-btn:hover {
+  background-color: #fe1e1f;
+  color: #fff;
+  border-color: #fe1e1f;
+}
+
+/* Active */
+.delete-btn:active {
+  background-color: #fe1e1f !important;
+  border-color: #fe1e1f !important;
+  color: #fff !important;
+}
+
+/* Focus */
+.delete-btn:focus {
+  box-shadow: 0 0 0 3px rgba(180, 95, 53, 0.35);
+  background-color: #fe1e1f !important;
+  border-color: #fe1e1f !important;
+  color: #fff !important;
+}
+
+.common-btn-out{
+  background-color: #000;
+  color: #fff;
+}
+
+.common-btn-out:hover{
+  background-color: orange;
+  color: #fff;
+}
+
+.common-btn-in{
+  background-color: #000;
+  color: #fff;
+}
+
+.common-btn-in:hover{
+  background-color: #000;
+  color: #fff;
+}
+
+.common-btn-in:focus{
+  background-color: #000;
+  color: #fff;
+}
+
+.common-btn-in:active{
+  background-color: #000 !important;
+  color: #fff !important;
+}
+.table-border{
+  border:1px solid #0000003a !important;
+  border-radius:6px !important
+}
+
+.cancel-btn{
+  border: 1px solid #000;
+  color: #000;
+}
+
+.cancel-btn:hover{
+  border: 1px solid #000;
+  color: #000;
+}
+
+.cancel-btn:focus{
+  border: 1px solid #000;
+  color: #000;
+}

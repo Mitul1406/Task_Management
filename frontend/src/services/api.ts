@@ -67,12 +67,15 @@ interface UserDayWiseResponse {
 }
 // GraphQL Queries & Mutations
 const GET_PROJECTS = gql`
-  query {
+    query {
     projects {
       id
       name
       description
       createdAt
+      adminId{
+        username
+      }
     }
   }
 `;
@@ -86,6 +89,9 @@ const USER_TASK=gql`query tasksForUser($userId: ID!) {
       title
       estimatedTime
       totalTime
+      totalTime
+      overtime
+      savedTime
       isRunning
       startDate
       endDate
@@ -108,19 +114,16 @@ const USER_TASK=gql`query tasksForUser($userId: ID!) {
 `
 const GET_TASKS = gql`
   query tasks($projectId: ID!) {
-    tasks(projectId: $projectId) {
+  tasks(projectId: $projectId) {
     id
     title
-    createdAt
-    updatedAt
-    totalTime
-    isRunning
     estimatedTime
-    overtime
-    savedTime
+    totalTime
+    savedTime       # <-- use this instead of totalSaved
+    overtime        # <-- use this instead of totalOvertime
+    status
     startDate
     endDate
-    status
     runningTimer {
       id
       startTime
@@ -133,8 +136,16 @@ const GET_TASKS = gql`
       email
       role
     }
+    users {
+      id
+      username
+      email
+      role
+      totalTime
+    }
   }
-  }
+}
+
 `;
 
 const CREATE_PROJECT = gql`
@@ -143,6 +154,10 @@ const CREATE_PROJECT = gql`
       id
       name
       description
+      adminId{
+      id
+      username
+      }
     }
   }
 `;
@@ -183,10 +198,12 @@ const CREATE_TASK = gql`
 
 
 const START_TIMER = gql`
-  mutation startTimer($taskId: ID!) {
-    startTimer(taskId: $taskId) {
-      id
+  mutation startTimer($taskId: ID!, $userId: ID!) {
+    startTimer(taskId: $taskId, userId: $userId) {
+      id 
       startTime
+      success
+      message
     }
   }
 `;
@@ -198,11 +215,11 @@ const DELETE_TASK = gql`
 `;
 
 const STOP_TIMER = gql`
-  mutation stopTimer($taskId: ID!) {
-    stopTimer(taskId: $taskId) {
-    totalDuration
-    overtime
-    savedTime
+  mutation stopTimer($taskId: ID!, $userId: ID!) {
+    stopTimer(taskId: $taskId, userId: $userId) {
+      totalDuration
+      overtime
+      savedTime
     }
   }
 `;
@@ -264,7 +281,18 @@ const GET_DAY_WISE_DATA = gql`
     }
   }
 `;
-
+const RESET=gql` mutation ResetPassword($token: String!, $newPassword: String!) {
+    resetPassword(token: $token, newPassword: $newPassword) {
+      success
+      message
+    }
+  }`
+const FORGOT=gql` mutation ForgotPassword($email: String!) {
+    forgotPassword(email: $email) {
+      success
+      message
+    }
+  }`
 const GET_USER_DAY_WISE = gql`
   query GetUserDayWise($userId: ID!, $startDate: String!, $endDate: String!) {
     userDayWise(userId: $userId, startDate: $startDate, endDate: $endDate) {
@@ -301,10 +329,51 @@ const GET_USER_DAY_WISE = gql`
     }
   }
 `;
-
+const ADMINUSER_TIMESHEET=gql`
+query GetUserDayWiseAdminUser($adminId: String!, $startDate: String!, $endDate: String!) {
+    userDayWiseAdminUser(adminId: $adminId, startDate: $startDate, endDate: $endDate) {
+    users {
+      id
+      username
+      email
+      projects {
+        id
+        name
+        description
+        tasks {
+          id
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+          startDate
+          endDate
+          status
+        }
+      }
+      dayWise {
+        date
+        time
+        status
+        tasks {
+          taskId
+          title
+          time
+          estimatedTime
+          savedTime
+          overtime
+          status
+        }
+      }
+    }
+  }
+}
+  
+`
 const ALL_TIMESHEET=gql`
-query GetUserDayWiseAdmin($startDate: String!, $endDate: String!) {
-  userDayWiseAdmin(startDate: $startDate, endDate: $endDate) {
+query GetUserDayWiseAdmin($startDate: String!, $endDate: String!,$userId: ID) {
+  userDayWiseAdmin(startDate: $startDate, endDate: $endDate,userId: $userId) {
     users {
       id
       username
@@ -343,6 +412,16 @@ query GetUserDayWiseAdmin($startDate: String!, $endDate: String!) {
   }
 }
 `
+const GET_ALL_USERS = gql`
+  query {
+    allusers {
+      id
+      username
+      email
+      role
+    }
+  }
+`;
 
 const GET_USERS = gql`
   query {
@@ -354,27 +433,37 @@ const GET_USERS = gql`
     }
   }
 `;
-export const CREATE_USER = gql`
-  mutation createUser($username: String!, $email: String!, $password: String!, $role: String) {
-    createUser(username: $username, email: $email, password: $password, role: $role) {
+const CREATE_USER = gql`
+  mutation createUser($username: String!, $email: String!, $role: String) {
+  createUser(username: $username, email: $email, role: $role) {
+    success
+    message
+    user {
       id
       username
       email
       role
     }
   }
+}
+
 `;
-export const UPDATE_USER = gql`
+const UPDATE_USER = gql`
   mutation updateUser($id: ID!, $username: String, $email: String, $role: String) {
     updateUser(id: $id, username: $username, email: $email, role: $role) {
-      id
-      username
-      email
-      role
+      success
+      message
+      user {
+        id
+        username
+        email
+        role
+      }
     }
   }
 `;
-export const DELETE_USER = gql`
+
+const DELETE_USER = gql`
   mutation deleteUser($id: ID!) {
     deleteUser(id: $id) {
       message
@@ -384,6 +473,7 @@ export const DELETE_USER = gql`
 const CHANGE_PASSWORD = gql`
   mutation changePassword($id: ID!, $oldPassword: String!, $newPassword: String!) {
     changePassword(id: $id, oldPassword: $oldPassword, newPassword: $newPassword) {
+      success
       message
     }
   }
@@ -412,7 +502,183 @@ const RESEND_OTP = gql`
     }
   }
 `;
+
+const SCREEN_SHOT=gql`
+query GetUserScreenshots($userId: ID!) {
+    screenshotsByUser(userId: $userId) {
+      id
+      url
+      createdAt
+    }
+  }
+`
+	const GET_ADMIN_PROJECT=gql`
+  query GetAdminsProjects($userId: ID!) {
+  adminsprojects(userId: $userId) {
+    id
+    name
+    description
+    createdAt
+    adminId{
+     id
+    }
+  }
+}
+
+`;
+
+const SUPERADMINCOUNT=gql`query {
+  superAdminDashboardCount {
+    totalProjects
+    totalTasks
+    totalUser
+    teamLead
+    employee
+    pendingTasks
+    inProgressTasks
+    projectContributions {
+      projectId
+      projectName
+      totalProjectWorkTime
+      userContributions {
+        userId
+        username
+        totalWorkTime
+      }
+    }
+  }
+}
+`
+const TEAMLEADCOUNT = gql`
+  query ($userId: ID!) {
+    teamLeadDashboardCount(userId: $userId) {
+      totalProjects
+      totalTasks
+      pendingTasks
+      inProgressTasks
+      totalWorkedToday
+    }
+  }
+`;
+
+const EMPCOUNT = gql`
+  query ($userId: ID!) {
+    empDashboardCount(userId: $userId) {
+      totalTasks
+      pendingTasks
+      inProgressTasks
+      totalWorkedToday
+    }
+  }
+`;
+
+const EMPDATA=gql`query($userId: ID!) {
+    empGet(userId: $userId) {
+      id
+      username
+      role
+      email
+    }
+  }`
 // API Functions
+export const getEmpData = async (userId: string) => {
+  try {
+    const res = await client.query({
+      query: EMPDATA,
+      variables: { userId },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.empGet;
+  } catch (err) {
+    console.error("Failed to fetch User Data:", err);
+    throw err;
+  }
+};
+export const getEmpDashboardCount = async (userId: string) => {
+  try {
+    const res = await client.query({
+      query: EMPCOUNT,
+      variables: { userId },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.empDashboardCount;
+  } catch (err) {
+    console.error("Failed to fetch Employee Dashboard Count:", err);
+    throw err;
+  }
+};
+export const getTeamLeadDashboardCount = async (userId: string) => {
+  try {
+    const res = await client.query({
+      query: TEAMLEADCOUNT,
+      variables: { userId },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.teamLeadDashboardCount;
+  } catch (err) {
+    console.error("Failed to fetch Team Lead Dashboard Count:", err);
+    throw err;
+  }
+};
+export const getSuperAdminDashboardCount = async () => {
+  try {
+    const res = await client.query({
+      query: SUPERADMINCOUNT,
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.superAdminDashboardCount;
+  } catch (err) {
+    console.error("Failed to fetch Super Admin Dashboard Count:", err);
+    throw err;
+  }
+};
+export const getAdminProjects = async (userId: string) => {
+  const res = await client.query({
+    query: GET_ADMIN_PROJECT,
+    variables: { userId },
+    fetchPolicy: "network-only", 
+  });
+
+  return (res as any).data.adminsprojects;
+};
+
+export const forgotPassword = async (email: string) => {
+  const res = await client.mutate({
+    mutation: FORGOT,
+    variables: { email },
+  });
+  return (res as any).data.forgotPassword;
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  const res = await client.mutate({
+    mutation: RESET,
+    variables: { token, newPassword },
+  });
+  return (res as any).data.resetPassword;
+};
+
+export const getUserScreenshots = async (userId: string) => {
+  if (!userId) throw new Error("Missing userId");
+
+  try {
+    const res = await client.query({
+      query: SCREEN_SHOT,
+      variables: { userId },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.screenshotsByUser;
+  } catch (err) {
+    console.error("Failed to fetch screenshots", err);
+    throw err;
+  }
+};
+
 export const verifyOtp = async (email: string, otp: string) => {
   const res = await client.mutate({
     mutation: VERIFY_OTP,
@@ -460,7 +726,6 @@ export const updateUser = async (userData: {
 export const createUser = async (userData: {
   username: string;
   email: string;
-  password: string;
   role?: string;
 }) => {
   const res = await client.mutate({
@@ -468,6 +733,14 @@ export const createUser = async (userData: {
     variables: userData,
   });
   return (res as any).data.createUser;
+};
+
+export const getAllUsers = async () => {
+  const res = await client.query({
+    query: GET_ALL_USERS,
+    fetchPolicy: "network-only",
+  });
+  return (res as any).data.allusers;
 };
 export const getUsers = async () => {
   const res = await client.query({
@@ -485,18 +758,17 @@ export const getTasksByProject = async (projectId: string) => {
   const res = await client.query({
     query: GET_TASKS,
     variables: { projectId },
-    fetchPolicy: "network-only",
+    fetchPolicy: "no-cache",
   });
   return (res as any).data.tasks;
 };
-
 
 export const createProject = async (name: string, description?: string) => {
   const res = await client.mutate({
     mutation: CREATE_PROJECT,
     variables: { name, description },
   });
-  return (res as any).data.createProject; // returns project document
+  return (res as any).data.createProject;
 };
 
 export const deleteProject = async (id: string) => {
@@ -516,13 +788,33 @@ export const createTask = async (projectId: string, title: string) => {
 };
 
 export const startTimer = async (taskId: string) => {
-  const res = await client.mutate({ mutation: START_TIMER, variables: { taskId } });
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("No token found");
+
+  const decoded = jwtDecode<JwtPayload>(token);
+  const userId = decoded.id;
+
+  const res = await client.mutate({
+    mutation: START_TIMER,
+    variables: { taskId, userId },
+  });
+
   return (res as any).data.startTimer;
 };
 
 export const stopTimer = async (taskId: string) => {
-  const res = await client.mutate({ mutation: STOP_TIMER, variables: { taskId } });
-  return (res as any).data.stopTimer; // returns timer document
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("No token found");
+
+  const decoded = jwtDecode<JwtPayload>(token);
+  const userId = decoded.id;
+
+  const res = await client.mutate({
+    mutation: STOP_TIMER,
+    variables: { taskId, userId },
+  });
+
+  return (res as any).data.stopTimer; // returns timer info
 };
 
 export const deleteTask = async (id: string) => {
@@ -550,13 +842,7 @@ export const createTaskAdmin = async (
 };
 
 export const updateTaskAdmin = async (
-  id: string,
-  title?: string,
-  estimatedTime?: number,
-  assignedUserId?: string,
-  startDate?: string,
-  endDate?: string
-) => {
+id: string, title?: string, estimatedTime?: number, assignedUserId?: string, startDate?: string, endDate?: string, status?: string) => {
   const res = await client.mutate({
     mutation: UPDATE_TASK,
     variables: { id, title, estimatedTime, assignedUserId,startDate,endDate },
@@ -612,7 +898,7 @@ export const getDayWiseData = async ({
   const res = await client.query({
     query: GET_DAY_WISE_DATA,
     variables: { projectId, userIds, startDate, endDate },
-    fetchPolicy: "network-only",
+    fetchPolicy: "no-cache",
   });
 
   return (res as any).data.dayWiseData;
@@ -645,10 +931,14 @@ export const updateTaskStatus = async (taskId: string, status: string) => {
   return (res as any).data.updateTaskStatus;
 };
 
-export const getAllTimesheet = async (startDate: string, endDate: string) => {
+export const getAllTimesheet = async (
+  startDate: string,
+  endDate: string,
+  userId?: string // 👈 added optional user filter
+) => {
   const res = await client.query({
     query: ALL_TIMESHEET,
-    variables: { startDate, endDate },
+    variables: { startDate, endDate, userId }, // 👈 send userId to backend if given
     fetchPolicy: "network-only",
   });
 
@@ -672,10 +962,8 @@ export const getAllTimesheet = async (startDate: string, endDate: string) => {
       ...d,
       tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
         ...t,
-        // normalize numeric timestamps if present
         startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
         endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
-        // force unique key per user, per day
         _uniqueKey: `${u.id || userIndex}-day${dIndex}-task${tIndex}`,
       })),
     }));
@@ -688,8 +976,55 @@ export const getAllTimesheet = async (startDate: string, endDate: string) => {
   });
 
   return safeUsers;
-}
+};
 
+
+export const getAdminUserTimesheet = async (
+  adminId: string,
+  startDate: string,
+  endDate: string
+) => {
+  const res = await client.query({
+    query: ADMINUSER_TIMESHEET,
+    variables: { adminId, startDate, endDate },
+    fetchPolicy: "network-only",
+  });
+
+  const users = (res as any)?.data?.userDayWiseAdminUser?.users || [];
+
+  const safeUsers = users.map((u: any, userIndex: number) => {
+    // Clone projects deeply
+    const clonedProjects = (u.projects || []).map((p: any, projIndex: number) => {
+      const cloned = JSON.parse(JSON.stringify(p));
+      cloned._uniqueKey = `${u.id || userIndex}-${p.id || projIndex}`;
+      cloned.tasks = (cloned.tasks || []).map((t: any) => ({
+        ...t,
+        startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+        endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+      }));
+      return cloned;
+    });
+
+    // Clone dayWise deeply
+    const clonedDayWise = (u.dayWise || []).map((d: any, dIndex: number) => ({
+      ...d,
+      tasks: (d.tasks || []).map((t: any, tIndex: number) => ({
+        ...t,
+        startDate: t.startDate ? new Date(Number(t.startDate)).toISOString() : null,
+        endDate: t.endDate ? new Date(Number(t.endDate)).toISOString() : null,
+        _uniqueKey: `${u.id || userIndex}-day${dIndex}-task${tIndex}`,
+      })),
+    }));
+
+    return {
+      ...u,
+      projects: clonedProjects,
+      dayWise: clonedDayWise,
+    };
+  });
+
+  return safeUsers;
+};
 
 // export const getAllTimesheet = async (startDate: string, endDate: string) => {
 //   const res = await client.query({
