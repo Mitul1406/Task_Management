@@ -14,7 +14,7 @@ const sendResetPasswordMail = async (email: string, token: string, username: str
     const templatePath = path.join(process.cwd(), "src", "templates", "tasktracker-reset-user.html");
     let htmlTemplate = fs.readFileSync(templatePath, "utf-8");
 
-    const resetLink = `http://localhost:3000/reset-password/${token}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     htmlTemplate = htmlTemplate
       .replace("{{RESET_LINK}}", resetLink)

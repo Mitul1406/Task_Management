@@ -71,11 +71,11 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
 
   return (
     <header
-  className="app-header w-100 bg-light shadow-sm p-2 d-flex justify-content-between align-items-center"
+  className="app-header w-100 shadow-sm p-2 d-flex justify-content-between align-items-center"
   style={{ marginLeft: collapse ? "50px" : "0px" }}
 >
   {/* Left: Welcome message */}
-  <div className="d-flex align-items-center">
+  <div className="d-flex align-items-center ms-3">
     <h6 className="m-0">
       Welcome{" "}
       {role === "teamLead"
@@ -93,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
       <FaUserCircle size={28} />
     </span>
 
-    <div className="user-popup">
+    <div className="user-popup main-color">
       <button onClick={() => setShowPasswordForm(true)}>Change Password</button>
       <button className="logout-btn" onClick={logout}>Logout</button>
     </div>
@@ -105,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
       className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
       style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
     >
-      <div className="bg-white p-4 rounded shadow" style={{ width: "320px" }}>
+      <div className="p-4 rounded shadow main-color" style={{ width: "320px" }}>
         <h5 className="text-center mb-3">Change Password</h5>
         <form onSubmit={handlePasswordChange}>
           {/* Old Password */}
@@ -158,7 +158,7 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>
+            <button type="submit" className="btn common-btn-in btn-sm" disabled={loading}>
               {loading ? "Updating..." : "Update"}
             </button>
           </div>

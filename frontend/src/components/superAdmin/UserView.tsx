@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import Pagination from "../Pagination";
 import Select from "react-select";
 import Swal from "sweetalert2";
+import { useSidebar } from "../../context/SideBarContext";
 
 const UserView: React.FC = () => {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ const UserView: React.FC = () => {
   const [endDate, setEndDate] = useState("");
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
   const [errors, setErrors] = useState<any>({});
+  const {setActivePath}=useSidebar()
   const statusOptions = [
   { value: "all", label: "All Status" },
   { value: "pending", label: "Pending" },
@@ -151,6 +153,7 @@ const selectedProjectOptions = selectedProject.includes("all")
     };
 
   useEffect(() => {
+    setActivePath("/userView")
     fetchProjects();
     fetchUsers();
   },[]);
@@ -372,6 +375,9 @@ const handleDeleteTask = async (id: string) => {
     confirmButtonText: "Yes, delete it!",
     cancelButtonText: "Cancel",
     reverseButtons: true,
+    customClass:{
+      popup:"main-color"
+    }
   });
 
   if (!result.isConfirmed) return;
@@ -455,12 +461,12 @@ useEffect(() => {
 }, [selectedStatus, selectedUser, startDate, endDate]);
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-4" style={{minHeight:"100vh"}}>
         <div className="d-flex justify-content-between">
     <h3>User Data - {username}</h3>
     <div className="gap-2">
-        <button className="btn btn-sm btn-outline-warning me-2" onClick={()=>navigate("/screenshots?userId="+userId+"&username="+username)}>View ScreenShots</button>
-        <button className="btn btn-sm btn-outline-success me-2" onClick={()=>navigate("/alluser-timesheet-report?userId="+userId+"&username="+username)}>View User Timesheet</button>
+        <button className="btn btn-sm details-btn me-2" onClick={()=>navigate("/screenshots?userId="+userId+"&username="+username)}>View ScreenShots</button>
+        <button className="btn btn-sm timesheet-btn me-2" onClick={()=>navigate("/alluser-timesheet-report?userId="+userId+"&username="+username)}>View User Timesheet</button>
         <button className="btn btn-sm btn-outline-dark " onClick={()=>navigate(-1)}>{"<"}- Back</button>
     </div>
     </div>
@@ -538,7 +544,7 @@ useEffect(() => {
 
     <div style={{ minWidth: "150px" }} className="ms-auto">
       <button
-        className="btn btn-primary w-100 mt-2"
+        className="btn common-btn-out w-100 mt-2"
         onClick={handleAddTask}
       >
         + Add Task
@@ -549,7 +555,7 @@ useEffect(() => {
 
 
   <div
-  className="table-responsive card p-4 shadow-sm border-0 bg-light"
+  className="table-responsive card p-4 shadow-sm border-0 second-color"
   style={{
     width: "100%",
     overflowX: "auto",
@@ -557,7 +563,7 @@ useEffect(() => {
   }}
 >
   <table
-    className="table table-hover table-bordered align-middle"
+    className="table table-hover align-middle"
     style={{ border: "1px solid #000", fontSize: "13px"}}
 
   >
@@ -609,13 +615,13 @@ useEffect(() => {
           <td>
             <div className="d-flex gap-2">
               <button
-                className="btn btn-sm btn-outline-primary"
+                className="btn btn-sm report-btn"
                 onClick={() => handleEditTask(task)}
               >
                 Edit
               </button>
               <button
-                className="btn btn-sm btn-outline-danger"
+                className="btn btn-sm delete-btn"
                 onClick={() => handleDeleteTask(task.id)}
               >
                 Delete
@@ -646,10 +652,10 @@ useEffect(() => {
     }}
   >
     <div
-      className="bg-white p-4 rounded shadow"
+      className="main-color p-4 rounded shadow"
       style={{ width: "90%", maxWidth: "700px" }}
     >
-      <h5 className="mb-3 text-center text-primary">
+      <h5 className="mb-3 text-center text-dark">
         {editMode ? (
           <>
             Edit Task — <span className="text-dark">{taskForm.title}</span>
@@ -889,14 +895,14 @@ useEffect(() => {
       {/* Buttons */}
       <div className="d-flex justify-content-between align-items-center mt-4">
         <button
-          className="btn btn-secondary"
+          className="btn cancel-btn"
           onClick={() => {
             setErrors({})
             setShowModal(false)}}
         >
           Close
         </button>
-        <button className="btn btn-success" onClick={handleSaveTask}>
+        <button className="btn common-btn-in" onClick={handleSaveTask}>
           {editMode ? "Save Changes" : "Add Task"}
         </button>
       </div>

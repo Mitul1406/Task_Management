@@ -12,6 +12,7 @@ import {
 import "../css/SideBar.css";
 import AdminDashboard from "../pages/AdminDashboard";
 import { useSidebar } from "../context/SideBarContext";
+import { RxDashboard } from "react-icons/rx";
 
 interface User {
   role: string;
@@ -40,31 +41,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   }, []);
 
 useEffect(() => {
-  const saved = localStorage.getItem("activeMenu");
+  const current = location.pathname;
 
-  if (saved) {
-    setActivePath(saved);
-    return;
+  let sidebarPaths: string[] = [];
+  if (role === "superAdmin") sidebarPaths = superAdminLinks.map(l => l.path);
+  else if (role === "teamLead") sidebarPaths = teamLeadLinks.map(l => l.path);
+  else if (role === "user") sidebarPaths = userLinks.map(l => l.path);
+
+  const isInSidebar = sidebarPaths.includes(current);
+
+  if (isInSidebar) {
+    setActivePath(current);
+    localStorage.setItem("activeMenu", current);
   }
 
-  // first time login → set proper default
-  const token = localStorage.getItem("token");
-  if (token) {
-    const decoded = jwtDecode<User>(token);
-
-    const defaultPath =
-      decoded.role === "superAdmin" ? "/superAdmin" :
-      decoded.role === "teamLead" ? "/admin" :
-      decoded.role === "user" ? "/user" :
-      "";
-
-    setActivePath(defaultPath);
-    localStorage.setItem("activeMenu", defaultPath);
-  }
-}, []); // <-- run only once
-
-
-
+}, [location.pathname, role, setActivePath]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -72,7 +63,7 @@ useEffect(() => {
   };
 
   const superAdminLinks = [
-    { label: "Dashboard", icon: <FaTachometerAlt />, path: "/superAdmin" },
+    { label: "Dashboard", icon: <RxDashboard />, path: "/superAdmin" },
     { label: "Users", icon: <FaUsers />, path: "/userView" },
     // { label: "View User Timesheet", icon: <FaClock />, path: "/alluser-timesheet-report" },
     // { label: "View User Screenshot", icon: <FaCamera />, path: "/screenshots" },
@@ -81,7 +72,7 @@ useEffect(() => {
   ];
 
   const teamLeadLinks = [
-    { label: "Dashboard", icon: <FaTachometerAlt />, path: "/admin" },
+    { label: "Dashboard", icon: <RxDashboard />, path: "/admin" },
     { label: "My Task", icon: <FaTasks />, path: "/tlTask" },
     { label: "Users", icon: <FaUsers />, path: "/userView" },
     // { label: "Project Task", icon: <FaTasks />, path: "/admin" },
@@ -93,7 +84,7 @@ useEffect(() => {
   ];
 
   const userLinks = [
-    { label: "Dashboard", icon: <FaTachometerAlt />, path: "/user" },
+    { label: "Dashboard", icon: <RxDashboard />, path: "/user" },
     { label: "My Tasks", icon: <FaTasks />, path: "/empTask" },
     { label: "My Timesheet", icon: <FaClock />, path: "/user-timesheet-report/"+id },
     // { label: "View Screenshot", icon: <FaCamera />, path: "/screenshots/"+id },
@@ -110,38 +101,58 @@ const isActive = (linkPath: string) => {
 
   return (
     <div className={`sidebar d-flex flex-column ${collapsed ? "collapsed" : ""}`}>
-      <div className="d-flex align-items-center p-3" style={{justifyContent:collapsed ? "center":"space-between",minWidth:collapsed ? "0":"210px"}}>
-        {!collapsed && <h5 className="m-0 ms-4">Task Tracker</h5>}
-        <div
-          onClick={toggleSidebar}
-          style={{ cursor: "pointer", fontSize: "1.2rem" }}
-        >
-          <FaBars title={collapsed ? "Expand" : "Collapse"} />
-        </div>
-      </div>
+  {/* Header */}
+  <div
+    className="header d-flex align-items-center"
+    style={{
+      justifyContent: collapsed ? "center" : "space-between",
+      minWidth: collapsed ? "0" : "210px",
+    }}
+  >
+    {!collapsed && <h5 className="m-0 ms-4">Task Tracker</h5>}
 
-      <ul className="nav flex-column mb-auto">
-        {linksToRender.map((link) => (
-          <li key={link.path} className="nav-item">
-            <button
-              className={`w-100 text-start d-flex align-items-center px-3 py-2 sidebar-btn ${
-                isActive(link.path) ? "btn-active" : ""
-              }`}
-              style={{justifyContent:collapsed ? "center":""}}
-              onClick={() => {
-                // localStorage.setItem("activeMenu", link.path);
-                setActivePath(link.path);
-                navigate(link.path)
-              }}
-              title={collapsed ? link.label : ""}
-            >
-              <span className="me-2">{link.icon}</span>
-              {!collapsed && <span>{link.label}</span>}
-            </button>
-          </li>
-        ))}
-      </ul>
+    <div
+      onClick={toggleSidebar}
+      className="toggle-btn"
+      title={collapsed ? "Expand" : "Collapse"}
+    >
+      <FaBars />
     </div>
+  </div>
+
+  {/* Scrollable Menu */}
+  <div style={{ flex: 1 }}>
+    <ul className="nav flex-column mb-auto">
+      {linksToRender.map((link) => (
+        <li key={link.path} className="nav-item mb-1">
+          <button
+            className={`w-100 d-flex align-items-center sidebar-btn ${
+              isActive(link.path) ? "btn-active" : ""
+            }`}
+            style={{ justifyContent: collapsed ? "center" : "" }}
+            onClick={() => {
+              setActivePath(link.path);
+              navigate(link.path);
+            }}
+            title={collapsed ? link.label : ""}
+          >
+            {/* Inner Capsule */}
+            <div className="inner d-flex align-items-center">
+              <span className="icon-span">{link.icon}</span>
+
+              {!collapsed && <span>{link.label}</span>}
+
+              {collapsed && (
+                <span className="tooltip-float">{link.label}</span>
+              )}
+            </div>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>
+
   );
 };
 

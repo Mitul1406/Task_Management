@@ -192,10 +192,10 @@ const handleTitleChange = (value: string) => {
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
     >
       <div className="modal-dialog modal-dialog-centered" style={{ width: "450px" }} role="document">
-        <div className="modal-content">
+        <div className="modal-content main-color">
           <form onSubmit={handleSubmit}>
             <div className="modal-header justify-content-center">
-              <h5 className="modal-title">Create Your Own Task</h5>
+              <h3 className="modal-title">Create Your Own Task</h3>
             </div>
 
             <div className="modal-body">
@@ -296,10 +296,10 @@ const handleTitleChange = (value: string) => {
             </div>
 
             <div className="modal-footer justify-content-between">
-              <button type="button" className="btn btn-secondary" onClick={handleClose}>
+              <button type="button" className="btn cancel-btn" onClick={handleClose}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
+              <button type="submit" className="btn common-btn-in" disabled={loading}>
                 {loading ? "Creating..." : "Create Task"}
               </button>
             </div>

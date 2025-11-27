@@ -6,7 +6,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="d-flex">
+    <div className="d-flex main-color">
       <Sidebar onToggle={setCollapsed} />
 
       <div

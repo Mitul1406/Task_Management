@@ -310,7 +310,7 @@ if (userTasks && Object.keys(userTasks).length > 0) {
   </div>
 
   {/* 🔹 Download PDF Button */}
-  <button className="btn btn-primary btn-sm" onClick={handleDownloadPDF}>
+  <button className="btn status btn-sm" onClick={handleDownloadPDF}>
     📄 Download PDF
   </button>
       </div>

@@ -4,6 +4,7 @@ import Pagination from "../Pagination";
 import { FaClock, FaProjectDiagram, FaSpinner, FaTasks, FaUsers } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../context/SideBarContext";
+import Select from "react-select";
 
 interface UserContribution {
   userId: string;
@@ -45,19 +46,86 @@ interface TimesheetRow {
 const Dashboard: React.FC = () => {
   const {activePath,setActivePath} =useSidebar()
   const [filteredTimesheet, setFilteredTimesheet] = useState<TimesheetRow[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<string[]>(["all"]);
   const [data, setData] = useState<DashboardData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentTimesheetPage, setCurrentTimesheetPage] = useState(1);
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
-  const dashboardItemsPerPage = 3;
+  const dashboardItemsPerPage = 4;
   const timesheetItemsPerPage = 10;
   const [users, setUsers] = useState<any[]>([]);
-  const navigate=useNavigate()
+  const [selectedUser, setSelectedUser] = useState<string[]>(["all"]);
 
-  const [selectedUser, setSelectedUser] = useState<string>("");
+  const navigate=useNavigate()
+  const statusOptions = [
+  { value: "all", label: "All Statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "code_review", label: "Code Review" },
+  { value: "done", label: "Done" }
+];
+  const userOptions = [
+  { value: "all", label: "All Users" },
+  ...users.map((u) => ({ value: u.id, label: u.username })),
+];
+  const selectedUserOptions = selectedUser.includes("all")
+  ? [userOptions[0]]
+  : userOptions.filter((opt) => selectedUser.includes(opt.value));
+
+  const selectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
+    borderRadius: "6px",
+    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)" : "none",
+    // minHeight: "35px",
+    alignItems: "flex-start",
+  }),
+  valueContainer: (base: any) => ({
+    ...base,
+    flexWrap: "wrap",
+    alignItems: "center",
+    paddingTop: "4px",
+    paddingBottom: "4px",
+    // maxHeight: "80px", // allow multi-value wrapping
+    overflowY: "auto",
+  }),
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#e9f2ff",
+    margin: "2px",
+    borderRadius: "4px",
+  }),
+  multiValueLabel: (base: any) => ({
+    ...base,
+    color: "#000",
+    // whiteSpace: "normal",
+    // wordBreak: "break-word",
+  }),
+  multiValueRemove: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    ":hover": {
+      backgroundColor: "#0d6efd",
+      color: "white",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
+const style = document.createElement("style");
+style.innerHTML = `
+  .css-1rhbuit-multiValue { max-width: 100%; }
+  .css-12jo7m5-value-container::-webkit-scrollbar {
+    display: none;
+  }
+`;
+document.head.appendChild(style);
   const formatDuration = (seconds: number) => {
     if (!seconds || seconds <= 0) return "-";
     const h = Math.floor(seconds / 3600);
@@ -125,8 +193,16 @@ useEffect(() => {
       const end = endDate ? new Date(endDate).getTime() : Infinity;
 
       return (
-        (!selectedUser || r.assignee === users.find(u => u.id === selectedUser)?.username) &&
-        (!selectedStatus || r.status === selectedStatus) &&
+        (selectedUser.length === 0 ||selectedUser.includes("all")||
+  selectedUser.includes(
+    users.find(u => u.username === r.assignee)?.id
+  )
+)
+ &&
+        (selectedStatus.length === 0 ||
+ selectedStatus.includes("all") ||
+ selectedStatus.includes(r.status))
+ &&
         date >= start &&
         date <= end
       );
@@ -154,15 +230,15 @@ useEffect(() => {
 );
 
   return (
-    <div className="container mt-3">
-<div className="card p-4 mb-4 shadow-sm border-0 bg-light">
+    <div className="container-fluid mt-3">
+<div className="card p-4 mb-4 shadow-sm border-0 main-color">
   {/* <h4 className="mb-4 text-dark">l</h4> */}
-  <div className="row g-4 text-center">
+  <div className="row g-3 text-center">
 
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/projects")
       navigate("/projects")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded-4">
         <span className="text-success mb-2">
           <FaProjectDiagram size={36} />
         </span>
@@ -172,7 +248,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-primary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-primary rounded-4">
         <span className="text-primary mb-2">
           <FaTasks size={36} />
         </span>
@@ -182,7 +258,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=pending")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-warning rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-warning rounded-4">
         <span className="text-warning mb-2">
           <FaClock size={36} />
         </span>
@@ -192,7 +268,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6" onClick={()=>navigate("/tasks?status=in_progress")} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-info rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-info rounded-4">
         <span className="text-danger mb-2">
           <FaSpinner size={36} />
         </span>
@@ -204,7 +280,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white border-secondary rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color border-secondary rounded-4">
         <span className="text-secondary mb-2">
           <FaUsers size={36} />
         </span>
@@ -216,7 +292,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView?role=teamLead")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded-4">
         <span className="text-info mb-2">
           <FaUsers size={36} />
         </span>
@@ -228,7 +304,7 @@ useEffect(() => {
     <div className="col-md-3 col-sm-6" onClick={()=>{
       setActivePath("/userView")
       navigate("/userView?role=user")}} style={{cursor:"pointer"}}>
-      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm bg-white rounded">
+      <div className="d-flex flex-column justify-content-center align-items-start p-4 shadow-sm second-color rounded-4">
         <span className="text-info mb-2">
           <FaUsers size={36} />
         </span>
@@ -239,14 +315,14 @@ useEffect(() => {
 
   </div>
 </div>
-<hr className="my-4 border-2 border-primary opacity-25" />
+{/* <hr className="my-4 border-2 border-primary opacity-25" /> */}
 
-      <div className="card p-3 shadow-sm mb-4 border-0 bg-light">
+      {paginatedProjects.length>0 &&(<div className="card p-3 shadow-sm mb-4 border-0 main-color">
         <h4 className="mb-3 text-dark">Project Contributions</h4>
         <div className="row g-3">
           {paginatedProjects.map((project) => (
-            <div key={project.projectId} className="col-md-4 col-sm-6">
-  <div className="card p-3 shadow-sm h-100 border-0" onClick={()=>{
+            <div key={project.projectId} className="col-md-3 col-sm-6">
+  <div className="card p-3 shadow-sm h-100 border-0 second-color rounded-4" onClick={()=>{
     setActivePath("/projects")
     navigate(`/projects?name=`+project.projectName)}} style={{cursor:"pointer"}}>
     <div className="d-flex justify-content-between align-items-center mb-2">
@@ -260,7 +336,7 @@ useEffect(() => {
       {project.userContributions.slice(0, 3).map((user) => (
         <li
           key={user.userId}
-          className="list-group-item d-flex justify-content-between align-items-center p-2"
+          className="list-group-item d-flex justify-content-between align-items-center p-2  second-color text-black"
         >
           <span>{user.username}</span>
           <span className="fw-semibold text-secondary">
@@ -292,45 +368,50 @@ useEffect(() => {
               pageSize={dashboardItemsPerPage}
             />
         )}
-      </div>
-      <hr className="my-4 border-2 border-primary opacity-25" />
+      </div>)}
+      {/* <hr className="my-4 border-2 border-primary opacity-25" /> */}
 
-      <div className="card p-3 shadow-sm mb-2 border-0 bg-light">
+      <div className="card p-3 shadow-sm mb-2 border-0 main-color">
   <div className="mb-3 row g-2 align-items-end">
-    <div className="col-md-4 col-sm-6">
-      <label className="form-label fw-bold">User</label>
-      <select
-        className="form-select"
-        value={selectedUser}
-        onChange={(e) => setSelectedUser(e.target.value)}
-      >
-        <option value="">All Users</option>
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.username}
-          </option>
-        ))}
-      </select>
+    <div className="col-md-3 col-sm-6">
+      <label className="form-label fw-normal">User</label>
+      <Select
+        isMulti
+        options={userOptions}
+        value={selectedUserOptions}
+        onChange={(selected: any) => {
+          const values = selected ? selected.map((s: any) => s.value) : [];
+          setSelectedUser(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Users..."
+        styles={selectStyles}
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+      />
     </div>
 
-    <div className="col-md-2 col-sm-6">
-  <label className="form-label fw-bold">Status</label>
-  <select
-    className="form-select"
-    value={selectedStatus}
-    onChange={(e) => setSelectedStatus(e.target.value)}
-  >
-    <option value="">All Statuses</option>
-    <option value="pending">Pending</option>
-    <option value="in_progress">In Progress</option>
-    <option value="code_review">Code Review</option>
-    <option value="done">Done</option>
-  </select>
+    <div className="col-md-3 col-sm-6">
+  <label className="form-label fw-normal">Status</label>
+  <Select
+        isMulti
+        options={statusOptions}
+        value={statusOptions.filter((opt) =>
+          selectedStatus.includes(opt.value)
+        )}
+        onChange={(selected) => {
+          const values:any = selected ? selected.map((s) => s.value) : [];
+          setSelectedStatus(values.includes("all") ? ["all"] : values);
+        }}
+        placeholder="Select Status..."
+        styles={selectStyles}
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
+      />
 </div>
 
 
     <div className="col-md-3 col-sm-6">
-      <label className="form-label fw-bold">Start Date</label>
+      <label className="form-label fw-normal">Start Date</label>
       <input
         type="date"
         className="form-control"
@@ -340,7 +421,7 @@ useEffect(() => {
     </div>
 
     <div className="col-md-3 col-sm-6">
-      <label className="form-label fw-bold">End Date</label>
+      <label className="form-label fw-normal">End Date</label>
       <input
         type="date"
         className="form-control"
@@ -361,20 +442,20 @@ useEffect(() => {
 
   <div className="table-responsive py-3">
     <table
-      className="table table-hover table-bordered align-middle text-left"
-      style={{ border: "1px solid #000", fontSize: "13px"}}
+      className="table table-hover second-color align-middle text-left table-border"
+      
     >
-      <thead style={{ backgroundColor: "#1b263b", color: "white" }}>
+      <thead >
         <tr>
-          <th>Assignee</th>
-          <th>Project</th>
-          <th>Task</th>
-          <th>Date</th>
-          <th>Estimated</th>
-          <th>Spent</th>
-          <th>Saved</th>
-          <th>Time Extension</th>
-          <th>Status</th>
+          <th className="fw-500">Assignee</th>
+          <th className="fw-500">Project</th>
+          <th className="fw-500">Task</th>
+          <th className="fw-500">Date</th>
+          <th className="fw-500">Estimated</th>
+          <th className="fw-500">Spent</th>
+          <th className="fw-500">Saved</th>
+          <th className="fw-500">Time Extension</th>
+          <th className="fw-500">Status</th>
         </tr>
       </thead>
       <tbody>

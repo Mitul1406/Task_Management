@@ -352,7 +352,7 @@ const badgeStyle = (status: string) => ({
       
       <div>
         <label className="form-label mb-1 d-block">&nbsp;</label>
-        <button className="btn btn-primary" onClick={handleDownload}>
+        <button className="btn status" onClick={handleDownload}>
           📄 Download PDF
         </button>
       </div>
@@ -369,7 +369,7 @@ const badgeStyle = (status: string) => ({
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="fw-bold mb-0">Overall Totals</h5>
                 <button
-                  className="btn btn-sm btn-outline-primary no-print"
+                  className="btn btn-sm btn-outline-dark no-print"
                   onClick={() => setShowUserTotals(!showUserTotals)}
                 >
                   {showUserTotals ? "Hide User Totals" : "View User Totals"}

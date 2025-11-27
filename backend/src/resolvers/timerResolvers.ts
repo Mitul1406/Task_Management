@@ -45,7 +45,6 @@ export const timerResolver = {
     startTime: new Date(),
   });
   await timer.save();
-
   // ✅ Return properly shaped GraphQL object
   return {
     id: timer._id.toString(),

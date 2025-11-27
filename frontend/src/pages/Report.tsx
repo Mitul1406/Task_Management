@@ -260,7 +260,7 @@ return (
       
         <div className="d-flex flex-column mt-3">
         <button
-          className="btn btn-primary"
+          className="btn status"
           onClick={handleDownloadPDF}
         >
           📄 Download PDF
@@ -365,7 +365,7 @@ return (
           border: "1px solid #dee2e6",
         }}
       >
-        <thead className="table-light" style={{ borderBottom: "2px solid #dee2e6" }}>
+        <thead className="table-light table-border">
           <tr>
             <th style={{ width: "20%", border: "1px solid #dee2e6" }}>Task</th>
             <th style={{ width: "12%", border: "1px solid #dee2e6" }}>Task Status</th>

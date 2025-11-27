@@ -18,6 +18,9 @@ const handleSessionExpired = async (message: string) => {
     confirmButtonText: "Go to Login",
     confirmButtonColor: "#3085d6",
     allowOutsideClick: false,
+    customClass:{
+      popup:"main-color"
+    }
   });
 
   if (result.isConfirmed) {

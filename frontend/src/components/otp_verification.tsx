@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { verifyOtp, resendOtp } from "../services/api";
 import { toast } from "react-toastify";
 import {jwtDecode} from "jwt-decode";
+import { useSidebar } from "../context/SideBarContext";
 
 const OTP_LENGTH = 6;
 
@@ -14,6 +15,7 @@ const OtpVerification: React.FC = () => {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendLock, setResendLock] = useState(0);
+  const {setActivePath}=useSidebar()
 
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
@@ -33,7 +35,8 @@ const OtpVerification: React.FC = () => {
           localStorage.removeItem("token");
           return;
         }
-        if ((decoded.role === "teamLead" || decoded.role === "projectManager")) navigate("/admin");
+        if (decoded.role === "teamLead") {
+          navigate("/admin")}
       else if(decoded.role === "superAdmin") navigate("/superAdmin")
         else navigate("/user");
       } catch {
@@ -88,9 +91,17 @@ const handleVerify = async () => {
       localStorage.removeItem("otpEmail");
       toast.success(res.message);
       
-      if (res.user.role === "teamLead" || res.user.role === "projectManager") navigate("/admin");
-      else if(res.user.role === "superAdmin") navigate("/superAdmin")
-      else navigate("/user");
+      if (res.user.role === "teamLead" || res.user.role === "projectManager") {
+          setActivePath("/admin")
+        
+        navigate("/admin")}
+      else if(res.user.role === "superAdmin") {
+          setActivePath("/superAdmin")
+        
+        navigate("/superAdmin")}
+      else{
+          setActivePath("/user")        
+          navigate("/user")}
     } else {
       toast.error(res.message || "OTP verification failed");
     }
@@ -108,7 +119,6 @@ const handleVerify = async () => {
     setVerifyLoading(false);
   }
 };
-
 
   const handleResend = async () => {
     if (resendLock > 0) return;

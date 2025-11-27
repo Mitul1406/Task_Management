@@ -98,7 +98,6 @@ export default function ScreenShotView() {
     fetchScreenshots();
   }, [selectedUserId]);
 
-  // Filter screenshots by date
   useEffect(() => {
     if (!startDate && !endDate) {
       setFilteredScreenshots(screenshots);
@@ -163,6 +162,9 @@ export default function ScreenShotView() {
     confirmButtonText: 'Yes, delete!',
     cancelButtonText: 'Cancel',
     reverseButtons: true,
+    customClass:{
+      popup:"main-color"
+    }
   }).then((result) => {
     if (result.isConfirmed) {
       deleteScreenshots(ids);
@@ -202,7 +204,7 @@ export default function ScreenShotView() {
   };
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-4" style={{minHeight:"100vh"}}>
       <div className="d-flex justify-content-between">
         <h3 className="mb-3">Employee Screenshots {username && (` - ${username}`)}</h3>
         <div>
@@ -260,7 +262,7 @@ export default function ScreenShotView() {
 
         {["superAdmin"].includes(userRole) && filteredScreenshots.length !== 0 && (
           <button
-            className="btn btn-outline-primary ms-auto position-absolute"
+            className="btn btn-outline-dark ms-auto position-absolute"
             style={{ top: "0", right: "0" }}
             onClick={toggleSelectMode}
           >
@@ -329,12 +331,14 @@ export default function ScreenShotView() {
                     />
                   )}
                   <img
-                    src={`${process.env.REACT_APP_BACKEND_URL}${shot.url}`}
+                    // src={`${process.env.REACT_APP_BACKEND_URL}${shot.url}`}
+                    src={`${shot.url}`}
                     alt={`Screenshot ${shot.id}`}
                     className="card-img-top"
                     style={{ maxHeight: "200px", objectFit: "cover", cursor: "pointer" }}
                     onClick={() =>
-                      openModal(`${process.env.REACT_APP_BACKEND_URL}${shot.url}`)
+                      // openModal(`${process.env.REACT_APP_BACKEND_URL}${shot.url}`)
+                      openModal(`${shot.url}`)
                     }
                   />
                   {!selectMode && ["superAdmin"].includes(userRole) && (
