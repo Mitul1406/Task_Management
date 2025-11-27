@@ -686,7 +686,7 @@ const selectStyles = {
                     ) : (
                       <div className="text-info">
                         {task.assignedUser.id === id
-                          ? <button className="btn btn-sm btn-primary" onClick={()=>handleStatusChange(task.id,"done")}>Change status to Done</button>
+                          ? <button className="btn btn-sm status" onClick={()=>handleStatusChange(task.id,"done")}>Change status to Done</button>
                           : "Can't modify other Team Lead's task"}
                       </div>
                     )}

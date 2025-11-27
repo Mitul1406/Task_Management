@@ -277,7 +277,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                         <td>{user.email}</td>
                         <td>{user.role === "user" ? "Employee" : "Team Lead"}</td>
                         <td>
-                          <button
+                          {loggedInRole!=="teamLead"?(<div><button
                             className="btn btn-sm report-btn me-2"
                             onClick={(e) => {
                               e.stopPropagation()
@@ -292,7 +292,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                               handleDelete(user.id)}}
                           >
                             Delete
-                          </button>
+                          </button></div>):("-")}
                         </td>
                       </tr>
                     ))}

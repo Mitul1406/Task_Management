@@ -120,7 +120,6 @@ const handleVerify = async () => {
   }
 };
 
-
   const handleResend = async () => {
     if (resendLock > 0) return;
 

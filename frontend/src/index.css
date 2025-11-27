@@ -132,7 +132,26 @@ div {
   color: #fff !important;
 }
 
+.start{
+  background-color: #3ec124 !important;
+  color: #fff !important;
+  border-color: #3ec124 !important;
+}
 
+.stop{
+  
+  background-color: #fe1e1f !important;
+  color: #fff !important;
+  border-color: #fe1e1f !important;
+}
+
+.status{
+
+  
+  background-color: #3b0ce6 !important;
+  color: #fff !important;
+  border-color: #3b0ce6 !important;
+}
 .timesheet-btn {
   border: 1.5px solid #3ec124;   /* warm orange-brown */
   color: #3ec124;

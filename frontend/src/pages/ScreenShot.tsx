@@ -120,7 +120,7 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
 
         track.onended = async() => {
           try {
-      await fetch("http://localhost:4040/broadcast-stop-confirm", {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/broadcast-stop-confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
@@ -160,7 +160,8 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         const formData = new FormData();
-        formData.append("screenshot", blob);
+        // formData.append("screenshot", blob);
+        formData.append("screenshot", blob, `screenshot_${Date.now()}.webp`);
         formData.append("userId", userId);
 
         try {
@@ -174,7 +175,7 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
         } catch {
           setStatus("Upload failed");
         }
-      }, "image/webp", 0.9);
+      }, "image/webp", 0.2);
     };
 
     // --- Expose functions to parent ---
@@ -489,7 +490,7 @@ export default AutoScreenshot;
 //       formData.append("userId", userId);
 
 //       try {
-//         const res = await fetch("http://localhost:4040/upload-screenshot", {
+//         const res = await fetch("${process.env.REACT_APP_BACKEND_URL}/upload-screenshot", {
 //           method: "POST",
 //           body: formData,
 //         });

@@ -780,7 +780,7 @@ useEffect(() => {
                     <div className="d-flex gap-2">
                       <button
                         className={`btn btn-sm ${
-                          task.isRunning ? "btn-danger" : "btn-success"
+                          task.isRunning ? "stop" : "start"
                         }`}
                         onClick={() =>
                           handleStartStopTimer(task, task.projectId)
@@ -789,7 +789,7 @@ useEffect(() => {
                         {task.isRunning ? "Stop" : "Start"}
                       </button>
                       <button
-                        className="btn btn-sm btn-primary"
+                        className="btn btn-sm status"
                         onClick={() =>
                           handleStatusClick(task.id, task.projectId)
                         }

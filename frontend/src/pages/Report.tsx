@@ -260,7 +260,7 @@ return (
       
         <div className="d-flex flex-column mt-3">
         <button
-          className="btn btn-primary"
+          className="btn status"
           onClick={handleDownloadPDF}
         >
           📄 Download PDF

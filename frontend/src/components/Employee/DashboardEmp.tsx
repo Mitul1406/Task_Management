@@ -45,6 +45,7 @@ const DashboardEmp: React.FC = () => {
       toast.error("Failed to fetch tasks");
     } finally {
       setLoading(false);
+      fetchDashboardData();
     }
   };
 

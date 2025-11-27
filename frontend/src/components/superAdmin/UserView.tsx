@@ -544,7 +544,7 @@ useEffect(() => {
 
     <div style={{ minWidth: "150px" }} className="ms-auto">
       <button
-        className="btn btn-primary w-100 mt-2"
+        className="btn common-btn-out w-100 mt-2"
         onClick={handleAddTask}
       >
         + Add Task
@@ -615,13 +615,13 @@ useEffect(() => {
           <td>
             <div className="d-flex gap-2">
               <button
-                className="btn btn-sm btn-outline-primary"
+                className="btn btn-sm report-btn"
                 onClick={() => handleEditTask(task)}
               >
                 Edit
               </button>
               <button
-                className="btn btn-sm btn-outline-danger"
+                className="btn btn-sm delete-btn"
                 onClick={() => handleDeleteTask(task.id)}
               >
                 Delete
@@ -655,7 +655,7 @@ useEffect(() => {
       className="main-color p-4 rounded shadow"
       style={{ width: "90%", maxWidth: "700px" }}
     >
-      <h5 className="mb-3 text-center text-primary">
+      <h5 className="mb-3 text-center text-dark">
         {editMode ? (
           <>
             Edit Task — <span className="text-dark">{taskForm.title}</span>
@@ -895,14 +895,14 @@ useEffect(() => {
       {/* Buttons */}
       <div className="d-flex justify-content-between align-items-center mt-4">
         <button
-          className="btn btn-secondary"
+          className="btn cancel-btn"
           onClick={() => {
             setErrors({})
             setShowModal(false)}}
         >
           Close
         </button>
-        <button className="btn btn-success" onClick={handleSaveTask}>
+        <button className="btn common-btn-in" onClick={handleSaveTask}>
           {editMode ? "Save Changes" : "Add Task"}
         </button>
       </div>

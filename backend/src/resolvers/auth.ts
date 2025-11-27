@@ -47,7 +47,7 @@ const sendResetPasswordMail = async (email: string, token: string, username: str
     const templatePath = path.join(process.cwd(), "src", "templates", "tasktracker-reset.html");
     let htmlTemplate = fs.readFileSync(templatePath, "utf-8");
 
-    const resetLink = `http://localhost:3000/reset-password/${token}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     htmlTemplate = htmlTemplate
       .replace("{{RESET_LINK}}", resetLink)
@@ -173,12 +173,13 @@ verifyOtp: async ({ email, otp }: any) => {
     },
 
 
-     screenshotsByUser: async ({ userId }: { userId: string }) => {
+  screenshotsByUser: async ({ userId }: { userId: string }) => {
   const screenshots = await Screenshot.find({ userId }).sort({ createdAt: -1 });
 
   return screenshots.map(s => ({
     id: s._id.toString(),
-    url: `/uploads/screenshots/${s.filename}`,
+    // url: `/uploads/screenshots/${s.filename}`,
+    url:s.url,
     createdAt: s.createdAt.toISOString(),
   }));
 },

@@ -304,7 +304,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
 
   return (<>   
    <div className='position-relative'>
-    <div style={{position:"absolute",right:"200px"}}>
+    <div style={{position:"absolute",right:"140px"}}>
    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
     
   {/* <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -345,7 +345,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
 </div>
 
 </div>
-    <button className="btn btn-primary mb-3" style={{position:"absolute",right:"60px",top:"20px"}} onClick={handleDownload}>
+    <button className="btn status mb-3" style={{position:"absolute",right:"00px",top:"20px"}} onClick={handleDownload}>
         Download PDF
       </button></div>
     <div className="container mt-4" ref={sheetRef}>
