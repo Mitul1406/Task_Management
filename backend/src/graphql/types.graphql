@@ -1,0 +1,212 @@
+type UserContribution {
+  userId: ID!
+  username: String
+  totalWorkTime: Float
+}
+
+type ProjectContribution {
+  projectId: ID!
+  projectName: String
+  totalProjectWorkTime: Float
+  userContributions: [UserContribution]
+}
+
+type DashboardCountTl {
+  totalProjects: Int
+  totalTasks: Int
+  pendingTasks: Int
+  inProgressTasks: Int
+  totalWorkedToday: Int
+}
+
+type DashboardCount {
+  totalProjects: Int
+  totalTasks: Int
+  totalUser: Int
+  teamLead: Int
+  employee: Int
+  pendingTasks: Int
+  inProgressTasks: Int
+  projectContributions: [ProjectContribution]
+}
+
+type Project {
+  id: ID!
+  name: String!
+  description: String
+  createdAt: String
+  tasks: [Task]
+  adminId: User
+}
+
+type UserTime {
+  id: ID!
+  username: String!
+  email: String
+  role: String
+  totalTime: Int!
+}
+
+type Task {
+  id: ID!
+  projectId: ID!
+  title: String!
+  estimatedTime: Int
+  totalTime: Int
+  isRunning: Boolean
+  runningTimer: Timer
+  assignedUserId: ID
+  assignedUser: User
+  createdAt: String
+  updatedAt: String
+  overtime: Int
+  savedTime: Int
+  startDate: String
+  endDate: String
+  status: String
+  users: [UserTime]
+}
+
+type Timer {
+  id: ID
+  taskId: ID
+  userId: ID
+  startTime: String
+  endTime: String
+  duration: Int
+  success: Boolean
+  message: String
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String!
+  role: String!
+  token: String
+  message: String
+  password: String
+  success: Boolean
+  teamLeads: [User]
+}
+
+type DeleteResponse {
+  message: String!
+}
+
+type ChangePasswordResponse {
+  success: Boolean!
+  message: String!
+}
+
+type StopTimerResponse {
+  totalDuration: Int!
+  overtime: Int!
+  savedTime: Int!
+}
+
+type DayWiseUserTask {
+  taskId: ID!
+  title: String!
+  time: Int!
+  estimatedTime: Int
+  savedTime: Int
+  overtime: Int
+  status: String
+}
+
+type DayWiseUserTime {
+  userId: ID!
+  time: Int
+  status: String!
+  tasks: [DayWiseUserTask!]!
+}
+
+type DayWiseEntry {
+  date: String!
+  time: Int!
+  status: String!
+  tasks: [DayWiseUserTask!]!
+  users: [DayWiseUserTime!]!
+}
+
+type TaskSummary {
+  id: ID!
+  title: String!
+  time: Int!
+  estimatedTime: Int
+  savedTime: Int
+  overtime: Int
+  startDate: String
+  endDate: String
+  status: String
+}
+
+type VerifyOtpResponse {
+  success: Boolean!
+  message: String!
+  token: String
+  user: User
+}
+
+type ProjectWithTasks {
+  id: ID!
+  name: String!
+  description: String
+  tasks: [TaskSummary!]!
+}
+
+type UserDayWise {
+  projects: [ProjectWithTasks!]!
+  dayWise: [DayWiseEntry!]!
+}
+
+type UserDayWiseInfo {
+  id: ID!
+  username: String!
+  email: String!
+  role: String!
+}
+
+type AdminUserDayWise {
+  id: ID!
+  username: String!
+  email: String!
+  projects: [ProjectWithTasks!]!
+  dayWise: [DayWiseEntry!]!
+}
+
+type UserDayWiseAdminResponse {
+  users: [AdminUserDayWise!]!
+}
+
+type Screenshot {
+  id: ID!
+  url: String!
+  createdAt: String!
+}
+
+type AuthResponse {
+  success: Boolean!
+  message: String!
+}
+
+type CreateUserResponse {
+  success: Boolean!
+  message: String!
+  user: User
+}
+
+type UserRelations {
+  role: String!
+  teamLeads: [User!]!
+  employees: [User!]!
+  message: String
+}
+
+type SendMailResponse {
+  success: Boolean!
+  message: String!
+  info: String
+  error: String
+}

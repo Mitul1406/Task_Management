@@ -1,0 +1,64 @@
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      th, td {
+        border: 1px solid black;
+        padding: 6px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        font-size: 12px;
+        text-align: left;
+      }
+
+      th {
+        background: #f0f0f0;
+        font-weight: bold;
+      }
+
+      .badge {
+        padding: 3px 6px;
+        color: #fff;
+        border-radius: 4px;
+        font-size: 11px;
+        text-align: center;
+        display: inline-block;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>{{username}} — Daywise Report ({{date}})</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Project Name</th>
+          <th>Task</th>
+          <th>Task Status</th>
+          <th>Time</th>
+          <th>Estimated</th>
+          <th>Saved</th>
+          <th>Time Extension</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{rows}}
+      </tbody>
+    </table>
+  </body>
+</html>

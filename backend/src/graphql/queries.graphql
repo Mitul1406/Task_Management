@@ -1,0 +1,38 @@
+type Query {
+  projects: [Project]
+  adminsprojects(userId: ID!): [Project]
+  project(id: ID!): Project
+  tasks(projectId: ID!): [Task]
+  task(id: ID!): Task
+  users: [User!]!
+  tasksForUser(userId: ID!): [Project!]!
+  allusers: [User!]!
+
+  dayWiseData(
+    projectId: ID!
+    userIds: [String!]!
+    startDate: String!
+    endDate: String!
+  ): [DayWiseEntry!]!
+
+  userDayWise(
+    userId: ID!
+    projectIds: [ID!]
+    startDate: String!
+    endDate: String!
+  ): UserDayWise!
+
+  userDayWiseAdmin(startDate: String!, endDate: String!, userId: ID): UserDayWiseAdminResponse!
+  userDayWiseAdminUser(adminId: String!, startDate: String!, endDate: String!): UserDayWiseAdminResponse!
+
+  screenshotsByUser(userId: ID!): [Screenshot!]!
+
+  superAdminDashboardCount: DashboardCount
+  teamLeadDashboardCount(userId: ID!): DashboardCountTl
+  empDashboardCount(userId: ID!): DashboardCountTl
+  empGet(userId: ID!): [User]
+
+  getTeamLead(id: ID): [User!]!
+  getUserTeamLead(id: ID!): [User!]!
+  getUserRelations(id: ID!): UserRelations!
+}
