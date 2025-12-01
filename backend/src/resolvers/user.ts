@@ -38,6 +38,7 @@ const sendResetPasswordMail = async (email: string, token: string, username: str
 };
 
 export const userResolver = {
+
 allusers: async () => {
       const users = await User.find({role:{$in:["admin","user"]}});
       return users.map((u) => ({
@@ -46,9 +47,119 @@ allusers: async () => {
         email: u.email,
         role: u.role,
       }));
-    },
+},
+
+// empGet:async({userId}:{userId:string})=>{ 
+//    const users = await User.find({
+    
+//     $or: [
+//       { role: "user" },
+//       { _id: new mongoose.Types.ObjectId(userId) }
+//     ]
+//   });
+   
+//       return users.map((u) => ({
+//         id: (u as any)._id.toString(),
+//         username: u.username,
+//         email: u.email,
+//         role: u.role,
+//       }));
+// },
+
+empGet:async({userId}:{userId:string})=>{ 
+   const users = await User.find({
+    
+    $or: [
+      { role: "user",teamLeads: userId },
+      { _id: new mongoose.Types.ObjectId(userId) }
+    ]
+  });
+   
+      return users.map((u) => ({
+        id: (u as any)._id.toString(),
+        username: u.username,
+        email: u.email,
+        role: u.role,
+      }));
+},
+
+getTeamLead:async({id}:{id:string})=>{
+   let users:any=await User.find({ role: {$in:["teamLead","superAdmin"]}})
+   if (id) {
+    users = users.filter((u: any) => u._id.toString() !== id);
+  }
+
+   return users.map((u:any) => ({
+        id: (u as any)._id.toString(),
+        username: u.username,
+        email: u.email,
+        role: u.role,
+      }));
+},
+
+getUserTeamLead:async({id}:{id:string})=>{
+  
+   const user:any=await User.findById(id)
+   const users:any = await User.find({_id:{$in:user.teamLeads}})
+   return users.map((u:any) => ({
+        id: (u as any)._id.toString(),
+        username: u.username,
+        email: u.email,
+        role: u.role,
+      }))
+},
+
+getUserRelations: async ({ id }:{id:string}) => {
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return {
+        role: "",
+        teamLeads: [],
+        employees: [],
+        message: "User not found"
+      };
+    }
+
+    if (user.role === "teamLead") {
+      const employees = await User.find({ teamLeads: id });
+      const teamLeads = await User.find({ _id : {$in : user.teamLeads} });
+
+      return {
+        role: "teamLead",
+        employees,
+        teamLeads,
+      };
+    }
+
+    if (user.role === "employee" || user.role === "user") {
+      const teamLeads = await User.find({ _id: { $in: user.teamLeads } });
+
+      return {
+        role: "employee",
+        teamLeads,
+        employees: []
+      };
+    }
+
+    return {
+      role: user.role,
+      employees: [],
+      teamLeads: []
+    };
+
+  } catch (err) {
+    console.error(err);
+    return {
+      role: "",
+      employees: [],
+      teamLeads: []
+    };
+  }
+},
+
 createUser: async (
-  { username, email, role }: { username: string; email: string; role?: string }
+  { username, email, role,teamLeads }: { username: string; email: string; role?: string,teamLeads?: string[] }
 ) => {
   try {
     const existing = await User.findOne({ email });
@@ -63,8 +174,9 @@ createUser: async (
     const newUser:any = new User({
       username,
       email,
-      password: "", // password will be set via reset link
+      password: "", 
       role: role || "user",
+      teamLeads: teamLeads || [],
     });
 
     const resetToken = jwt.sign(
@@ -74,7 +186,7 @@ createUser: async (
     );
 
     newUser.resetToken = resetToken;
-newUser.resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+newUser.resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 await newUser.save();
 
     await sendResetPasswordMail(newUser.email, resetToken, newUser.username);
@@ -92,8 +204,9 @@ await newUser.save();
     };
   }
 },
-  updateUser: async (
-  { id, username, email, role }: { id: string; username?: string; email?: string; role?: string }
+
+updateUser: async (
+  { id, username, email, role,teamLeads }: { id: string; username?: string; email?: string; role?: string;teamLeads?:string[] }
 ) => {
   try {
     const user = await User.findById(id);
@@ -104,7 +217,6 @@ await newUser.save();
       };
     }
 
-    // Check if the new email already exists in another user
     if (email && email !== user.email) {
       const existingEmail = await User.findOne({ email });
       if (existingEmail) {
@@ -118,6 +230,9 @@ await newUser.save();
 
     if (username) user.username = username;
     if (role) user.role = role;
+    if (teamLeads) {
+      user.teamLeads = teamLeads.map(id => new mongoose.Types.ObjectId(id));
+    }
 
     await user.save();
 
@@ -139,6 +254,13 @@ deleteUser: async ({ id }: { id: string }) => {
   try {
     const user = await User.findByIdAndDelete(id);
     if (!user) throw new Error("User not found");
+    const userRole=user.role
+    if (userRole === "teamLead") {
+      await User.updateMany(
+        { teamLeads: id },
+        { $pull: { teamLeads: id } }
+      );
+    }
 
     const userProjects = await Project.find({ adminId: id });
     const userProjectIds = userProjects.map((p) => p._id);
@@ -202,24 +324,4 @@ changePassword: async (
     return { success: false, message: "Failed to change password" };
   }
 },
-
-empGet:async({userId}:{userId:string})=>{
-    console.log(userId);
-   
-   const users = await User.find({
-    
-    $or: [
-      { role: "user" },
-      { _id: new mongoose.Types.ObjectId(userId) }
-    ]
-  });
-   console.log(users);
-   
-      return users.map((u) => ({
-        id: (u as any)._id.toString(),
-        username: u.username,
-        email: u.email,
-        role: u.role,
-      }));
-}
 };

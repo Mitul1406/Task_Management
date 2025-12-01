@@ -580,6 +580,91 @@ const EMPDATA=gql`query($userId: ID!) {
       email
     }
   }`
+
+const GET_USER_RELATIONS=gql`query GetUserRelations($id: ID!) {
+  getUserRelations(id: $id) {
+    role
+    employees {
+      id
+      username
+      email
+      role
+    }
+    teamLeads {
+      id
+      username
+      email
+      role
+    }
+  }
+}
+`;
+
+const GET_TEAM_LEADS=gql`
+query GetTeamLeads($id: ID) {
+  getTeamLead(id: $id) {
+    id
+    username
+    email
+    role
+  }
+}`
+
+const GET_USER_TL=gql`
+query getUserTeamLead($id: ID!) {
+  getUserTeamLead(id: $id) {
+    id
+    username
+    email
+    role
+  }
+}
+`
+// API Functions
+export const getUserTeamLead = async (id:string) => {
+  try {
+    const res = await client.query({
+      query: GET_USER_TL,
+      variables:{ id },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.getUserTeamLead;
+  } catch (err) {
+    console.error("Failed to fetch User Team Lead Data:", err);
+    throw err;
+  }
+};
+
+export const getTeamLeads = async (id?:string) => {
+  try {
+    const res = await client.query({
+      query: GET_TEAM_LEADS,
+      variables:{ id },
+      fetchPolicy: "network-only", 
+    });
+
+    return (res as any).data.getTeamLead;
+  } catch (err) {
+    console.error("Failed to fetch Team Lead Data:", err);
+    throw err;
+  }
+};
+
+export const getUserRelations = async (id: string) => {
+  try {
+    const res = await client.query({
+      query: GET_USER_RELATIONS,
+      variables: { id },
+      fetchPolicy: "network-only",
+    });
+
+    return (res as any).data.getUserRelations;
+  } catch (err) {
+    console.error("Failed to fetch user relations:", err);
+    throw err;
+  }
+};
 // API Functions
 export const getEmpData = async (userId: string) => {
   try {
