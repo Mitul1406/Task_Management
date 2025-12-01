@@ -88,6 +88,7 @@ type ProjectContribution {
     message: String
     password: String
     success:Boolean
+    teamLeads:[User]
     }
 
       type DeleteResponse {
@@ -194,6 +195,13 @@ type AuthResponse {
   user: User
 }
 
+type UserRelations {
+  role: String!
+  teamLeads: [User!]!
+  employees: [User!]!
+  message: String
+}
+
   type Query{
     projects:[Project]
     adminsprojects(userId: ID!): [Project]
@@ -227,6 +235,12 @@ type AuthResponse {
   teamLeadDashboardCount(userId: ID!): DashboardCountTl
   empDashboardCount(userId: ID!): DashboardCountTl
   empGet(userId: ID!):[User]
+
+  getTeamLead(id: ID): [User!]!
+
+  getUserTeamLead(id: ID!): [User!]!
+
+  getUserRelations(id: ID!): UserRelations!
     }
 
     type Mutation{
