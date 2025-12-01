@@ -8,6 +8,13 @@ import jwt from 'jsonwebtoken'
 import nodemailer from "nodemailer";
 import { Project } from "../models/Project.js";
 import mongoose from "mongoose";
+import pdf from "html-pdf-node";
+import { taskResolver } from "./taskResolvers.js";
+
+const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS },
+    });
 
 const sendResetPasswordMail = async (email: string, token: string, username: string) => {
   try {
@@ -19,12 +26,7 @@ const sendResetPasswordMail = async (email: string, token: string, username: str
     htmlTemplate = htmlTemplate
       .replace("{{RESET_LINK}}", resetLink)
       .replace("{{YEAR}}", new Date().getFullYear().toString())
-      .replace("{{user}}", username);
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS },
-    });
+      .replace("{{user}}", username);   
 
     await transporter.sendMail({
       from: `"Task Tracker" <${process.env.EMAIL}>`,
@@ -35,6 +37,172 @@ const sendResetPasswordMail = async (email: string, token: string, username: str
   } catch (err) {
     throw new Error("Failed to send reset email");
   }
+};
+
+const transformData = (data: any) => {
+  if (!data) return [];
+
+  const { projects = [], dayWise = [] } = data;
+
+  // Map task IDs to project names
+  const taskToProjectMap: Record<string, string> = {};
+  projects.forEach((project: any) => {
+    (project.tasks || []).forEach((task: any) => {
+      taskToProjectMap[task.id] = project.name;
+    });
+  });
+
+  // Flatten dayWise tasks and add projectName
+  const tasksWithProjectName = dayWise.flatMap((day: any) => {
+    return (day.tasks || []).map((task: any) => ({
+      ...task,
+      projectName: taskToProjectMap[task.taskId] || "Unknown Project",
+    }));
+  });
+
+  return tasksWithProjectName;
+};
+
+
+const sendMailToTeamLeads = async (
+  userId: string,
+) => {
+  const response: {
+    success: boolean;
+    message: string;
+    info?: any;
+    error?: string;
+  } = {
+    success: false,
+    message: "",
+  };
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      response.message = "User not found";
+      response.error = "No user with provided ID";
+      return response;
+    }
+
+    const teamLeads = await User.find({ _id: { $in: user.teamLeads } });
+    const toEmails = teamLeads.map(tl => tl.email);
+
+    if (toEmails.length === 0) {
+      response.message = "No team leads found";
+      response.error = "The user has no team leads assigned";
+      return response;
+    }
+
+    const today:any = new Date().toISOString().split("T")[0];
+    const subject = `${user.username}'s Today Tasks -> ${today}`;
+    const message = `Today's Summary.`
+    const userDayWiseData = await taskResolver.userDayWise({
+      userId,
+      startDate: today,
+      endDate: today,
+    });
+    
+
+    const tasks:any = await transformData(userDayWiseData)
+
+    const pdfPath = await generateDaywisePdf(user.username, today, tasks);
+ 
+    const result = await transporter.sendMail({
+      from: user.username,
+      replyTo: user.email,
+      to: toEmails.join(", "),
+      subject,
+      text: message,
+      attachments: [
+        {
+          filename: `report-${today}.pdf`,
+          path: pdfPath,
+        },
+      ],
+    });
+
+    response.success = true;
+    response.message = "Email sent successfully to your team leads..";
+    response.info = result;
+    return response;
+
+  } catch (err: any) {
+    console.error(err);
+    response.success = false;
+    response.message = "Failed to send email";
+    response.error = err.message || "Unknown error";
+    return response;
+  }
+};
+
+const formatTime = (seconds: number) => {
+  if (!seconds || seconds <= 0) return "-";
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  let result = "";
+  if (h > 0) result += `${h}h `;
+  if (m > 0) result += `${m}m `;
+  if (s > 0) result += `${s}s`;
+
+  return result.trim();
+};
+
+const generateDaywisePdf = async (
+  username: string,
+  date: string,
+  tasks: any[]
+) => {  
+  const templatePath = path.join(process.cwd(), "src", "templates", "daywise-report.html");
+  let html = fs.readFileSync(templatePath, "utf-8");
+  
+  const statusColors: Record<string, string> = {
+  in_progress: "#4b0867ff",
+  done: "#2bc22bff",   
+  pending: "#064393ff", 
+  code_review:"#a1dcaeff"
+};
+  const rows = tasks
+  .map((t: any) => {
+    const statusBg = statusColors[t.status] || statusColors.default; // pick color based on task status
+    return `
+      <tr>
+        <td>${t.projectName}</td>
+        <td>${t.title}</td>
+        <td>
+          <span style="background:${statusBg};padding:4px 8px;border-radius:5px;color:white">
+            ${t.status.replace("_", " ")}
+          </span>
+        </td>
+        <td>${formatTime(t.time)}</td>
+        <td>${formatTime(t.estimatedTime)}</td>
+        <td style="color:green">${formatTime(t.savedTime)}</td>
+        <td style="color:red">${formatTime(t.overtime)}</td>
+      </tr>
+    `;
+  })
+  .join("");
+
+  html = html
+    .replace("{{username}}", username)
+    .replace("{{date}}", date)
+    .replace("{{rows}}", rows);
+
+  const outputPath = path.join(process.cwd(),"report", `daywise-report-${date}.pdf`);
+
+  const file = { content: html };
+
+  const pdfBuffer:any = await pdf.generatePdf(file, {
+    format: "A4",
+    printBackground: true,
+    margin: { top: "20px", bottom: "20px" },
+  });
+
+  fs.writeFileSync(outputPath, pdfBuffer);
+  return outputPath;
 };
 
 export const userResolver = {
@@ -324,4 +492,8 @@ changePassword: async (
     return { success: false, message: "Failed to change password" };
   }
 },
+
+sendMailToTeamLeads: async ({ userId }: any) => {
+      return await sendMailToTeamLeads(userId);
+    },
 };
