@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { getEmpDashboardCount, getUserTasks } from "../../services/api";
+import { getEmpDashboardCount, getUserTasks, sendMailToTeamLeads } from "../../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../Pagination";
 import { useNavigate } from "react-router-dom";
 import CreateTaskModal from "../CreateTaskModal";
 import { jwtDecode } from "jwt-decode";
-import { FaClock, FaRegCalendarCheck, FaSpinner, FaTasks } from "react-icons/fa";
+import { FaClock, FaRegCalendarCheck, FaShare, FaSpinner, FaTasks } from "react-icons/fa";
 import { useSidebar } from "../../context/SideBarContext";
 
 interface DashboardData {
@@ -19,6 +19,7 @@ const DashboardEmp: React.FC = () => {
   const {setActivePath}=useSidebar()
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loading1, setLoading1] = useState(false);
  const [showTaskModal, setShowTaskModal] = useState(false);
   const [todayPage, setTodayPage] = useState(1);
   const [yesterdayPage, setYesterdayPage] = useState(1);
@@ -69,7 +70,25 @@ const DashboardEmp: React.FC = () => {
       }
     };
     
+  const mailSend = async () => {
+    try {
+      setLoading1(true);
 
+      const token: any = localStorage.getItem("token");
+      const parsed: any = jwtDecode(token);
+      const res = await sendMailToTeamLeads(parsed?.id);
+
+      if (res.success) {
+        toast.success(res.message);
+      } else {
+        toast.error(res.error || "Failed to send mail");
+      }
+    } catch {
+      toast.error("Server error");
+    } finally {
+      setLoading1(false); // stop loader
+    }
+  };
   const normalizeDate = (val: any) => {
     if (!val) return null;
     const num = Number(val);
@@ -156,12 +175,23 @@ const DashboardEmp: React.FC = () => {
   const TaskTable = ({ title, data, currentPage, onPageChange, totalPages }: any) => (
     <div className="card shadow-sm p-3 mb-4 border-0 main-color">
       <div className="d-flex justify-content-between mb-3 "><h5 className="text-dark fw-bold">{title}</h5>
+      <div><button
+          className="btn btn-outline-dark p-2"
+          onClick={() => mailSend()}
+        >
+          {loading1 ? (
+        <span className="spinner-border spinner-border-sm me-2" role="status" />
+      ) : (
+        <span className="me-2" ><FaShare /></span>
+      )}
+      {loading1 ? "Sending..." : "Share Tasks Update"}
+        </button>
       <button
-          className="btn common-btn-out p-1"
+          className="btn common-btn-out p-2 ms-2"
           onClick={() => setShowTaskModal(true)}
         >
           Create Your Own Task
-        </button></div>
+        </button></div></div>
       <div className="table-responsive main-color">
         <table className="table table-hover align-middle text-left second-color table-border">
           <thead>

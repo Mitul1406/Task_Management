@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
   getUserTasks,
+  sendMailToTeamLeads,
   startTimer,
   stopTimer,
   updateTaskStatus,
@@ -16,10 +17,12 @@ import Pagination from "../Pagination";
 import { useLocation } from "react-router-dom";
 import Select from "react-select";
 import { jwtDecode } from "jwt-decode";
+import { FaShare } from "react-icons/fa";
 
 const TlTask: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loading1, setLoading1] = useState(false);
   const [selectedProject, setSelectedProject] = useState(["all"]);
   const [filterStartDate, setFilterStartDate] = useState(() =>
     new Date().toISOString().split("T")[0]
@@ -600,7 +603,28 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       projectId: project.id,
     }))
   );
+
+  const mailSend = async () => {
+      try {
+        setLoading1(true);
   
+        const token: any = localStorage.getItem("token");
+        const parsed: any = jwtDecode(token);
+        const userId=parsed?.id
+        const res = await sendMailToTeamLeads(userId);
+  
+        if (res.success) {
+          toast.success(res.message);
+        } else {
+          toast.error(res.error || "Failed to send mail");
+        }
+      } catch {
+        toast.error("Server error");
+      } finally {
+        setLoading1(false); // stop loader
+      }
+    };
+
   const filteredTasks = allTasks.filter((task: any) => {
     const projectMatch =
       selectedProject.includes("all") || selectedProject.includes(task.projectId);
@@ -659,14 +683,25 @@ useEffect(() => {
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div><h2 className="m-0">Your Tasks</h2>
-        <p>Manage everything related to users tasks — view details, edit tasks, and also delete unwanteds.</p></div>
-
+        <p>Manage everything related to users tasks — view details, edit tasks, and also delete unwanteds.</p>
+        </div>
+        <div className="d-flex flex-column gap-2"><button
+                  className="btn btn-outline-dark p-2"
+                  onClick={() => mailSend()}
+                >
+                  {loading1 ? (
+                <span className="spinner-border spinner-border-sm me-2" role="status" />
+              ) : (
+                <span className="me-2" ><FaShare /></span>
+              )}
+              {loading1 ? "Sending..." : "Share Tasks Update"}
+                </button>
         <button
           className="btn common-btn-out"
           onClick={() => setShowTaskModal(true)}
         >
           Create Your Own Task
-        </button>
+        </button></div>
       </div>
 
       {/* Filters */}
