@@ -620,7 +620,32 @@ query getUserTeamLead($id: ID!) {
   }
 }
 `
+
+const MAILTL = gql`
+  mutation SendMailToTeamLeads($userId: ID!) {
+    sendMailToTeamLeads(userId: $userId) {
+      success
+      message
+      error
+    }
+  }
+`;
+
 // API Functions
+export const sendMailToTeamLeads = async (userId: string) => {
+  try {
+    const res = await client.mutate({
+      mutation: MAILTL,
+      variables: { userId },
+    });
+
+    return (res as any).data.sendMailToTeamLeads;
+  } catch (err) {
+    console.error("Failed to send mail to team leads:", err);
+    throw err;
+  }
+};
+
 export const getUserTeamLead = async (id:string) => {
   try {
     const res = await client.query({
