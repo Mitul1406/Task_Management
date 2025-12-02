@@ -10,6 +10,7 @@ import { Project } from "../models/Project.js";
 import mongoose from "mongoose";
 import pdf from "html-pdf-node";
 import { taskResolver } from "./taskResolvers.js";
+import { simpleQueue } from "../queue/simpleQueue.js";
 
 const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -63,52 +64,29 @@ const transformData = (data: any) => {
   return tasksWithProjectName;
 };
 
-
-const sendMailToTeamLeads = async (
-  userId: string,
-) => {
-  const response: {
-    success: boolean;
-    message: string;
-    info?: any;
-    error?: string;
-  } = {
-    success: false,
-    message: "",
-  };
-
+const sendMailToTeamLeads = async ({ userId }: { userId: string }) => {
   try {
     const user = await User.findById(userId);
-    if (!user) {
-      response.message = "User not found";
-      response.error = "No user with provided ID";
-      return response;
-    }
+    if (!user) throw new Error("User not found");
 
     const teamLeads = await User.find({ _id: { $in: user.teamLeads } });
     const toEmails = teamLeads.map(tl => tl.email);
 
-    if (toEmails.length === 0) {
-      response.message = "No team leads found";
-      response.error = "The user has no team leads assigned";
-      return response;
-    }
-
     const today:any = new Date().toISOString().split("T")[0];
     const subject = `${user.username}'s Today Tasks -> ${today}`;
-    const message = `Today's Summary.`
+    const message = `Today's Summary.`;
+
     const userDayWiseData = await taskResolver.userDayWise({
       userId,
       startDate: today,
       endDate: today,
     });
-    
 
-    const tasks:any = await transformData(userDayWiseData)
+    const tasks = await transformData(userDayWiseData);
 
     const pdfPath = await generateDaywisePdf(user.username, today, tasks);
- 
-    const result = await transporter.sendMail({
+
+    await transporter.sendMail({
       from: user.username,
       replyTo: user.email,
       to: toEmails.join(", "),
@@ -122,19 +100,11 @@ const sendMailToTeamLeads = async (
       ],
     });
 
-    response.success = true;
-    response.message = "Email sent successfully to your team leads..";
-    response.info = result;
-    return response;
-
-  } catch (err: any) {
-    console.error(err);
-    response.success = false;
-    response.message = "Failed to send email";
-    response.error = err.message || "Unknown error";
-    return response;
+  } catch (err) {
+    console.error("Failed to send queued email:", err);
   }
 };
+
 
 const formatTime = (seconds: number) => {
   if (!seconds || seconds <= 0) return "-";
@@ -494,6 +464,12 @@ changePassword: async (
 },
 
 sendMailToTeamLeads: async ({ userId }: any) => {
-      return await sendMailToTeamLeads(userId);
-    },
+  simpleQueue.addJob(sendMailToTeamLeads, { userId });
+
+  return {
+    success: true,
+    message: "Daily task update email sended to Team Leads",
+  };
+}
+
 };
