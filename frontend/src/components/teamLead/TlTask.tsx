@@ -18,6 +18,7 @@ import { useLocation } from "react-router-dom";
 import Select from "react-select";
 import { jwtDecode } from "jwt-decode";
 import { FaShare } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 const TlTask: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
@@ -565,8 +566,21 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
     const task = project?.tasks.find((t: any) => t.id === taskId);
     if (!task) return;
 
-    if (!window.confirm(`Change status of "${task.title}" to code_review?`))
-      return;
+    
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `Do you want to change the status of "${task.title}" to code_review?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, change it!",
+        customClass:{
+          popup:"main-color",
+          cancelButton: "delete-btn", 
+          confirmButton: "common-btn-in",     
+        }
+      });
+    
+      if (!result.isConfirmed) return;
 
     setProjects((prev) =>
       prev.map((p) =>

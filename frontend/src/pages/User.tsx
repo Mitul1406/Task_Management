@@ -270,11 +270,11 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     text: "This action will permanently delete this user.",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
-    cancelButtonColor: "#6c757d",
     confirmButtonText: "Yes, delete it!",
     customClass:{
-      popup:"main-color"
+      popup:"main-color",
+      cancelButton: "delete-btn", 
+      confirmButton: "common-btn-in", 
     }
   });
     if(result.isConfirmed) {

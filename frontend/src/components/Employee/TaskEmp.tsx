@@ -6,6 +6,7 @@ import { jwtDecode } from "jwt-decode";
 import { useLocation, useParams } from "react-router-dom";
 import {
   getUserTasks,
+  sendMailToTeamLeads,
   startTimer,
   stopTimer,
   updateTaskStatus,
@@ -15,12 +16,15 @@ import NotificationPermissionBanner, { notifyUser } from "../notifyUser";
 import CreateTaskModal from "../CreateTaskModal";
 import StopPermissionModal from "../StopPermissionModel";
 import Pagination from "../Pagination"; 
+import { FaShare } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 const ITEMS_PER_PAGE = 10;
 
 const TaskEmp: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loading1, setLoading1] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showStopPermissionModal, setShowStopPermissionModal] = useState(false);
   const [projectFilter, setProjectFilter] = useState("");
@@ -208,6 +212,27 @@ useEffect(() => {
       setProjects(refreshed);
     }, 1000);
   }, []);
+ 
+   const mailSend = async () => {
+        try {
+          setLoading1(true);
+    
+          const token: any = localStorage.getItem("token");
+          const parsed: any = jwtDecode(token);
+          const userId=parsed?.id
+          const res = await sendMailToTeamLeads(userId);
+    
+          if (res.success) {
+            toast.success(res.message);
+          } else {
+            toast.error(res.error || "Failed to send mail");
+          }
+        } catch {
+          toast.error("Server error");
+        } finally {
+          setLoading1(false); // stop loader
+        }
+      };
 
   const fetchTasks = async () => {
     try {
@@ -498,13 +523,20 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
     const task = project?.tasks.find((t: any) => t.id === taskId);
     if (!task) return;
+const result = await Swal.fire({
+    title: "Are you sure?",
+    text: `Do you want to change the status of "${task.title}" to code_review?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, change it!",
+    customClass:{
+      popup:"main-color",
+      cancelButton: "delete-btn", 
+      confirmButton: "common-btn-in",     
+    }
+  });
 
-    if (
-      !window.confirm(
-        `Are you sure you want to change the status of "${task.title}" to code_review?`
-      )
-    )
-      return;
+  if (!result.isConfirmed) return;
 
     setProjects((prev) =>
       prev.map((p) =>
@@ -608,9 +640,20 @@ useEffect(() => {
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div><h3>Your Tasks</h3>
         <p>Here you can view tasks, start or stop timers, update task status, and create your own tasks.</p></div>
+        <div className="d-flex flex-column gap-2"><button
+                          className="btn btn-outline-dark p-2"
+                          onClick={() => mailSend()}
+                        >
+                          {loading1 ? (
+                        <span className="spinner-border spinner-border-sm me-2" role="status" />
+                      ) : (
+                        <span className="me-2" ><FaShare /></span>
+                      )}
+                      {loading1 ? "Sending..." : "Share Tasks Update"}
+                        </button>
         <button className="btn common-btn-out" onClick={() => setShowTaskModal(true)}>
           Create Your Own Task
-        </button>
+        </button></div>
         <CreateTaskModal
           show={showTaskModal}
           onClose={() => setShowTaskModal(false)}

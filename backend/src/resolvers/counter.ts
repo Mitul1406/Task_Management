@@ -98,7 +98,6 @@ export const counterResolver = {
   }
 },
 teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
-  console.log(userId);
   
   try {
     if (!userId) throw new Error("User ID required");
@@ -131,7 +130,6 @@ teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
 
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
-    console.log(todayStart,todayEnd);
     
     const allTasks = await Task.find({
       assignedUserId:new mongoose.Types.ObjectId(userId),
@@ -139,7 +137,6 @@ teamLeadDashboardCount: async ({ userId }: { userId: string }) => {
       startDate: { $lte: todayEnd },
       endDate: { $gte: todayStart },
     }).select("status");
-    console.log(allTasks);
     
     const totalTasks = allTasks.length;
     const pendingTasks = allTasks.filter((t) => t.status === "pending").length;

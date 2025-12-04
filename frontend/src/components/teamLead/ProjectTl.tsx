@@ -69,12 +69,12 @@ const ProjectTl: React.FC = () => {
     text: "This action will permanently delete the Project.",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#3085d6",
-    cancelButtonColor: "#d33",
     confirmButtonText: "Yes, delete it!",
     cancelButtonText: "Cancel",
     customClass:{
-      popup:"main-color"
+      popup:"main-color",
+          cancelButton: "delete-btn", 
+          confirmButton: "common-btn-in",
     }
   });
     if (!result.isConfirmed) return;
