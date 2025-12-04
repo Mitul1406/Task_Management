@@ -177,6 +177,23 @@ const generateDaywisePdf = async (
 
 export const userResolver = {
 
+user:async({ userId }: { userId: string }) => {
+  const user = await User.findById(userId)
+    .select("id username email")
+    .lean();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return {
+    id:user._id,
+    username:user.username,
+    email:user.email,
+    role:user.role 
+  };
+},
+
 allusers: async () => {
       const users = await User.find({role:{$in:["admin","user"]}});
       return users.map((u) => ({

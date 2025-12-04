@@ -631,7 +631,31 @@ const MAILTL = gql`
   }
 `;
 
+const USER = gql`
+  query GetUser($userId: ID!) {
+  user(userId: $userId) {
+    id
+    username
+    email
+  }
+}
+`;
+
 // API Functions
+export const getUser = async (userId: string) => {
+  try {
+    const res = await client.query({
+      query: USER,
+      variables: { userId },
+    });
+
+    return (res as any).data.user;
+  } catch (err) {
+    console.error("Failed to send mail to team leads:", err);
+    throw err;
+  }
+};
+
 export const sendMailToTeamLeads = async (userId: string) => {
   try {
     const res = await client.mutate({

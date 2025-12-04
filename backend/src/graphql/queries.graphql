@@ -4,6 +4,7 @@ type Query {
   project(id: ID!): Project
   tasks(projectId: ID!): [Task]
   task(id: ID!): Task
+  user(userId: ID!): User
   users: [User!]!
   tasksForUser(userId: ID!): [Project!]!
   allusers: [User!]!
