@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useId } from "react";
 import html2pdf from "html2pdf.js";
-import { getAllTimesheet, getUsers } from "../services/api";
+import { getAllTimesheet, getUsers,getUser } from "../services/api";
 import {jwtDecode} from "jwt-decode";
 import Pagination from "../components/Pagination";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -61,14 +61,18 @@ const AllUserTimeSheet: React.FC = () => {
   const navigate=useNavigate()
   let totalResults=0;
   let totalPagesCalc=0;
-  useEffect(()=>{
-     if(userId){
-      setSelectedUser(userId)
-    }
-    if(username)
-      setSelectedUserName(username)
-      
-  },[userId])
+  useEffect(() => {
+  if (!userId) return;
+
+  const fetchUser = async () => {
+    const data: any = await getOneUser(userId);
+
+    setSelectedUser(userId);
+    setSelectedUserName(data.username);
+  };
+
+  fetchUser();
+}, [userId]);   
 
   useEffect(() => {
   const fetchData = async () => {
@@ -80,11 +84,11 @@ const AllUserTimeSheet: React.FC = () => {
       let data: any[] = [];
 
       if (role === "superAdmin") {
-        data = await getAllTimesheet(startDate, endDate, selectedUser || undefined);
-      } else if (role === "teamLead" || role === "projectManager") {
+        data = await getAllTimesheet(startDate, endDate,userId || undefined);
+      } else if (role === "teamLead" ) {
         const adminId = getCurrentUserId();
         if (!adminId) throw new Error("Admin ID not found");
-        data = await getAllTimesheet(startDate, endDate, selectedUser || undefined);
+        data = await getAllTimesheet(startDate, endDate, userId || undefined);
       } else {
         throw new Error("Unauthorized role");
       }
@@ -104,7 +108,6 @@ useEffect(() => {
   setCurrentPage(1);
 }, [startDate, endDate, selectedUser]);
 
-
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -120,7 +123,11 @@ useEffect(() => {
   setTotalPages(totalPagesCalc);
   if (currentPage > totalPagesCalc) setCurrentPage(1);
 }, [totalResults, totalPagesCalc]);
-
+  
+const getOneUser =async(userId:string)=>{
+   const data = await getUser(userId)
+   return data
+}
   const totalHours = () => {
     const start = new Date(startDate);
   const end = new Date(endDate);

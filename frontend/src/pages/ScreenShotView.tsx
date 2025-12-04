@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsers, getUserScreenshots } from "../services/api";
+import { getUser, getUsers, getUserScreenshots } from "../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../components/Pagination";
 import Swal from "sweetalert2";
@@ -27,7 +27,7 @@ export default function ScreenShotView() {
   const location=useLocation()
     const qp= new URLSearchParams(location.search)
     const userId=qp.get("userId")
-    const username=qp.get("username")
+    const [username,setSelectedUserName]=useState("")
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>(userId || "");
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
@@ -64,20 +64,36 @@ export default function ScreenShotView() {
   }, []);
 
   useEffect(() => {
-    if (userId) return;
-    if (!["teamLead", "superAdmin"].includes(userRole)) return;
-
-    const fetchUsers = async () => {
-      try {
-        const data = await getUsers();
-        setUsers(data);
-        if (data.length > 0 && !selectedUserId) setSelectedUserId(data[0].id);
-      } catch {
-        setError("Failed to load users.");
-      }
+    if (!userId) return;
+  
+    const fetchUser = async () => {
+      const data: any = await getOneUser(userId);
+  
+      setSelectedUserName(data.username);
     };
-    fetchUsers();
-  }, [userId, selectedUserId, userRole]);
+  
+    fetchUser();
+  }, [userId]);
+
+  const getOneUser =async(userId:string)=>{
+     const data = await getUser(userId)
+     return data
+  }
+  // useEffect(() => {
+  //   if (userId) return;
+  //   if (!["teamLead", "superAdmin"].includes(userRole)) return;
+
+  //   const fetchUsers = async () => {
+  //     try {
+  //       const data = await getUsers();
+  //       setUsers(data);
+  //       if (data.length > 0 && !selectedUserId) setSelectedUserId(data[0].id);
+  //     } catch {
+  //       setError("Failed to load users.");
+  //     }
+  //   };
+  //   fetchUsers();
+  // }, [userId, selectedUserId, userRole]);
 
   // Fetch screenshots
   useEffect(() => {
