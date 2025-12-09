@@ -583,12 +583,18 @@ useEffect(() => {
       </tr>
     </thead>
     <tbody>
-      {filteredTasks.length === 0 ? (
-    <tr>
-      <td colSpan={11} className="text-center text-muted py-3">
-        No tasks found.
-      </td>
-    </tr>
+      {loading ? (
+  <tr>
+    <td colSpan={11} className="text-center py-3">
+      <span className="text-dark">Loading tasks...</span>
+    </td>
+  </tr>
+) : filteredTasks.length === 0 ? (
+  <tr>
+    <td colSpan={11} className="text-center text-muted py-3">
+      No tasks found.
+    </td>
+  </tr>
   ):(filteredTasks.map((task) => (
         <tr key={task.id}>
           <td className="text-wrap text-break">{task.title}</td>

@@ -299,7 +299,7 @@ const handleStartStopTimer = async (task: Task, projectId: string) => {
       toast.success("Status updated to code_review");
     } catch (err) {
       console.error(err);
-      alert("Failed to update status");
+      toast.error("Failed to update status");
       setProjects((prevProjects) =>
         prevProjects.map((proj) =>
           proj.id === projectId

@@ -188,6 +188,13 @@ div {
   transition: all 0.25s ease;
 }
 
+.delete-btn:disabled {
+  border: 1.5px solid #fe1e1f;   /* warm orange-brown */
+  color: #fe1e1f;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
 /* Hover */
 .delete-btn:hover {
   background-color: #fe1e1f;

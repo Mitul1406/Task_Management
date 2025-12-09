@@ -8,6 +8,7 @@ import CreateTaskModal from "../CreateTaskModal";
 import { jwtDecode } from "jwt-decode";
 import { FaClock, FaRegCalendarCheck, FaShare, FaSpinner, FaTasks } from "react-icons/fa";
 import { useSidebar } from "../../context/SideBarContext";
+import AutoScreenshot from "../../pages/ScreenShot";
 
 interface DashboardData {
   totalTasks: number;
@@ -170,7 +171,7 @@ const DashboardEmp: React.FC = () => {
   const totalTodayPages = Math.ceil(todayTasks.length / tasksPerPage);
 //   const totalYesterdayPages = Math.ceil(yesterdayTasks.length / tasksPerPage);
 
-  if (loading) return <p>Loading tasks...</p>;
+  if (loading) return <div className="d-flex justify-content-center min-vh-100">Loading Dashboard...</div>;
 
   const TaskTable = ({ title, data, currentPage, onPageChange, totalPages }: any) => (
     <div className="card shadow-sm p-3 mb-4 border-0 main-color">
@@ -267,6 +268,7 @@ const DashboardEmp: React.FC = () => {
 
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
+      <AutoScreenshot/>
       <div className="card p-3 mb-4 shadow-sm border-0 main-color">
               <div className="row g-3 text-center">      
                 <div

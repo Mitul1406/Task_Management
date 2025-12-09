@@ -185,7 +185,6 @@ app.post("/broadcast-task-update", (req, res) => {
   const { userId, task } = req.body;
 
   if (!userId || !task) return res.status(400).send("Missing userId or task");
-   console.log(task.projectId,"--------->",task);
    
   (clients[userId] || []).forEach((clientRes: { write: (arg0: string) => void; }) => {
     clientRes.write(

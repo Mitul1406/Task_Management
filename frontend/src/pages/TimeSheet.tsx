@@ -170,8 +170,8 @@ useEffect(() => {
 };
 
 
-  if (loading) return <div>Loading report...</div>;
-  if (!project) return <div>Project not found</div>;
+  if (loading) return <div className="d-flex min-vh-100 justify-content-center">Loading report...</div>;
+  if (!project) return <div className="d-flex min-vh-100 justify-content-center">Project not found</div>;
 
 
 

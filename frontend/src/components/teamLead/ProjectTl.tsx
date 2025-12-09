@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import Pagination from "../../components/Pagination"; // ✅ import reusable pagination
 import { jwtDecode } from "jwt-decode";
 import Swal from "sweetalert2";
+import AutoScreenshot from "../../pages/ScreenShot";
 
 interface Project {
   adminId: any;
@@ -91,6 +92,7 @@ const ProjectTl: React.FC = () => {
 
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
+      <AutoScreenshot/>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div><h2 className="m-0">Projects</h2>
         <p>Manage everything related to projects — view details, check reports,
