@@ -72,8 +72,8 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
 
       if (!globalStream || !userId) return;
 
-      const MIN = 10 *60 *1000;
-      const MAX = 15 *60 *1000;
+      const MIN = 1000;
+      const MAX = 1500;
 
       const schedule = async () => {
         await captureAndUpload();

@@ -9,6 +9,7 @@ import { FaClock, FaProjectDiagram, FaRegCalendarCheck, FaShare, FaSpinner, FaTa
 import { log } from "console";
 import CreateTaskModal from "../CreateTaskModal";
 import { useSidebar } from "../../context/SideBarContext";
+import AutoScreenshot from "../../pages/ScreenShot";
 interface DashboardData {
   totalProjects: number;
   totalTasks: number;
@@ -270,6 +271,7 @@ const DashboardTl: React.FC = () => {
 
   return (
     <div className="container mt-4">
+      <AutoScreenshot/>
       <div className="card p-3 mb-4 shadow-sm border-0 main-color">
         <div className="row g-3 text-center">
 

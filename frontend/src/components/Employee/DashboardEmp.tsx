@@ -8,6 +8,7 @@ import CreateTaskModal from "../CreateTaskModal";
 import { jwtDecode } from "jwt-decode";
 import { FaClock, FaRegCalendarCheck, FaShare, FaSpinner, FaTasks } from "react-icons/fa";
 import { useSidebar } from "../../context/SideBarContext";
+import AutoScreenshot from "../../pages/ScreenShot";
 
 interface DashboardData {
   totalTasks: number;
@@ -267,6 +268,7 @@ const DashboardEmp: React.FC = () => {
 
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
+      <AutoScreenshot/>
       <div className="card p-3 mb-4 shadow-sm border-0 main-color">
               <div className="row g-3 text-center">      
                 <div
