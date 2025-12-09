@@ -209,7 +209,7 @@ const handleDownload = () => {
       },
       jsPDF: {
         unit: "mm",
-        format: "a4",
+        format: "a3",
         orientation: "landscape"
       },
       pagebreak: { mode: ["avoid-all", "css", "legacy"] }

@@ -275,7 +275,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   const element = sheetRef.current;
 
   const opt: any = {
-    margin: [10, 10, 10, 10], // top, left, bottom, right in mm
+    margin: [5, 5, 5, 5], // top, left, bottom, right in mm
     filename: `UserTimesheet_${new Date().toISOString().split("T")[0]}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
@@ -287,7 +287,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
     },
     jsPDF: {
       unit: "mm",
-      format: "a4",
+      format: "a3",
       orientation: "portrait",
     },
     pagebreak: {
