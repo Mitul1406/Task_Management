@@ -226,7 +226,7 @@ const handleStatusClick = async (taskId: string, projectId: string) => {
     toast.success("Status updated to code_review");
   } catch (err) {
     console.error(err);
-    alert("Failed to update status, reverting...");
+    toast.error("Failed to update status, reverting...");
 
     // Rollback if API fails
     setAssignedTasks((prev) =>

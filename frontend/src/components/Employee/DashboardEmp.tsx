@@ -170,7 +170,7 @@ const DashboardEmp: React.FC = () => {
   const totalTodayPages = Math.ceil(todayTasks.length / tasksPerPage);
 //   const totalYesterdayPages = Math.ceil(yesterdayTasks.length / tasksPerPage);
 
-  if (loading) return <p>Loading tasks...</p>;
+  if (loading) return <div className="d-flex justify-content-center min-vh-100">Loading Dashboard...</div>;
 
   const TaskTable = ({ title, data, currentPage, onPageChange, totalPages }: any) => (
     <div className="card shadow-sm p-3 mb-4 border-0 main-color">

@@ -214,7 +214,7 @@ useEffect(() => {
   fetchAndFilterData();
 }, [selectedUser, startDate, endDate, selectedStatus, users]);
 
-  if (!data) return <div>Loading...</div>;
+  if (!data) return <div className="d-flex justify-content-center min-vh-100">Loading...</div>;
   const totalPages = Math.ceil(data.projectContributions.length / dashboardItemsPerPage);
   const startIdx = (currentPage - 1) * dashboardItemsPerPage;
   const paginatedProjects = data.projectContributions.slice(

@@ -291,7 +291,7 @@ export default function ScreenShotView() {
       {selectMode && (
         <div className="mb-3 d-flex flex-wrap align-items-center gap-2">
           <button
-            className="btn btn-outline-success"
+            className="btn timesheet-btn"
             style={{ minWidth: "120px" }}
             onClick={() => {
               if (selectedScreenshots.length === filteredScreenshots.length) {
@@ -307,7 +307,7 @@ export default function ScreenShotView() {
           </button>
 
           <button
-            className="btn btn-danger"
+            className="btn delete-btn"
             style={{ minWidth: "180px" }}
             disabled={selectedScreenshots.length === 0}
             onClick={() => confirmDelete(selectedScreenshots)}
@@ -316,7 +316,7 @@ export default function ScreenShotView() {
           </button>
 
           <button
-            className="btn btn-secondary"
+            className="btn details-btn"
             onClick={() => setSelectedScreenshots([])}
             disabled={selectedScreenshots.length === 0}
           >

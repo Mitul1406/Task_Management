@@ -145,8 +145,7 @@ const getOneUser =async(userId:string)=>{
 
   if (loading)
     return (
-      <div className="d-flex justify-content-center align-items-center py-5">
-        <div className="spinner-border text-primary" />
+      <div className="d-flex min-vh-100 justify-content-center">Loading...
       </div>
     );
 

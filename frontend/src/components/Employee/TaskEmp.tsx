@@ -18,10 +18,12 @@ import StopPermissionModal from "../StopPermissionModel";
 import Pagination from "../Pagination"; 
 import { FaShare } from "react-icons/fa";
 import Swal from "sweetalert2";
+import { useScreenShare } from "../../context/ScreenRecordContext";
 
 const ITEMS_PER_PAGE = 10;
 
 const TaskEmp: React.FC = () => {
+  const esRef = useRef<EventSource | null>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loading1, setLoading1] = useState(false);
@@ -46,21 +48,130 @@ const TaskEmp: React.FC = () => {
   const status = queryParams.get("status");
   // const { taskId } = useParams();
   const [highlightTaskId, setHighlightTaskId] = useState<string | null>(taskId || null);
+  const { globalStream } = useScreenShare();
+  
+// useEffect(() => {
+//   const token: any = localStorage.getItem("token");
+//   const data: any = jwtDecode(token);
+//   const userId = data.id;
+
+//   const esRef = useRef<EventSource | null>(null);
+
+//   const connectSSE = () => {
+//     es = new EventSource(`${process.env.REACT_APP_BACKEND_URL}/events/${userId}`);
+
+//     es.onmessage = (event) => {
+//       const data = JSON.parse(event.data);
+//       console.log("SSE event:", data);
+
+//       if (data.stopConfirmed) {
+//         screenshotRef.current?.stopScreenShare();
+
+//         Object.keys(intervalsRef.current).forEach((taskId) => {
+//           clearInterval(intervalsRef.current[taskId]);
+//           delete intervalsRef.current[taskId];
+//         });
+
+//         setProjects((prev) =>
+//           prev.map((proj) => ({
+//             ...proj,
+//             tasks: proj.tasks.map((t: any) =>
+//               t.isRunning
+//                 ? {
+//                     ...t,
+//                     isRunning: false,
+//                     totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+//                     runningDuration: 0,
+//                   }
+//                 : t
+//             ),
+//           }))
+//         );
+
+//         return;
+//       }
+
+//       if (data.id && data.projectId) {
+//         const updatedTask = data;
+
+//         setProjects((prev) =>
+//           prev.map((p) =>
+//             p.id === updatedTask.projectId
+//               ? {
+//                   ...p,
+//                   tasks: p.tasks.map((t: any) => {
+//                     if (t.id === updatedTask.id) {
+//                       if (updatedTask.isRunning && !intervalsRef.current[t.id]) {
+//                         intervalsRef.current[t.id] = setInterval(() => {
+//                           setProjects((prevProjects) =>
+//                             prevProjects.map((proj) =>
+//                               proj.id === updatedTask.projectId
+//                                 ? {
+//                                     ...proj,
+//                                     tasks: proj.tasks.map((taskItem: any) =>
+//                                       taskItem.id === updatedTask.id
+//                                         ? {
+//                                             ...taskItem,
+//                                             runningDuration:
+//                                               (taskItem.runningDuration || 0) + 1,
+//                                           }
+//                                         : taskItem
+//                                     ),
+//                                   }
+//                                 : proj
+//                             )
+//                           );
+//                         }, 1000);
+//                       }
+
+//                       if (!updatedTask.isRunning && intervalsRef.current[t.id]) {
+//                         clearInterval(intervalsRef.current[t.id]);
+//                         delete intervalsRef.current[t.id];
+//                       }
+
+//                       return { ...t, ...updatedTask };
+//                     }
+//                     return t;
+//                   }),
+//                 }
+//               : p
+//           )
+//         );
+//       }
+//     };
+
+//     es.onerror = () => {
+//       es.close();
+//       setTimeout(connectSSE, 2000);
+//     };
+//   };
+
+//   connectSSE();
+
+//   return () => es.close();
+// }, []);
 
 useEffect(() => {
   const token: any = localStorage.getItem("token");
   const data: any = jwtDecode(token);
   const userId = data.id;
 
-  let es: EventSource;
-
   const connectSSE = () => {
-    es = new EventSource(`http://localhost:4040/events/${userId}`);
+    if (esRef.current) {
+      esRef.current.close(); // close old before creating new
+    }
+
+    const es = new EventSource(
+      `${process.env.REACT_APP_BACKEND_URL}/events/${userId}`
+    );
+
+    esRef.current = es;
 
     es.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("SSE event:", data);
+      console.log("SSE event------->:", data);
 
+      // ---------- your existing logic ----------
       if (data.stopConfirmed) {
         screenshotRef.current?.stopScreenShare();
 
@@ -84,7 +195,6 @@ useEffect(() => {
             ),
           }))
         );
-
         return;
       }
 
@@ -97,37 +207,70 @@ useEffect(() => {
               ? {
                   ...p,
                   tasks: p.tasks.map((t: any) => {
+                    // START interval
                     if (t.id === updatedTask.id) {
-                      if (updatedTask.isRunning && !intervalsRef.current[t.id]) {
-                        intervalsRef.current[t.id] = setInterval(() => {
-                          setProjects((prevProjects) =>
-                            prevProjects.map((proj) =>
-                              proj.id === updatedTask.projectId
-                                ? {
-                                    ...proj,
-                                    tasks: proj.tasks.map((taskItem: any) =>
-                                      taskItem.id === updatedTask.id
-                                        ? {
-                                            ...taskItem,
-                                            runningDuration:
-                                              (taskItem.runningDuration || 0) + 1,
-                                          }
-                                        : taskItem
-                                    ),
-                                  }
-                                : proj
-                            )
-                          );
-                        }, 1000);
-                      }
+                      // if (updatedTask.isRunning && !intervalsRef.current[t.id]) {
+                      //   intervalsRef.current[t.id] = setInterval(() => {
+                      //     setProjects((prevProjects) =>
+                      //       prevProjects.map((proj) =>
+                      //         proj.id === updatedTask.projectId
+                      //           ? {
+                      //               ...proj,
+                      //               tasks: proj.tasks.map((taskItem: any) =>
+                      //                 taskItem.id === updatedTask.id
+                      //                   ? {
+                      //                       ...taskItem,
+                      //                       runningDuration:
+                      //                         (taskItem.runningDuration || 0) +
+                      //                         1,
+                      //                     }
+                      //                   : taskItem
+                      //               ),
+                      //             }
+                      //           : proj
+                      //       )
+                      //     );
+                      //   }, 1000);
+                      // }
 
-                      if (!updatedTask.isRunning && intervalsRef.current[t.id]) {
-                        clearInterval(intervalsRef.current[t.id]);
-                        delete intervalsRef.current[t.id];
-                      }
+                      // // STOP interval
+                      // if (!updatedTask.isRunning && intervalsRef.current[t.id]) {
+                      //   clearInterval(intervalsRef.current[t.id]);
+                      //   delete intervalsRef.current[t.id];
+                      // }
+
+                      if (updatedTask.isRunning) {
+  // Clear old interval first
+  if (intervalsRef.current[t.id]) {
+    clearInterval(intervalsRef.current[t.id]);
+    delete intervalsRef.current[t.id];
+  }
+
+  intervalsRef.current[t.id] = setInterval(() => {
+    setProjects((prevProjects) =>
+      prevProjects.map((proj) =>
+        proj.id === updatedTask.projectId
+          ? {
+              ...proj,
+              tasks: proj.tasks.map((taskItem:any) =>
+                taskItem.id === updatedTask.id
+                  ? { ...taskItem, runningDuration: (taskItem.runningDuration || 0) + 1 }
+                  : taskItem
+              ),
+            }
+          : proj
+      )
+    );
+  }, 1000);
+} else if (intervalsRef.current[t.id]) {
+  clearInterval(intervalsRef.current[t.id]);
+  delete intervalsRef.current[t.id];
+}
+
 
                       return { ...t, ...updatedTask };
                     }
+
                     return t;
                   }),
                 }
@@ -138,6 +281,7 @@ useEffect(() => {
     };
 
     es.onerror = () => {
+      console.log("SSE disconnected, reconnecting...");
       es.close();
       setTimeout(connectSSE, 2000);
     };
@@ -145,8 +289,101 @@ useEffect(() => {
 
   connectSSE();
 
-  return () => es.close();
+  return () => {
+    console.log("Closing SSE on unmount");
+    if (esRef.current) esRef.current.close();
+  };
 }, []);
+
+  useEffect(() => {
+  const initialize = async () => {    
+    try {
+      const userTasks: any = await fetchTasks();
+      const token: any = localStorage.getItem("token");
+      const data: any = jwtDecode(token);
+      const userId = data.id;
+
+      if (!globalStream) {
+        const running = userTasks
+          .flatMap((p: any) => p.tasks)
+          .filter((t: any) => t.isRunning);
+
+        for (const task of running) {
+          await stopTimer(task.id);
+
+          broadcastTaskUpdate(
+            {
+              ...task,
+              projectId: task.projectId,
+              isRunning: false,
+              runningDuration: 0,
+              totalTime: task.totalTime + (task.runningDuration || 0),
+            },
+            userId
+          );
+
+          notifyUser(
+            "Timer Stopped",
+            "Running timer stopped because screen sharing ended or page refreshed"
+          );
+        }
+      }
+
+      fetchTasks();
+    } catch (error) {
+      console.error("Error during initialization:", error);
+    }
+  };
+
+  initialize();
+
+  return () => {
+    Object.values(intervalsRef.current).forEach(clearInterval);
+  };
+}, [globalStream]); 
+
+// useEffect(() => {
+//   console.log("------------->",screenshotRef.current);
+//   alert(screenshotRef.current);
+  
+//     const initialize = async () => {
+//       try {
+//         const userTasks:any = await fetchTasks();
+//         const token:any=localStorage.getItem("token")
+//         const data:any=jwtDecode(token)
+//         const userId = data.id
+//         const running = userTasks
+//           .flatMap((p: any) => p.tasks)
+//           .filter((t: any) => t.isRunning);
+        
+//         for (const task of running) {
+//           await stopTimer(task.id);
+//           broadcastTaskUpdate(
+//   {
+//     ...task,
+//     projectId: task.projectId, 
+//     isRunning: false,
+//     runningDuration: 0,
+//     totalTime: task.totalTime + (task.runningDuration || 0)
+//   },
+//   userId
+// );
+
+//           notifyUser("Timer Stopped","Running timer stopped due to refresh")
+//         }
+  
+//         fetchTasks();
+//       } catch (error) {
+//         console.error("Error during initialization:", error);
+//       }
+//     };
+  
+//     initialize();
+  
+//     return () => {
+//       Object.values(intervalsRef.current).forEach(clearInterval);
+//     };
+//   }, []);
 
   useEffect(() => {
   if (taskId ) {
@@ -250,28 +487,60 @@ useEffect(() => {
       setProjects(tasksWithProjectId);
   
       // Start intervals for running tasks
+      // tasksWithProjectId.forEach((project: any) => {
+      //   project.tasks.forEach((task: any) => {
+      //     if (task.isRunning && !intervalsRef.current[task.id]) {
+      //       intervalsRef.current[task.id] = setInterval(() => {
+      //         setProjects((prev) =>
+      //           prev.map((p) =>
+      //             p.id === project.id
+      //               ? {
+      //                   ...p,
+      //                   tasks: p.tasks.map((t: any) =>
+      //                     t.id === task.id
+      //                       ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+      //                       : t
+      //                   )
+      //                 }
+      //               : p
+      //           )
+      //         );
+      //       }, 1000);
+      //     }
+      //   });
+      // });
       tasksWithProjectId.forEach((project: any) => {
-        project.tasks.forEach((task: any) => {
-          if (task.isRunning && !intervalsRef.current[task.id]) {
-            intervalsRef.current[task.id] = setInterval(() => {
-              setProjects((prev) =>
-                prev.map((p) =>
-                  p.id === project.id
-                    ? {
-                        ...p,
-                        tasks: p.tasks.map((t: any) =>
-                          t.id === task.id
-                            ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
-                            : t
-                        )
-                      }
-                    : p
-                )
-              );
-            }, 1000);
-          }
-        });
-      });
+  project.tasks.forEach((task: any) => {
+    if (task.isRunning) {
+      // Clear old interval if exists
+      if (intervalsRef.current[task.id]) {
+        clearInterval(intervalsRef.current[task.id]);
+        delete intervalsRef.current[task.id];
+      }
+
+      intervalsRef.current[task.id] = setInterval(() => {
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id === project.id
+              ? {
+                  ...p,
+                  tasks: p.tasks.map((t: any) =>
+                    t.id === task.id
+                      ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+                      : t
+                  )
+                }
+              : p
+          )
+        );
+      }, 1000);
+    } else if (intervalsRef.current[task.id]) {
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
+    }
+  });
+});
+
   
       return tasksWithProjectId;  // IMPORTANT: return tasks
     } catch (error) {
@@ -281,47 +550,6 @@ useEffect(() => {
       setLoading(false);
     }
   };
-
-
-useEffect(() => {
-    const initialize = async () => {
-      try {
-        const userTasks:any = await fetchTasks();
-        const token:any=localStorage.getItem("token")
-        const data:any=jwtDecode(token)
-        const userId = data.id
-        const running = userTasks
-          .flatMap((p: any) => p.tasks)
-          .filter((t: any) => t.isRunning);
-        
-        for (const task of running) {
-          await stopTimer(task.id);
-          broadcastTaskUpdate(
-  {
-    ...task,
-    projectId: task.projectId, 
-    isRunning: false,
-    runningDuration: 0,
-    totalTime: task.totalTime + (task.runningDuration || 0)
-  },
-  userId
-);
-
-          notifyUser("Timer Stopped","Running timer stopped due to refresh")
-        }
-  
-        fetchTasks();
-      } catch (error) {
-        console.error("Error during initialization:", error);
-      }
-    };
-  
-    initialize();
-  
-    return () => {
-      Object.values(intervalsRef.current).forEach(clearInterval);
-    };
-  }, []);
 
 
   const formatDuration = (seconds: number) => {
@@ -360,7 +588,7 @@ useEffect(() => {
   };
   const broadcastTaskUpdate = async (task: any, userId: string) => {
   try {
-    await fetch("http://localhost:4040/broadcast-task-update", {
+    await fetch(`${process.env.REACT_APP_BACKEND_URL}/broadcast-task-update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, task }),
@@ -369,20 +597,27 @@ useEffect(() => {
     console.error("Failed to broadcast task update", err);
   }
 };
+
 const handleStartStopTimer = async (task: any, projectId: string) => {
   try {
     const token: any = localStorage.getItem("token");
-    const data:any =jwtDecode(token)
+    const data: any = jwtDecode(token);
     const userId = data.id;
 
+    // Find currently running task
     const runningTask = projects.flatMap((p) => p.tasks).find((t: any) => t.isRunning);
 
-    // CASE A: STOP CURRENT TASK
+    // ---------------- CASE A: STOP CURRENT TASK ----------------
     if (task.isRunning) {
       await stopTimer(task.id);
-      clearInterval(intervalsRef.current[task.id]);
-      delete intervalsRef.current[task.id];
 
+      // Clear any interval for this task
+      if (intervalsRef.current[task.id]) {
+        clearInterval(intervalsRef.current[task.id]);
+        delete intervalsRef.current[task.id];
+      }
+
+      // Update UI
       setProjects((prev) =>
         prev.map((p) =>
           p.id === projectId
@@ -409,6 +644,7 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
         userId
       );
 
+      // Show stop permission modal if no other tasks are running
       const stillRunning = projects
         .flatMap((p) => p.tasks)
         .some((t: any) => t.isRunning && t.id !== task.id);
@@ -417,11 +653,15 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       return;
     }
 
-    // CASE B: START NEW TASK
+    // ---------------- CASE B: START NEW TASK ----------------
+    // If another task is running, stop it first
     if (runningTask && runningTask.id !== task.id) {
       await stopTimer(runningTask.id);
-      clearInterval(intervalsRef.current[runningTask.id]);
-      delete intervalsRef.current[runningTask.id];
+
+      if (intervalsRef.current[runningTask.id]) {
+        clearInterval(intervalsRef.current[runningTask.id]);
+        delete intervalsRef.current[runningTask.id];
+      }
 
       setProjects((prev) =>
         prev.map((p) => ({
@@ -439,7 +679,6 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
         }))
       );
 
-      // Broadcast stop of previous running task
       broadcastTaskUpdate(
         {
           ...runningTask,
@@ -462,6 +701,7 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       hasPermission = true;
     }
 
+    // Start timer API call
     const res = await startTimer(task.id);
     if (!res.success) {
       toast.error(res.message || "Failed to start timer");
@@ -480,7 +720,7 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
                   ? {
                       ...t,
                       isRunning: true,
-                      runningDuration: 0,
+                      runningDuration: t.runningDuration || 0,
                       status: updatedTask.status,
                     }
                   : t
@@ -496,7 +736,11 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       userId
     );
 
-    // Start interval
+    if (intervalsRef.current[task.id]) {
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
+    }
+
     intervalsRef.current[task.id] = setInterval(() => {
       setProjects((prev) =>
         prev.map((p) =>
@@ -518,6 +762,156 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
     toast.error("Something went wrong while starting/stopping timer.");
   }
 };
+
+// const handleStartStopTimer = async (task: any, projectId: string) => {
+//   try {
+//     const token: any = localStorage.getItem("token");
+//     const data:any =jwtDecode(token)
+//     const userId = data.id;
+
+//     const runningTask = projects.flatMap((p) => p.tasks).find((t: any) => t.isRunning);
+
+//     // CASE A: STOP CURRENT TASK
+//     if (task.isRunning) {
+//       await stopTimer(task.id);
+//       clearInterval(intervalsRef.current[task.id]);
+//       delete intervalsRef.current[task.id];
+
+//       setProjects((prev) =>
+//         prev.map((p) =>
+//           p.id === projectId
+//             ? {
+//                 ...p,
+//                 tasks: p.tasks.map((t: any) =>
+//                   t.id === task.id
+//                     ? {
+//                         ...t,
+//                         isRunning: false,
+//                         totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+//                         runningDuration: 0,
+//                       }
+//                     : t
+//                 ),
+//               }
+//             : p
+//         )
+//       );
+
+//       // Broadcast stop
+//       broadcastTaskUpdate(
+//         { ...task, isRunning: false, runningDuration: 0, totalTime: task.totalTime + (task.runningDuration || 0) },
+//         userId
+//       );
+
+//       const stillRunning = projects
+//         .flatMap((p) => p.tasks)
+//         .some((t: any) => t.isRunning && t.id !== task.id);
+
+//       if (!stillRunning) setShowStopPermissionModal(true);
+//       return;
+//     }
+
+//     // CASE B: START NEW TASK
+//     if (runningTask && runningTask.id !== task.id) {
+//       await stopTimer(runningTask.id);
+//       clearInterval(intervalsRef.current[runningTask.id]);
+//       delete intervalsRef.current[runningTask.id];
+
+//       setProjects((prev) =>
+//         prev.map((p) => ({
+//           ...p,
+//           tasks: p.tasks.map((t: any) =>
+//             t.id === runningTask.id
+//               ? {
+//                   ...t,
+//                   isRunning: false,
+//                   totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+//                   runningDuration: 0,
+//                 }
+//               : t
+//           ),
+//         }))
+//       );
+
+//       // Broadcast stop of previous running task
+//       broadcastTaskUpdate(
+//         {
+//           ...runningTask,
+//           isRunning: false,
+//           runningDuration: 0,
+//           totalTime: runningTask.totalTime + (runningTask.runningDuration || 0),
+//         },
+//         userId
+//       );
+//     }
+
+//     // Request screen permission if needed
+//     let hasPermission = screenshotRef.current?.hasPermission;
+//     if (!hasPermission) {
+//       const granted = await screenshotRef.current?.requestScreenShare?.();
+//       if (!granted) {
+//         toast.error("You must share your ENTIRE SCREEN to start a task.");
+//         return;
+//       }
+//       hasPermission = true;
+//     }
+
+//     const res = await startTimer(task.id);
+//     if (!res.success) {
+//       toast.error(res.message || "Failed to start timer");
+//       return;
+//     }
+
+//     const updatedTask = await updateTaskStatus(task.id, "in_progress");
+
+//     setProjects((prev) =>
+//       prev.map((p) =>
+//         p.id === projectId
+//           ? {
+//               ...p,
+//               tasks: p.tasks.map((t: any) =>
+//                 t.id === task.id
+//                   ? {
+//                       ...t,
+//                       isRunning: true,
+//                       runningDuration: 0,
+//                       status: updatedTask.status,
+//                     }
+//                   : t
+//               ),
+//             }
+//           : p
+//       )
+//     );
+
+//     // Broadcast start
+//     broadcastTaskUpdate(
+//       { ...task, isRunning: true, runningDuration: 0, status: updatedTask.status },
+//       userId
+//     );
+
+//     // Start interval
+//     intervalsRef.current[task.id] = setInterval(() => {
+//       setProjects((prev) =>
+//         prev.map((p) =>
+//           p.id === projectId
+//             ? {
+//                 ...p,
+//                 tasks: p.tasks.map((t: any) =>
+//                   t.id === task.id
+//                     ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+//                     : t
+//                 ),
+//               }
+//             : p
+//         )
+//       );
+//     }, 1000);
+//   } catch (error) {
+//     console.error("Error in timer:", error);
+//     toast.error("Something went wrong while starting/stopping timer.");
+//   }
+// };
 
   const handleStatusClick = async (taskId: string, projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
@@ -626,7 +1020,7 @@ useEffect(() => {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedTasks = filteredTasks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  if (loading) return <p>Loading tasks...</p>;
+  if (loading) return <div className="d-flex justify-content-center min-vh-100">Loading tasks...</div>;
 
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
@@ -825,7 +1219,7 @@ useEffect(() => {
     const userId = data.id;
 
     try {
-      await fetch("http://localhost:4040/broadcast-stop-confirm", {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/broadcast-stop-confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
