@@ -445,39 +445,54 @@ export const GET_USERS = gql`
       username
       email
       role
-    }
-  }
-`;
-
-export const CREATE_USER = gql`
-  mutation createUser($username: String!, $email: String!, $role: String) {
-    createUser(username: $username, email: $email, role: $role) {
-      success
-      message
-      user {
-        id
-        username
-        email
-        role
+      teamLeads{
+      id
       }
     }
   }
 `;
 
-export const UPDATE_USER = gql`
-  mutation updateUser($id: ID!, $username: String, $email: String, $role: String) {
-    updateUser(id: $id, username: $username, email: $email, role: $role) {
+  export const CREATE_USER = gql`
+  mutation createUser(
+    $username: String!
+    $email: String!
+    $role: String
+    $teamLeads: [ID!]
+  ) {
+    createUser(
+      username: $username
+      email: $email
+      role: $role
+      teamLeads: $teamLeads
+    ) {
       success
       message
-      user {
-        id
-        username
-        email
-        role
-      }
     }
   }
 `;
+
+  export const UPDATE_USER = gql`
+  mutation updateUser(
+    $id: ID!
+    $username: String
+    $email: String
+    $role: String
+    $teamLeads: [ID!]
+  ) {
+    updateUser(
+      id: $id
+      username: $username
+      email: $email
+      role: $role
+      teamLeads: $teamLeads
+    ) {
+      success
+      message
+      
+    }
+  }
+`;
+
 
 export const DELETE_USER = gql`
   mutation deleteUser($id: ID!) {

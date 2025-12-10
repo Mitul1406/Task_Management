@@ -252,7 +252,9 @@ export const updateUser = async (userData: {
   username?: string;
   email?: string;
   role?: string;
+  teamLeads?: string[];
 }) => {
+
   const res = await client.mutate({
     mutation: UPDATE_USER,
     variables: {...userData},
@@ -263,7 +265,9 @@ export const createUser = async (userData: {
   username: string;
   email: string;
   role?: string;
+  teamLeads?: string[];
 }) => {
+  
   const res = await client.mutate({
     mutation: CREATE_USER,
     variables: userData,

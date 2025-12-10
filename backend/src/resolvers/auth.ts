@@ -71,14 +71,25 @@ const sendResetPasswordMail = async (email: string, token: string, username: str
 };
 export const authResolver = { 
     users: async () => {
-      const users = await User.find({role:{$in:["teamLead","projectManager","user"]}});
-      return users.map((u) => ({
-        id: (u as any)._id.toString(),
-        username: u.username,
-        email: u.email,
-        role: u.role,
-      }));
-    },
+  const users = await User.find({
+    role: { $in: ["teamLead", "user"] },
+  }).populate("teamLeads"); // IMPORTANT
+
+  return users.map((u:any) => ({
+    id: u._id.toString(),
+    username: u.username,
+    email: u.email,
+    role: u.role,
+
+    teamLeads: u.teamLeads?.map((tl: any) => ({
+      id: tl._id.toString(),
+      username: tl.username,
+      email: tl.email,
+      role: tl.role,
+    })) || []
+  }));
+},
+
   register: async ({ username, email, password, role }: any) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) throw new Error("User already exists");
