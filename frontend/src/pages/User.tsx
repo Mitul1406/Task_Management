@@ -252,13 +252,12 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   };
 
   const handleEdit = (user: User) => {
-    
     setEditingUser(user);
     setFormData({
       username: user.username,
       email: user.email,
       role: user.role,
-      teamLeads:user?.teamLeads,
+      teamLeads:user.teamLeads.map((tl:any) => tl.id),
     });
     setErrors({});
     setShowModal(true);

@@ -3,8 +3,8 @@ type Mutation {
   updateProject(id: ID!, name: String, description: String): Project
   deleteProject(id: ID!): Boolean
 
-  createUser(username: String!, email: String!, role: String): CreateUserResponse!
-  updateUser(id: ID!, username: String, email: String, role: String): CreateUserResponse!
+  createUser(username: String!, email: String!, role: String,teamLeads: [ID!]): CreateUserResponse!
+  updateUser(id: ID!, username: String, email: String, role: String,teamLeads: [ID!]): CreateUserResponse!
   deleteUser(id: ID!): DeleteResponse!
   changePassword(id: ID!, oldPassword: String!, newPassword: String!): ChangePasswordResponse!
 
