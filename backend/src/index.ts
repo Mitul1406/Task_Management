@@ -13,6 +13,7 @@ import multer from "multer";
 import type { Response } from "express-serve-static-core";
 import s3 from "./utils/s3config.ts"
 import { User } from "./models/User.ts";
+import "./cron/morningReminder.ts"
 dotenv.config();
 const app = express();
 app.use(cors());

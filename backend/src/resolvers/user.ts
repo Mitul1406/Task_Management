@@ -195,7 +195,7 @@ user:async({ userId }: { userId: string }) => {
 },
 
 allusers: async () => {
-      const users = await User.find({role:{$in:["admin","user"]}});
+      const users = await User.find({role:{$in:["teamLead","user"]}});
       return users.map((u) => ({
         id: (u as any)._id.toString(),
         username: u.username,
