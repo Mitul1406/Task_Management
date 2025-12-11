@@ -438,6 +438,7 @@ userDayWise: async ({
       startDate: (t as any).startDate ? new Date((t as any).startDate) : undefined,
       endDate: (t as any).endDate ? new Date((t as any).endDate) : undefined,
       status: t.status,
+      createdAt: (t as any).createdAt
     };
   }
 
@@ -483,6 +484,8 @@ userDayWise: async ({
     for (const task of tasks) {
       const taskId = task._id.toString();
       const info = taskInfoMap[taskId];
+
+      
       if (!info) continue;
 
       let workedToday = workedByTaskByDate[taskId]?.[dayKey] || 0;
@@ -522,7 +525,8 @@ userDayWise: async ({
         startDate: info.startDate,
         endDate: info.endDate,
         status: info.status,
-        running: isRunning, 
+        running: isRunning,
+        createdAt: info.createdAt
       });
 
       if (info.projectId && projectMap[info.projectId]) {
@@ -538,6 +542,8 @@ userDayWise: async ({
           endDate: info.endDate,
           status: info.status,
           running: isRunning,
+        createdAt: info.createdAt
+
         });
       }
     }
