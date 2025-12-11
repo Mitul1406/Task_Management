@@ -5,7 +5,6 @@ import path from "path";
 
 const sendMailToUsers = async (users: any[]) => {
   const templatePath = path.join(process.cwd(),"src", "templates", "reminderMail.html");
-  console.log(templatePath);
   
   for (let user of users) {
     const htmlContent = loadTemplate(templatePath, {
@@ -23,7 +22,7 @@ const sendMailToUsers = async (users: any[]) => {
   }
 };
 
-cron.schedule("0 15 * * 1-5", async () => {
+cron.schedule("0 9 * * 1-5", async () => {
   try {
     const users = await User.find({role:{$in:["teamLead","user"]}});
     
