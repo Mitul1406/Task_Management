@@ -169,4 +169,6 @@ Cron.schedule("0 22 * * 1-5", () => {
   console.log("Running Team Lead Summary Cron");
   sendDailySummaryToTeamLeads();
   sendDailySummaryToSuperAdmin();
+}, {
+  timezone: "Asia/Kolkata"
 });
