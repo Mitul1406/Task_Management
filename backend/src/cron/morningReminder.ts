@@ -16,14 +16,14 @@ const sendMailToUsers = async (users: any[]) => {
     await transporter.sendMail({
       from: process.env.MAIL_USER,
       to: user.email,
-      subject: "Daily Notification",
+      subject: "Task Tracker Reminder – Start Your Timers & Review Today’s Tasks",
       html: htmlContent,
     });
   }
 };
 
-cron.schedule("0 9 * * 1-5", async () => {
-  try {
+cron.schedule(process.env.MORNING_REMINDER_CRON!, async () => {
+  try {    
     const users = await User.find({role:{$in:["teamLead","user"]}});
     
     await sendMailToUsers(users);

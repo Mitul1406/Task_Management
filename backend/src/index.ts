@@ -13,13 +13,15 @@ import multer from "multer";
 import type { Response } from "express-serve-static-core";
 import s3 from "./utils/s3config.ts"
 import { User } from "./models/User.ts";
+dotenv.config();
+
 import "./cron/morningReminder.ts"
 import "./cron/sendTeamLeadSummaryNightCron.ts"
 import "./cron/sendTeamLeadTaskAck.ts"
-dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+    console.log("0000>",process.env.MORNING_REMINDER_CRON);
 
 connectDb();
 app.use("/graphql", (req, res, next) => {
