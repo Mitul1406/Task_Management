@@ -263,6 +263,7 @@ tasksForUser: async ({ userId }: { userId: string }) => {
       totalTime: totalCompleted + runningDuration,
       savedTime:(task as any).savedTime,
       overtime:(task as any).overtime,
+      createdAt:(task as any).createdAt,
       isRunning: !!runningTimer,
       runningDuration,
       assignedUser: (task as any).assignedUser

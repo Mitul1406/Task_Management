@@ -75,11 +75,10 @@ const sendDailySummaryToTeamLeads = async () => {
       await transporter.sendMail({
         from: process.env.EMAIL,
         to: lead.email,
-        subject: `Team Summary – ${today}`,
+        subject: `Your Team’s Task Update – ${today}`,
         html,
       });
 
-      console.log(`Team lead summary sent → ${lead.username}`);
     }
   } catch (err) {
     console.error("Error sending team lead summary:", err);
@@ -92,7 +91,7 @@ const sendDailySummaryToSuperAdmin = async () => {
 
     const teamLeads = await User.find({ role: { $in: ["teamLead"] } });
 
-    let tlSummaryHtml = "";
+    let finalSummary = "";
 
     for (const tl of teamLeads) {
       const tlData = await taskResolver.userDayWise({
@@ -104,35 +103,29 @@ const sendDailySummaryToSuperAdmin = async () => {
       const tlTasks = transformData(tlData, today);
       const tlRows = buildEmployeeRows(tlTasks);
 
-      tlSummaryHtml += buildEmployeeSection(tl.username, tlRows);
-    }
+      let block = `
+        <div class="employee-section">
+          <h2>TeamLead: ${tl.username}</h2>
+          ${buildEmployeeSection(`${tl.username}'s Tasks`, tlRows)}
+      `;
 
-    let tlEmployeesHtml = "";
-
-    for (const lead of teamLeads) {
-      const employees = await User.find({ teamLeads: lead._id });
-
-      let employeeBlocks = "";
+      const employees = await User.find({ teamLeads: tl._id });
 
       for (const emp of employees) {
-        const data = await taskResolver.userDayWise({
+        const empData = await taskResolver.userDayWise({
           userId: (emp as any)._id.toString(),
           startDate: today,
           endDate: today,
         });
 
-        const tasks = transformData(data, today);
-        const rowsHtml = buildEmployeeRows(tasks);
-        const sectionHtml = buildEmployeeSection(emp.username, rowsHtml);
+        const empTasks = transformData(empData, today);
+        const empRows = buildEmployeeRows(empTasks);
 
-        employeeBlocks += sectionHtml;
+        block += buildEmployeeSection(emp.username, empRows);
       }
 
-      tlEmployeesHtml += `
-        <div class="employee-section">
-          <h2>TeamLead: ${lead.username}</h2>
-          ${employeeBlocks}
-        </div>`;
+      block += `</div>`; // close tl-block
+      finalSummary += block;
     }
 
     const templatePath = path.join(
@@ -144,29 +137,26 @@ const sendDailySummaryToSuperAdmin = async () => {
 
     const html = loadTemplate(templatePath, {
       date: today,
-      leadSummary: tlSummaryHtml,
-      tlEmployees: tlEmployeesHtml,
+      summary: finalSummary,
     });
 
-    // Send email TO SUPERADMIN ONLY
     const superAdmins = await User.find({ role: "superAdmin" });
     for (const admin of superAdmins) {
       await transporter.sendMail({
         from: process.env.EMAIL,
         to: admin.email,
-        subject: `SuperAdmin Team Summary – ${today}`,
+        subject: `Team's Task Update – ${today}`,
         html,
       });
-      console.log(`SuperAdmin summary sent → ${admin.username}`);
     }
   } catch (err) {
     console.error("Error sending superAdmin summary:", err);
   }
 };
 
-
-Cron.schedule("0 22 * * * 1-5", () => {
-  console.log("Running Team Lead Summary Cron");
+Cron.schedule(process.env.NIGHT_TASK_UPDATE_CRON!, () => {
   sendDailySummaryToTeamLeads();
   sendDailySummaryToSuperAdmin();
+}, {
+  timezone: "Asia/Kolkata"
 });
