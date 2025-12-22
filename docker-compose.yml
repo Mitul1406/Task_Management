@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "4040:4040"
+    environment:
+      MONGO_URL: mongodb://mongo:27017/tasktracker
+      MORNING_REMINDER_CRON: "0 9 * * 1-5"
+      MORNING_TASK_UPDATE_CRON: "0 11 * * 1-5"
+      NIGHT_TASK_UPDATE_CRON: "0 22 * * 1-5"
+    depends_on:
+      - mongo
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_BACKEND_URL: http://backend:4040
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  mongo_data:

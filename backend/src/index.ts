@@ -21,7 +21,6 @@ import "./cron/sendTeamLeadTaskAck.ts"
 const app = express();
 app.use(cors());
 app.use(express.json());
-    console.log("0000>",process.env.MORNING_REMINDER_CRON);
 
 connectDb();
 app.use("/graphql", (req, res, next) => {
