@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { getUsers, createUser, updateUser, deleteUser,getEmpData } from "../services/api";
+import { getUsers, createUser, updateUser, deleteUser,getEmpData, getUserRelations, getTeamLeads } from "../services/api";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
 import "../css/Userpage.css";
 import Pagination from "../components/Pagination";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import ViewDataModal from "../components/ViewDataModal";
+import Select from "react-select";
 
 interface User {
   id: string;
   username: string;
   email: string;
   role: string;
+  teamLeads:string[]
 }
 
 interface DecodedUser {
@@ -22,13 +25,16 @@ const UserPage: React.FC = () => {
   const location = useLocation();
   const url = new URLSearchParams(location.search);
   const filterRole = url.get("role");
+  const filterName = url.get("name")
   const navigate=useNavigate()
   const [users, setUsers] = useState<User[]>([]);
+  const [teamLeads, setTeamLeads] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     role: "user",
+    teamLeads: [] as string[],
   });
   const [errors, setErrors] = useState<{ username?: string; email?: string }>({});
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -38,8 +44,73 @@ const UserPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loggedInRole, setLoggedInRole] = useState("");
-
+  const [open, setOpen] = useState(false);
+  const [relationData, setRelationData] = useState(null);
   const usersPerPage = 10;
+
+  
+  const selectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
+    borderRadius: "6px",
+    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(13, 110, 253, 0.25)" : "none",
+    // minHeight: "35px",
+    alignItems: "flex-start",
+  }),
+  valueContainer: (base: any) => ({
+    ...base,
+    flexWrap: "wrap",
+    alignItems: "center",
+    paddingTop: "4px",
+    paddingBottom: "4px",
+    // maxHeight: "80px", // allow multi-value wrapping
+    overflowY: "auto",
+  }),
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#e9f2ff",
+    margin: "2px",
+    borderRadius: "4px",
+  }),
+  multiValueLabel: (base: any) => ({
+    ...base,
+    color: "#000",
+    // whiteSpace: "normal",
+    // wordBreak: "break-word",
+  }),
+  multiValueRemove: (base: any) => ({
+    ...base,
+    color: "#0d6efd",
+    ":hover": {
+      backgroundColor: "#0d6efd",
+      color: "white",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
+const style = document.createElement("style");
+style.innerHTML = `
+  .css-1rhbuit-multiValue { max-width: 100%; }
+  .css-12jo7m5-value-container::-webkit-scrollbar {
+    display: none;
+  }
+`;
+document.head.appendChild(style);
+  
+  const teamLeadOptions = teamLeads.map((lead) => ({
+  value: lead.id,
+  label: lead.username,
+}));
+  
+  const handleTeamLeadChange = (selected: any) => {
+  const ids = selected ? selected.map((item: any) => item.value) : [];
+  setFormData((prev) => ({ ...prev, teamLeads: ids }));
+};
 
   // Fetch users
   const fetchUsers = async () => {
@@ -57,11 +128,23 @@ const UserPage: React.FC = () => {
     }
   };
 
+  const fetchTeamLeads=async(id?:string)=>{
+    try{
+      const data:User[] = id?await getTeamLeads(id):await getTeamLeads()      
+      setTeamLeads(data)
+    }catch{
+      toast.error("Failed to fetch team leads");
+    }
+  }
+
   useEffect(() => {
     if (filterRole) {
       setRoleFilter(filterRole);
     }
-  }, [filterRole]);
+    if(filterName){
+      setSearch(filterName)
+    }
+  }, [filterRole,filterName]);
 
   useEffect(() => {
     fetchUsers();
@@ -71,6 +154,13 @@ const UserPage: React.FC = () => {
       setLoggedInRole(decoded.role);
     }
   }, []);
+
+  useEffect(()=>{
+    if(editingUser){
+    fetchTeamLeads(editingUser?.id)
+    }else{
+    fetchTeamLeads()}
+  },[showModal])
 
   useEffect(() => {
     let result = users;
@@ -132,23 +222,26 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   });
 };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     try {
       setLoading(true);
+      let res;
       if (editingUser) {
-        const res = await updateUser({ ...formData, id: editingUser.id });
-        toast.success(res.message || "User updated successfully");
+         res = await updateUser({ ...formData, id: editingUser.id });
       } else {
-        const res = await createUser(formData);
-        toast.success(res.message || "User created successfully");
+         res = await createUser(formData);
       }
+      if (!res.success) {
+      toast.error(res.message || "Operation failed");
+      return; 
+    }
+      toast.success(res.message || "success");
       setShowModal(false);
       setEditingUser(null);
-      setFormData({ username: "", email: "", role: "user" });
+      setFormData({ username: "", email: "", role: "user",teamLeads: [] });
       setErrors({});
       fetchUsers();
     } catch (err: any) {
@@ -164,6 +257,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
       username: user.username,
       email: user.email,
       role: user.role,
+      teamLeads:user.teamLeads.map((tl:any) => tl.id),
     });
     setErrors({});
     setShowModal(true);
@@ -175,11 +269,11 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     text: "This action will permanently delete this user.",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
-    cancelButtonColor: "#6c757d",
     confirmButtonText: "Yes, delete it!",
     customClass:{
-      popup:"main-color"
+      popup:"main-color",
+      cancelButton: "delete-btn", 
+      confirmButton: "common-btn-in", 
     }
   });
     if(result.isConfirmed) {
@@ -196,10 +290,18 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   const handleCancel = () => {
     setShowModal(false);
     setEditingUser(null);
-    setFormData({ username: "", email: "", role: "user" });
+    setFormData({ username: "", email: "", role: "user",teamLeads:[] });
     setErrors({});
   };
-
+  const handleView = async (id:any) => {
+  try {
+    const data = await getUserRelations(id); 
+    setRelationData(data);                   
+    setOpen(true);                  
+  } catch (err) {
+    console.error(err);
+  }
+};
   // Pagination
   const indexOfLast = currentPage * usersPerPage;
   const indexOfFirst = indexOfLast - usersPerPage;
@@ -267,7 +369,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                       <th className="fw-500">Username</th>
                       <th className="fw-500">Email</th>
                       <th className="fw-500">Role</th>
-                      <th className="fw-500" style={{ width: "150px" }}>Actions</th>
+                      <th className="fw-500">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -277,7 +379,16 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                         <td>{user.email}</td>
                         <td>{user.role === "user" ? "Employee" : "Team Lead"}</td>
                         <td>
-                          {loggedInRole!=="teamLead"?(<div><button
+                          <div>
+                          <button
+                          className="btn btn-sm details-btn me-2"
+                          style={{minWidth:"125px"}}
+                          onClick={(e)=>{
+                            e.stopPropagation()
+                            handleView(user?.id)}}>
+                              {user.role === "user"?"View Team Leads":"View Team"}
+                            </button>
+                          {loggedInRole!=="teamLead"&&(<><button
                             className="btn btn-sm report-btn me-2"
                             onClick={(e) => {
                               e.stopPropagation()
@@ -292,7 +403,8 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                               handleDelete(user.id)}}
                           >
                             Delete
-                          </button></div>):("-")}
+                          </button></>)}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -313,7 +425,11 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
         </div>
       </div>
 
-      {/* Bootstrap Modal */}
+      <ViewDataModal
+  open={open}
+  onClose={() => setOpen(false)}
+  data={relationData}
+/>
       <div
         className={`modal fade ${showModal ? "show d-block" : ""}`}
         tabIndex={-1}
@@ -370,6 +486,23 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                     </>
                   )}
                 </select>
+
+                
+  <div className="mb-3">
+    <label className="form-label">Select Team Leads</label>
+    <Select
+      isMulti
+      options={teamLeadOptions}
+      onChange={handleTeamLeadChange}
+      styles={selectStyles}
+      value={teamLeadOptions.filter((opt) =>
+        formData.teamLeads.includes(opt.value)
+      )}
+      className="basic-multi-select"
+      classNamePrefix="select"
+    />
+  </div>
+
               </div>
               <div className="modal-footer justify-content-between">
                 <button

@@ -1,0 +1,27 @@
+type Mutation {
+  createProject(name: String!, description: String): Project
+  updateProject(id: ID!, name: String, description: String): Project
+  deleteProject(id: ID!): Boolean
+
+  createUser(username: String!, email: String!, role: String,teamLeads: [ID!]): CreateUserResponse!
+  updateUser(id: ID!, username: String, email: String, role: String,teamLeads: [ID!]): CreateUserResponse!
+  deleteUser(id: ID!): DeleteResponse!
+  changePassword(id: ID!, oldPassword: String!, newPassword: String!): ChangePasswordResponse!
+
+  createTask(projectId: ID!, title: String!, estimatedTime: Int, assignedUserId: ID, startDate: String, endDate: String): Task
+  updateTask(id: ID!, title: String, estimatedTime: Int, assignedUserId: ID, startDate: String, endDate: String): Task
+  deleteTask(id: ID!): Boolean
+  updateTaskStatus(taskId: ID!, status: String!): Task
+
+  startTimer(taskId: ID!, userId: ID!): Timer!
+  stopTimer(taskId: ID!, userId: ID!): StopTimerResponse!
+
+  register(username: String!, email: String!, password: String!, role: String): User
+  login(email: String!, password: String!): User
+  verifyOtp(email: String!, otp: String!): VerifyOtpResponse!
+  resendOTP(email: String!): VerifyOtpResponse!
+  forgotPassword(email: String!): AuthResponse!
+  resetPassword(token: String!, newPassword: String!): AuthResponse!
+
+  sendMailToTeamLeads(userId: ID!): SendMailResponse!
+}

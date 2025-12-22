@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Tracker - Daily Reminder</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: Arial, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+    }
+    a {
+      text-decoration: none;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .email-header h1 {
+      color: #2563eb;
+      margin: 0;
+      font-size: 28px;
+    }
+    .email-header p {
+      color: #555;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .btn {
+      display: inline-block;
+      background-color: #2563eb;
+      color: #fff;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    .footer {
+      font-size: 13px;
+      color: #999;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    @media only screen and (max-width: 480px) {
+      .email-container {
+        padding: 20px;
+      }
+      .email-header h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <table width="100%">
+    <tr>
+      <td>
+        <div class="email-container">
+          
+          <!-- Header -->
+          <div class="email-header" style="text-align: center;">
+            <h1>Task Tracker</h1>
+            <p>Stay organized. Stay productive.</p>
+          </div>
+
+          <!-- Body -->
+          <h2 style="text-align: center; color: #2563eb;">Daily Reminder</h2>
+
+          <p>Hello {{user}},</p>
+
+          <p>
+            This is your friendly reminder from <strong>Task Tracker</strong> 😊  
+            Don’t forget to review and manage your tasks for today.  
+            Staying consistent helps you stay productive and reach your goals.
+          </p>
+
+          <!-- Inserted Additional Reminder Info -->
+          <p>
+            Below is a quick reminder to help you manage your daily workflow effectively.  
+            Please review your <strong>assigned tasks</strong> and make sure everything is updated.
+          </p>
+
+          <p>
+            If you have any questions, missing tasks, or need clarification, feel free to connect with your
+            <strong>Team Lead</strong> anytime.
+          </p>
+
+          <p>
+            You can also <strong>add new tasks</strong> whenever required so your daily work remains properly tracked.
+          </p>
+
+          <p style="background:#f6faff; padding:12px; border-left:4px solid #2563eb; font-size:14px;">
+            <strong>Important:</strong><br>
+            Please ensure you <strong>Start</strong> and <strong>Stop</strong> your timers accurately.  
+            All task activities are monitored and shared with Team Leads and Admin during daily reviews.  
+            Proper timer usage helps maintain transparency and ensures your efforts are correctly recorded.
+          </p>
+
+          <p>
+            Stay consistent and productive — your daily updates help the team plan better and support you
+            in achieving your goals.
+          </p>
+
+          <p style="color:#555; text-align:center; font-size:15px;">
+            Click below to view or update your tasks.
+          </p>
+
+          <!-- Button -->
+          <div style="text-align: center;">
+            <a href="{{FRONTEND_URL}}" class="btn" style="color: white !important;">Open Task Tracker</a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+          <!-- Footer -->
+          <p class="footer">
+            You're receiving this reminder because you have an active Task Tracker account.<br/>
+            &copy; {{YEAR}} Task Tracker. All rights reserved.
+          </p>
+
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

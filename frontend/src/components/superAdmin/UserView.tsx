@@ -465,8 +465,8 @@ useEffect(() => {
         <div className="d-flex justify-content-between">
     <h3>User Data - {username}</h3>
     <div className="gap-2">
-        <button className="btn btn-sm details-btn me-2" onClick={()=>navigate("/screenshots?userId="+userId+"&username="+username)}>View ScreenShots</button>
-        <button className="btn btn-sm timesheet-btn me-2" onClick={()=>navigate("/alluser-timesheet-report?userId="+userId+"&username="+username)}>View User Timesheet</button>
+        <button className="btn btn-sm details-btn me-2" onClick={()=>navigate("/screenshots?userId="+userId)}>View ScreenShots</button>
+        <button className="btn btn-sm timesheet-btn me-2" onClick={()=>navigate("/alluser-timesheet-report?userId="+userId)}>View User Timesheet</button>
         <button className="btn btn-sm btn-outline-dark " onClick={()=>navigate(-1)}>{"<"}- Back</button>
     </div>
     </div>
@@ -583,12 +583,18 @@ useEffect(() => {
       </tr>
     </thead>
     <tbody>
-      {filteredTasks.length === 0 ? (
-    <tr>
-      <td colSpan={11} className="text-center text-muted py-3">
-        No tasks found.
-      </td>
-    </tr>
+      {loading ? (
+  <tr>
+    <td colSpan={11} className="text-center py-3">
+      <span className="text-dark">Loading tasks...</span>
+    </td>
+  </tr>
+) : filteredTasks.length === 0 ? (
+  <tr>
+    <td colSpan={11} className="text-center text-muted py-3">
+      No tasks found.
+    </td>
+  </tr>
   ):(filteredTasks.map((task) => (
         <tr key={task.id}>
           <td className="text-wrap text-break">{task.title}</td>

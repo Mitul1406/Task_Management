@@ -246,9 +246,9 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   });
 };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-danger">{error}</div>;
-  if (!data) return <div>No data available</div>;
+  if (loading) return <div className="d-flex min-vh-100 justify-content-center">Loading...</div>;
+  if (error) return <div className="d-flex min-vh-100 justify-content-center text-danger">{error}</div>;
+  if (!data) return <div className="d-flex min-vh-100 justify-content-center">No data available</div>;
   const projectTotals = calculateProjectTaskTotals(data);
   const overallTotals = data ? calculateOverallTotals(data) : null;
  
@@ -275,7 +275,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
   const element = sheetRef.current;
 
   const opt: any = {
-    margin: [10, 10, 10, 10], // top, left, bottom, right in mm
+    margin: [5, 5, 5, 5], // top, left, bottom, right in mm
     filename: `UserTimesheet_${new Date().toISOString().split("T")[0]}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
@@ -287,7 +287,7 @@ const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] 
     },
     jsPDF: {
       unit: "mm",
-      format: "a4",
+      format: "a3",
       orientation: "portrait",
     },
     pagebreak: {

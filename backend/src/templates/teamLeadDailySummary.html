@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      h2 {
+        margin-bottom: 10px;
+        background: #517ddc;
+        padding: 8px;
+        color: white;
+        display: inline-block;
+        border-radius: 6px;
+      }
+      table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+      th, td {
+        border: 1px solid black;
+        padding: 6px;
+        font-size: 12px;
+        word-wrap: break-word;
+      }
+      th {
+        background: #f0f0f0;
+        font-weight: bold;
+        text-align: start;
+      }
+      .employee-section {
+  background-color: #fff;          
+  border-radius: 0.75rem;           
+  padding: 20px;                    
+  margin-bottom: 30px;             
+  border: 1px solid #e3e6f0;      
+}
+    </style>
+  </head>
+
+  <body>
+    <h1>Daily Employee Summary ({{date}})</h1>
+
+    {{employees}}
+  </body>
+</html>

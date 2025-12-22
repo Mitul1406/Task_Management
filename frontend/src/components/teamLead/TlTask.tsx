@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
   getUserTasks,
+  sendMailToTeamLeads,
   startTimer,
   stopTimer,
   updateTaskStatus,
@@ -16,10 +17,16 @@ import Pagination from "../Pagination";
 import { useLocation } from "react-router-dom";
 import Select from "react-select";
 import { jwtDecode } from "jwt-decode";
+import { FaShare } from "react-icons/fa";
+import Swal from "sweetalert2";
+import { useScreenShare } from "../../context/ScreenRecordContext";
 
 const TlTask: React.FC = () => {
+  const esRef = useRef<EventSource | null>(null);
+  const { globalStream } = useScreenShare();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loading1, setLoading1] = useState(false);
   const [selectedProject, setSelectedProject] = useState(["all"]);
   const [filterStartDate, setFilterStartDate] = useState(() =>
     new Date().toISOString().split("T")[0]
@@ -110,106 +117,308 @@ style.innerHTML = `
 document.head.appendChild(style);
 
 
- useEffect(() => {
-  const token: any = localStorage.getItem("token");
-  const data: any = jwtDecode(token);
-  const userId = data.id;
+//  useEffect(() => {
+//   const token: any = localStorage.getItem("token");
+//   const data: any = jwtDecode(token);
+//   const userId = data.id;
 
-  let es: EventSource;
+//   let es: EventSource;
 
-  const connectSSE = () => {
-    es = new EventSource(`http://localhost:4040/events/${userId}`);
+//   const connectSSE = () => {
+//     es = new EventSource(`${process.env.REACT_APP_BACKEND_URL}/events/${userId}`);
 
-    es.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("SSE event:", data);
+//     es.onmessage = (event) => {
+//       const data = JSON.parse(event.data);
+//       console.log("SSE event:", data);
 
-      if (data.stopConfirmed) {
-        screenshotRef.current?.stopScreenShare();
+//       if (data.stopConfirmed) {
+//         screenshotRef.current?.stopScreenShare();
 
-        Object.keys(intervalsRef.current).forEach((taskId) => {
-          clearInterval(intervalsRef.current[taskId]);
-          delete intervalsRef.current[taskId];
-        });
+//         Object.keys(intervalsRef.current).forEach((taskId) => {
+//           clearInterval(intervalsRef.current[taskId]);
+//           delete intervalsRef.current[taskId];
+//         });
 
-        setProjects((prev) =>
-          prev.map((proj) => ({
-            ...proj,
-            tasks: proj.tasks.map((t: any) =>
-              t.isRunning
-                ? {
-                    ...t,
-                    isRunning: false,
-                    totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
-                    runningDuration: 0,
-                  }
-                : t
-            ),
-          }))
-        );
+//         setProjects((prev) =>
+//           prev.map((proj) => ({
+//             ...proj,
+//             tasks: proj.tasks.map((t: any) =>
+//               t.isRunning
+//                 ? {
+//                     ...t,
+//                     isRunning: false,
+//                     totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+//                     runningDuration: 0,
+//                   }
+//                 : t
+//             ),
+//           }))
+//         );
 
-        return;
+//         return;
+//       }
+
+//       if (data.id && data.projectId) {
+//         const updatedTask = data;
+
+//         setProjects((prev) =>
+//           prev.map((proj) =>
+//             proj.id === updatedTask.projectId
+//               ? {
+//                   ...proj,
+//                   tasks: proj.tasks.map((task: any) => {
+//                     if (task.id === updatedTask.id) {
+//                       if (!updatedTask.isRunning && intervalsRef.current[task.id]) {
+//                         clearInterval(intervalsRef.current[task.id]);
+//                         delete intervalsRef.current[task.id];
+//                       }
+
+//                       if (updatedTask.isRunning && !intervalsRef.current[task.id]) {
+//                         intervalsRef.current[task.id] = setInterval(() => {
+//                           setProjects((prevProjects) =>
+//                             prevProjects.map((projItem) =>
+//                               projItem.id === updatedTask.projectId
+//                                 ? {
+//                                     ...projItem,
+//                                     tasks: projItem.tasks.map((taskItem: any) =>
+//                                       taskItem.id === updatedTask.id
+//                                         ? {
+//                                             ...taskItem,
+//                                             runningDuration:
+//                                               (taskItem.runningDuration || 0) + 1,
+//                                           }
+//                                         : taskItem
+//                                     ),
+//                                   }
+//                                 : projItem
+//                             )
+//                           );
+//                         }, 1000);
+//                       }
+
+//                       return { ...task, ...updatedTask };
+//                     }
+//                     return task;
+//                   }),
+//                 }
+//               : proj
+//           )
+//         );
+//       }
+//     };
+
+//     es.onerror = () => {
+//       es.close();
+//       setTimeout(connectSSE, 2000);
+//     };
+//   };
+
+//   connectSSE();
+
+//   return () => es.close();
+// }, []);
+
+  
+    useEffect(() => {
+    const token: any = localStorage.getItem("token");
+    const data: any = jwtDecode(token);
+    const userId = data.id;
+  
+    const connectSSE = () => {
+      if (esRef.current) {
+        esRef.current.close(); // close old before creating new
       }
-
-      if (data.id && data.projectId) {
-        const updatedTask = data;
-
-        setProjects((prev) =>
-          prev.map((proj) =>
-            proj.id === updatedTask.projectId
-              ? {
-                  ...proj,
-                  tasks: proj.tasks.map((task: any) => {
-                    if (task.id === updatedTask.id) {
-                      if (!updatedTask.isRunning && intervalsRef.current[task.id]) {
-                        clearInterval(intervalsRef.current[task.id]);
-                        delete intervalsRef.current[task.id];
-                      }
-
-                      if (updatedTask.isRunning && !intervalsRef.current[task.id]) {
-                        intervalsRef.current[task.id] = setInterval(() => {
-                          setProjects((prevProjects) =>
-                            prevProjects.map((projItem) =>
-                              projItem.id === updatedTask.projectId
-                                ? {
-                                    ...projItem,
-                                    tasks: projItem.tasks.map((taskItem: any) =>
-                                      taskItem.id === updatedTask.id
-                                        ? {
-                                            ...taskItem,
-                                            runningDuration:
-                                              (taskItem.runningDuration || 0) + 1,
-                                          }
-                                        : taskItem
-                                    ),
-                                  }
-                                : projItem
-                            )
-                          );
-                        }, 1000);
-                      }
-
-                      return { ...task, ...updatedTask };
+  
+      const es = new EventSource(
+        `${process.env.REACT_APP_BACKEND_URL}/events/${userId}`
+      );
+  
+      esRef.current = es;
+  
+      es.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("SSE event------->:", data);
+  
+        // ---------- your existing logic ----------
+        if (data.stopConfirmed) {
+          screenshotRef.current?.stopScreenShare();
+  
+          Object.keys(intervalsRef.current).forEach((taskId) => {
+            clearInterval(intervalsRef.current[taskId]);
+            delete intervalsRef.current[taskId];
+          });
+  
+          setProjects((prev) =>
+            prev.map((proj) => ({
+              ...proj,
+              tasks: proj.tasks.map((t: any) =>
+                t.isRunning
+                  ? {
+                      ...t,
+                      isRunning: false,
+                      totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
+                      runningDuration: 0,
                     }
-                    return task;
-                  }),
-                }
-              : proj
-          )
-        );
+                  : t
+              ),
+            }))
+          );
+          return;
+        }
+  
+        if (data.id && data.projectId) {
+          const updatedTask = data;
+  
+          setProjects((prev) =>
+            prev.map((p) =>
+              p.id === updatedTask.projectId
+                ? {
+                    ...p,
+                    tasks: p.tasks.map((t: any) => {
+                      // START interval
+                      if (t.id === updatedTask.id) {
+                        if (updatedTask.isRunning) {
+  // Clear old interval first
+  if (intervalsRef.current[t.id]) {
+    clearInterval(intervalsRef.current[t.id]);
+    delete intervalsRef.current[t.id];
+  }
+
+  intervalsRef.current[t.id] = setInterval(() => {
+    setProjects((prevProjects) =>
+      prevProjects.map((proj) =>
+        proj.id === updatedTask.projectId
+          ? {
+              ...proj,
+              tasks: proj.tasks.map((taskItem:any) =>
+                taskItem.id === updatedTask.id
+                  ? { ...taskItem, runningDuration: (taskItem.runningDuration || 0) + 1 }
+                  : taskItem
+              ),
+            }
+          : proj
+      )
+    );
+  }, 1000);
+} else if (intervalsRef.current[t.id]) {
+  clearInterval(intervalsRef.current[t.id]);
+  delete intervalsRef.current[t.id];
+}
+
+  
+                        return { ...t, ...updatedTask };
+                      }
+  
+                      return t;
+                    }),
+                  }
+                : p
+            )
+          );
+        }
+      };
+  
+      es.onerror = () => {
+        console.log("SSE disconnected, reconnecting...");
+        es.close();
+        setTimeout(connectSSE, 2000);
+      };
+    };
+  
+    connectSSE();
+  
+    return () => {
+      console.log("Closing SSE on unmount");
+      if (esRef.current) esRef.current.close();
+    };
+  }, []);
+  
+    useEffect(() => {
+    const initialize = async () => {    
+      try {
+        const userTasks: any = await fetchTasks();
+        const token: any = localStorage.getItem("token");
+        const data: any = jwtDecode(token);
+        const userId = data.id;
+  
+        if (!globalStream) {
+          const running = userTasks
+            .flatMap((p: any) => p.tasks)
+            .filter((t: any) => t.isRunning);
+  
+          for (const task of running) {
+            await stopTimer(task.id);
+  
+            broadcastTaskUpdate(
+              {
+                ...task,
+                projectId: task.projectId,
+                isRunning: false,
+                runningDuration: 0,
+                totalTime: task.totalTime + (task.runningDuration || 0),
+              },
+              userId
+            );
+  
+            notifyUser(
+              "Timer Stopped",
+              "Running timer stopped because screen sharing ended or page refreshed"
+            );
+          }
+        }
+  
+        fetchTasks();
+      } catch (error) {
+        console.error("Error during initialization:", error);
       }
     };
-
-    es.onerror = () => {
-      es.close();
-      setTimeout(connectSSE, 2000);
+  
+    initialize();
+  
+    return () => {
+      Object.values(intervalsRef.current).forEach(clearInterval);
     };
-  };
+  }, [globalStream]); 
 
-  connectSSE();
+//   useEffect(() => {
+//     const initialize = async () => {
+//       try {
+//         const userTasks:any = await fetchTasks();
+//         const token:any=localStorage.getItem("token")
+//         const data:any=jwtDecode(token)
+//         const userId = data.id
+//         const running = userTasks
+//           .flatMap((p: any) => p.tasks)
+//           .filter((t: any) => t.isRunning);
+        
+//         for (const task of running) {
+//           await stopTimer(task.id);
+//           broadcastTaskUpdate(
+//   {
+//     ...task,
+//     projectId: task.projectId, 
+//     isRunning: false,
+//     runningDuration: 0,
+//     totalTime: task.totalTime + (task.runningDuration || 0)
+//   },
+//   userId
+// );
 
-  return () => es.close();
-}, []);
+//           notifyUser("Timer Stopped","Running timer stopped due to refresh")
+//         }
+  
+//         fetchTasks();
+//       } catch (error) {
+//         console.error("Error during initialization:", error);
+//       }
+//     };
+  
+//     initialize();
+  
+//     return () => {
+//       Object.values(intervalsRef.current).forEach(clearInterval);
+//     };
+//   }, []);
 
   useEffect(() => {
     projectsRef.current = projects;
@@ -236,29 +445,37 @@ document.head.appendChild(style);
 
     setProjects(tasksWithProjectId);
 
-    // Start intervals for running tasks
     tasksWithProjectId.forEach((project: any) => {
-      project.tasks.forEach((task: any) => {
-        if (task.isRunning && !intervalsRef.current[task.id]) {
-          intervalsRef.current[task.id] = setInterval(() => {
-            setProjects((prev) =>
-              prev.map((p) =>
-                p.id === project.id
-                  ? {
-                      ...p,
-                      tasks: p.tasks.map((t: any) =>
-                        t.id === task.id
-                          ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
-                          : t
-                      )
-                    }
-                  : p
-              )
-            );
-          }, 1000);
-        }
-      });
-    });
+  project.tasks.forEach((task: any) => {
+    if (task.isRunning) {
+      // Clear old interval if exists
+      if (intervalsRef.current[task.id]) {
+        clearInterval(intervalsRef.current[task.id]);
+        delete intervalsRef.current[task.id];
+      }
+
+      intervalsRef.current[task.id] = setInterval(() => {
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id === project.id
+              ? {
+                  ...p,
+                  tasks: p.tasks.map((t: any) =>
+                    t.id === task.id
+                      ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
+                      : t
+                  )
+                }
+              : p
+          )
+        );
+      }, 1000);
+    } else if (intervalsRef.current[task.id]) {
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
+    }
+  });
+});
 
     return tasksWithProjectId;  // IMPORTANT: return tasks
   } catch (error) {
@@ -268,47 +485,7 @@ document.head.appendChild(style);
     setLoading(false);
   }
 };
-  
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        const userTasks:any = await fetchTasks();
-        const token:any=localStorage.getItem("token")
-        const data:any=jwtDecode(token)
-        const userId = data.id
-        const running = userTasks
-          .flatMap((p: any) => p.tasks)
-          .filter((t: any) => t.isRunning);
-        
-        for (const task of running) {
-          await stopTimer(task.id);
-          broadcastTaskUpdate(
-  {
-    ...task,
-    projectId: task.projectId, 
-    isRunning: false,
-    runningDuration: 0,
-    totalTime: task.totalTime + (task.runningDuration || 0)
-  },
-  userId
-);
-
-          notifyUser("Timer Stopped","Running timer stopped due to refresh")
-        }
-  
-        fetchTasks();
-      } catch (error) {
-        console.error("Error during initialization:", error);
-      }
-    };
-  
-    initialize();
-  
-    return () => {
-      Object.values(intervalsRef.current).forEach(clearInterval);
-    };
-  }, []);
-
+ 
   const formatDuration = (seconds: number) => {
     if (!seconds || seconds <= 0) return "-";
     const h = Math.floor(seconds / 3600);
@@ -399,7 +576,7 @@ document.head.appendChild(style);
   
   const broadcastTaskUpdate = async (task: any, userId: string) => {
   try {
-    await fetch("http://localhost:4040/broadcast-task-update", {
+    await fetch(`${process.env.REACT_APP_BACKEND_URL}/broadcast-task-update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, task }),
@@ -412,16 +589,23 @@ document.head.appendChild(style);
 const handleStartStopTimer = async (task: any, projectId: string) => {
   try {
     const token: any = localStorage.getItem("token");
-    const data:any =jwtDecode(token)
+    const data: any = jwtDecode(token);
     const userId = data.id;
 
+    // Find currently running task
     const runningTask = projects.flatMap((p) => p.tasks).find((t: any) => t.isRunning);
 
+    // ---------------- CASE A: STOP CURRENT TASK ----------------
     if (task.isRunning) {
       await stopTimer(task.id);
-      clearInterval(intervalsRef.current[task.id]);
-      delete intervalsRef.current[task.id];
 
+      // Clear any interval for this task
+      if (intervalsRef.current[task.id]) {
+        clearInterval(intervalsRef.current[task.id]);
+        delete intervalsRef.current[task.id];
+      }
+
+      // Update UI
       setProjects((prev) =>
         prev.map((p) =>
           p.id === projectId
@@ -442,11 +626,13 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
         )
       );
 
+      // Broadcast stop
       broadcastTaskUpdate(
         { ...task, isRunning: false, runningDuration: 0, totalTime: task.totalTime + (task.runningDuration || 0) },
         userId
       );
 
+      // Show stop permission modal if no other tasks are running
       const stillRunning = projects
         .flatMap((p) => p.tasks)
         .some((t: any) => t.isRunning && t.id !== task.id);
@@ -455,11 +641,15 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       return;
     }
 
-    // CASE B: START NEW TASK
+    // ---------------- CASE B: START NEW TASK ----------------
+    // If another task is running, stop it first
     if (runningTask && runningTask.id !== task.id) {
       await stopTimer(runningTask.id);
-      clearInterval(intervalsRef.current[runningTask.id]);
-      delete intervalsRef.current[runningTask.id];
+
+      if (intervalsRef.current[runningTask.id]) {
+        clearInterval(intervalsRef.current[runningTask.id]);
+        delete intervalsRef.current[runningTask.id];
+      }
 
       setProjects((prev) =>
         prev.map((p) => ({
@@ -477,7 +667,6 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
         }))
       );
 
-      // Broadcast stop of previous running task
       broadcastTaskUpdate(
         {
           ...runningTask,
@@ -500,6 +689,7 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       hasPermission = true;
     }
 
+    // Start timer API call
     const res = await startTimer(task.id);
     if (!res.success) {
       toast.error(res.message || "Failed to start timer");
@@ -518,7 +708,7 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
                   ? {
                       ...t,
                       isRunning: true,
-                      runningDuration: 0,
+                      runningDuration: t.runningDuration || 0,
                       status: updatedTask.status,
                     }
                   : t
@@ -534,7 +724,11 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       userId
     );
 
-    // Start interval
+    if (intervalsRef.current[task.id]) {
+      clearInterval(intervalsRef.current[task.id]);
+      delete intervalsRef.current[task.id];
+    }
+
     intervalsRef.current[task.id] = setInterval(() => {
       setProjects((prev) =>
         prev.map((p) =>
@@ -562,8 +756,21 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
     const task = project?.tasks.find((t: any) => t.id === taskId);
     if (!task) return;
 
-    if (!window.confirm(`Change status of "${task.title}" to code_review?`))
-      return;
+    
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `Do you want to change the status of "${task.title}" to code_review?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, change it!",
+        customClass:{
+          popup:"main-color",
+          cancelButton: "delete-btn", 
+          confirmButton: "common-btn-in",     
+        }
+      });
+    
+      if (!result.isConfirmed) return;
 
     setProjects((prev) =>
       prev.map((p) =>
@@ -600,7 +807,28 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
       projectId: project.id,
     }))
   );
+
+  const mailSend = async () => {
+      try {
+        setLoading1(true);
   
+        const token: any = localStorage.getItem("token");
+        const parsed: any = jwtDecode(token);
+        const userId=parsed?.id
+        const res = await sendMailToTeamLeads(userId);
+  
+        if (res.success) {
+          toast.success(res.message);
+        } else {
+          toast.error(res.error || "Failed to send mail");
+        }
+      } catch {
+        toast.error("Server error");
+      } finally {
+        setLoading1(false); // stop loader
+      }
+    };
+
   const filteredTasks = allTasks.filter((task: any) => {
     const projectMatch =
       selectedProject.includes("all") || selectedProject.includes(task.projectId);
@@ -647,7 +875,7 @@ useEffect(() => {
     }
   }, [focusedTaskId, paginatedTasks]);
 
-  if (loading) return <p>Loading tasks...</p>;
+  if (loading) return <div className="d-flex justify-content-center min-vh-100">Loading tasks...</div>;
 
   return (
     <div className="container mt-4" style={{minHeight:"100vh"}}>
@@ -659,14 +887,25 @@ useEffect(() => {
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div><h2 className="m-0">Your Tasks</h2>
-        <p>Manage everything related to users tasks — view details, edit tasks, and also delete unwanteds.</p></div>
-
+        <p>Manage everything related to users tasks — view details, edit tasks, and also delete unwanteds.</p>
+        </div>
+        <div className="d-flex flex-column gap-2"><button
+                  className="btn btn-outline-dark p-2"
+                  onClick={() => mailSend()}
+                >
+                  {loading1 ? (
+                <span className="spinner-border spinner-border-sm me-2" role="status" />
+              ) : (
+                <span className="me-2" ><FaShare /></span>
+              )}
+              {loading1 ? "Sending..." : "Share Tasks Update"}
+                </button>
         <button
           className="btn common-btn-out"
           onClick={() => setShowTaskModal(true)}
         >
           Create Your Own Task
-        </button>
+        </button></div>
       </div>
 
       {/* Filters */}
@@ -834,7 +1073,7 @@ useEffect(() => {
             const userId = data.id;
         
             try {
-              await fetch("http://localhost:4040/broadcast-stop-confirm", {
+              await fetch(`${process.env.REACT_APP_BACKEND_URL}/broadcast-stop-confirm`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId }),
@@ -859,490 +1098,3 @@ useEffect(() => {
 
 export default TlTask;
 
-
-// "use client";
-
-// import React, { useCallback, useEffect, useRef, useState } from "react";
-// import { toast } from "react-toastify";
-// import { jwtDecode } from "jwt-decode";
-// import {
-//   getUserTasks,
-//   startTimer,
-//   stopTimer,
-//   updateTaskStatus,
-// } from "../../services/api";
-// import AutoScreenshot, { AutoScreenshotRef } from "../../pages/ScreenShot";
-// import NotificationPermissionBanner, { notifyUser } from "../notifyUser";
-// import CreateTaskModal from "../CreateTaskModal";
-// import StopPermissionModal from "../StopPermissionModel";
-
-// const TlTask: React.FC = () => {
-//   const [projects, setProjects] = useState<any[]>([]);
-//   const [loading, setLoading] = useState(true);
-
-//   const [selectedProject, setSelectedProject] = useState<string>("all");
-//   const [showStopPermissionModal, setShowStopPermissionModal] = useState(false);
-//   const [showTaskModal, setShowTaskModal] = useState(false);
-//   const intervalsRef = useRef<{ [key: string]: any }>({});
-//   const screenshotRef = useRef<AutoScreenshotRef>(null);
-//   const projectsRef = useRef<any[]>([]);
-//   const [filterStartDate, setFilterStartDate] = useState(
-//     () => new Date().toISOString().split("T")[0]
-//   );
-//   const [filterEndDate, setFilterEndDate] = useState(
-//     () => new Date().toISOString().split("T")[0]
-//   );
-
-//   useEffect(() => {
-//     projectsRef.current = projects;
-//   }, [projects]);
-
-//   const handleScreenShareStopped = useCallback(async () => {
-//     const runningTasks =
-//       projectsRef.current?.flatMap((project: any) =>
-//         project.tasks
-//           .filter((task: any) => task.isRunning)
-//           .map((task: any) => ({ ...task, projectId: project.id }))
-//       ) || [];
-
-//     if (runningTasks.length === 0) return;
-
-//     for (const task of runningTasks) {
-//       try {
-//         await stopTimer(task.id);
-//         clearInterval(intervalsRef.current[task.id]);
-//         delete intervalsRef.current[task.id];
-
-//         notifyUser(
-//           "Timer Stopped",
-//           "Your timer stopped because screen sharing was ended. Visit the website now.",
-//           `/tlTask`
-//         );
-
-//         setProjects((prev) =>
-//           prev.map((project: any) =>
-//             project.id === task.projectId
-//               ? {
-//                   ...project,
-//                   tasks: project.tasks.map((t: any) =>
-//                     t.id === task.id
-//                       ? {
-//                           ...t,
-//                           isRunning: false,
-//                           totalTime:
-//                             (t.totalTime || 0) + (t.runningDuration || 0),
-//                           runningDuration: 0,
-//                         }
-//                       : t
-//                   ),
-//                 }
-//               : project
-//           )
-//         );
-//       } catch (err) {
-//         console.error(`❌ Failed to stop timer for task ${task.id}`, err);
-//       }
-//     }
-
-//     setTimeout(async () => {
-//       const refreshed = await getUserTasks();
-//       setProjects(refreshed);
-//     }, 1000);
-//   }, []);
-
-//   const fetchTasks = async () => {
-//     try {
-//       const token: any = localStorage.getItem("token");
-//       const decode: any = jwtDecode(token);
-//       const res = await getUserTasks();
-//       setProjects(res || []);
-//     } catch (error) {
-//       console.error(error);
-//       toast.error("Failed to fetch tasks");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchTasks();
-//     return () => {
-//       Object.values(intervalsRef.current).forEach(clearInterval);
-//     };
-//   }, []);
-
-//   const formatDuration = (seconds: number) => {
-//     if (!seconds || seconds <= 0) return "-";
-//     const h = Math.floor(seconds / 3600);
-//     const m = Math.floor((seconds % 3600) / 60);
-//     const s = seconds % 60;
-//     const parts: string[] = [];
-//     if (h > 0) parts.push(`${h.toString().padStart(2, "0")}h`);
-//     if (m > 0) parts.push(`${m.toString().padStart(2, "0")}m`);
-//     if (s > 0) parts.push(`${s.toString().padStart(2, "0")}s`);
-//     return parts.length > 0 ? parts.join(" ") : "-";
-//   };
-
-//   const formatDate = (val: any) => {
-//     if (!val) return "";
-//     if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-//     const n = Number(val);
-//     if (isNaN(n)) return "";
-//     return new Date(n).toISOString().split("T")[0];
-//   };
-
-//   const handleStartStopTimer = async (task: any, projectId: string) => {
-//   try {
-//     if (task.isRunning) {
-//       await stopTimer(task.id);
-//       clearInterval(intervalsRef.current[task.id]);
-//       delete intervalsRef.current[task.id];
-
-//       setProjects((prev) =>
-//         prev.map((p) =>
-//           p.id === projectId
-//             ? {
-//                 ...p,
-//                 tasks: p.tasks.map((t: any) =>
-//                   t.id === task.id
-//                     ? {
-//                         ...t,
-//                         isRunning: false,
-//                         totalTime: (t.totalTime || 0) + (t.runningDuration || 0),
-//                         runningDuration: 0,
-//                       }
-//                     : t
-//                 ),
-//               }
-//             : p
-//         )
-//       );
-
-//       const anyRunning = projects.some((p) =>
-//         p.tasks.some((t: any) => t.isRunning && t.id !== task.id)
-//       );
-
-//       if (!anyRunning) {
-//         setShowStopPermissionModal(true);
-//       }
-
-//       return;
-//     }
-
-//     let hasPermission = screenshotRef.current?.hasPermission;
-//     if (!hasPermission) {
-//       const granted = await screenshotRef.current?.requestScreenShare?.();
-//       if (!granted) {
-//         toast.error("You must share your ENTIRE SCREEN to start a task.");
-//         return;
-//       }
-//       hasPermission = true;
-//     }
-
-//     const res = await startTimer(task.id);
-//     if (!res.success) {
-//       toast.error(res.message || "Failed to start timer");
-//       return;
-//     }
-
-//     const updatedTask = await updateTaskStatus(task.id, "in_progress");
-
-//     setProjects((prev) =>
-//       prev.map((p) =>
-//         p.id === projectId
-//           ? {
-//               ...p,
-//               tasks: p.tasks.map((t: any) =>
-//                 t.id === task.id
-//                   ? {
-//                       ...t,
-//                       isRunning: true,
-//                       runningDuration: 0,
-//                       status: updatedTask.status,
-//                     }
-//                   : t
-//               ),
-//             }
-//           : p
-//       )
-//     );
-
-//     intervalsRef.current[task.id] = setInterval(() => {
-//       setProjects((prev) =>
-//         prev.map((p) =>
-//           p.id === projectId
-//             ? {
-//                 ...p,
-//                 tasks: p.tasks.map((t: any) =>
-//                   t.id === task.id
-//                     ? { ...t, runningDuration: (t.runningDuration || 0) + 1 }
-//                     : t
-//                 ),
-//               }
-//             : p
-//         )
-//       );
-//     }, 1000);
-//   } catch (error) {
-//     console.error("Error in handleStartStopTimer:", error);
-//     toast.error("Something went wrong while starting/stopping timer.");
-//   }
-//    };
-
-//   const normalizeDate = (val: any) => {
-//     if (!val) return null;
-
-//     if (!isNaN(Number(val))) {
-//       const d = new Date(Number(val));
-//       d.setHours(0, 0, 0, 0);
-//       return d;
-//     }
-
-//     const d = new Date(val);
-//     if (isNaN(d.getTime())) return null; 
-//     d.setHours(0, 0, 0, 0);
-//     return d;
-//   };
-
-//   const handleStatusClick = async (taskId: string, projectId: string) => {
-//     const project = projects.find((p) => p.id === projectId);
-//     const task = project?.tasks.find((t: any) => t.id === taskId);
-//     if (!task) return;
-
-//     if (
-//       !window.confirm(
-//         `Are you sure you want to change the status of "${task.title}" to code_review?`
-//       )
-//     )
-//       return;
-
-//     setProjects((prev) =>
-//       prev.map((p) =>
-//         p.id === projectId
-//           ? {
-//               ...p,
-//               tasks: p.tasks.map((t: any) =>
-//                 t.id === taskId ? { ...t, status: "code_review" } : t
-//               ),
-//             }
-//           : p
-//       )
-//     );
-
-//     try {
-//       await updateTaskStatus(taskId, "code_review");
-//       toast.success("Status updated to code_review");
-//     } catch (err) {
-//       console.error(err);
-//       toast.error("Failed to update status, reverting...");
-//       setProjects((prev) =>
-//         prev.map((p) =>
-//           p.id === projectId
-//             ? {
-//                 ...p,
-//                 tasks: p.tasks.map((t: any) =>
-//                   t.id === taskId ? { ...t, status: task.status } : t
-//                 ),
-//               }
-//             : p
-//         )
-//       );
-//     }
-//   };
-
-//   const statusMap: Record<string, { label: string; bgColor: string }> = {
-//     pending: { label: "Pending", bgColor: "#064393ff" },
-//     in_progress: { label: "In Progress", bgColor: "#4b0867ff" },
-//     code_review: { label: "Code Review", bgColor: "#a1dcaeff" },
-//     done: { label: "Done", bgColor: "#2bc22bff" },
-//   };
-
-//   // 🔽 Filter logic based on selected project
-//   const filteredProjects =
-//     selectedProject === "all"
-//       ? projects
-//       : projects.filter((p) => p.id === selectedProject);
-
-//   if (loading) return <p>Loading tasks...</p>;
-
-//   return (
-//     <div className="container mt-4">
-//       <NotificationPermissionBanner />
-//       <AutoScreenshot
-//         ref={screenshotRef}
-//         onPermissionDenied={handleScreenShareStopped}
-//       />
-
-//       {/* 🔽 Project Select Filter */}
-//       <div className="d-flex justify-content-between align-items-center mb-3">
-//         <h3>Your Tasks:</h3>
-//         <button className="btn btn-primary mt-2" onClick={() => setShowTaskModal(true)}>
-//         Create Your Own Task
-//       </button>
-//         <CreateTaskModal show={showTaskModal} onClose={() => setShowTaskModal(false)} fetchUserTask={fetchTasks}/>
-
-//         </div>
-
-//       {filteredProjects.length === 0 ? (
-//         <p>No tasks found for this project.</p>
-//       ) : (
-//         <div className="row">
-//   {/* === Filters Section === */}
-//   <div className="d-flex align-items-end gap-3 flex-wrap mb-3">
-//     <div>
-//       <label className="form-label fw-normal">Select Project:</label>
-//       <select
-//         className="form-select"
-//         style={{ width: "200px" }}
-//         value={selectedProject}
-//         onChange={(e) => setSelectedProject(e.target.value)}
-//       >
-//         <option value="all">All Projects</option>
-//         {projects.map((project) => (
-//           <option key={project.id} value={project.id}>
-//             {project.name}
-//           </option>
-//         ))}
-//       </select>
-//     </div>
-
-//     <div>
-//       <label className="form-label fw-normal">Start Date:</label>
-//       <input
-//         type="date"
-//         className="form-control"
-//         style={{ width: "180px" }}
-//         value={filterStartDate}
-//         onChange={(e) => setFilterStartDate(e.target.value)}
-//       />
-//     </div>
-
-//     <div>
-//       <label className="form-label fw-normal">End Date:</label>
-//       <input
-//         type="date"
-//         className="form-control"
-//         style={{ width: "180px" }}
-//         value={filterEndDate}
-//         min={filterStartDate}
-//         onChange={(e) => setFilterEndDate(e.target.value)}
-//       />
-//     </div>
-//   </div>
-
-//   {filteredProjects.length > 0 ? (
-//     filteredProjects.map((project) => {
-//       const filteredTasks = project.tasks?.filter((task: any) => {
-//         const taskStart = normalizeDate(task.startDate);
-//         const taskEnd = normalizeDate(task.endDate);
-//         const selectedStart:any = normalizeDate(filterStartDate);
-//         const selectedEnd:any = normalizeDate(filterEndDate);
-
-//         if (!taskStart || !taskEnd) return false;
-//         return taskStart <= selectedEnd && taskEnd >= selectedStart;
-//       });
-
-//       return (
-//         <div key={project.id} className="col-12 mb-4">
-//           {/* === Project Header === */}
-//           <div
-//             className="px-3 py-2 text-white rounded-top"
-//             style={{ background: "#a4c4e5ff" }}
-//           >
-//             <h5 className="mb-0">{project.name}</h5>
-//           </div>
-
-//           {/* === Task Section === */}
-//           <div className="p-3 rounded-bottom" style={{ background: "#e6e9ecff" }}>
-//             {filteredTasks && filteredTasks.length > 0 ? (
-//               <div className="d-flex flex-wrap gap-3">
-//                 {filteredTasks.map((task: any) => (
-//                   <div
-//                     key={task.id}
-//                     className="p-3 rounded border shadow-sm"
-//                     style={{
-//                       background: "#e9efff",
-//                       minWidth: "280px",
-//                     //   flex: "1 1 280px",
-//                     }}
-//                   >
-//                     <div className="d-flex justify-content-between align-items-center">
-//                       <h6 className="mb-0">{task.title}</h6>
-//                       <span
-//                         className="badge"
-//                         style={{
-//                           background:
-//                             statusMap[task.status]?.bgColor || "#6c757d",
-//                           color: "#fff",
-//                         }}
-//                       >
-//                         {statusMap[task.status]?.label || task.status}
-//                       </span>
-//                     </div>
-
-//                     <div className="mt-2 small text-muted">
-//                       <div>
-//                         Estimated:{" "}
-//                         {formatDuration(task.estimatedTime || 0)}
-//                       </div>
-//                       <div>
-//                         Consumed:{" "}
-//                         {formatDuration(
-//                           (task.totalTime || 0) +
-//                             (task.runningDuration || 0)
-//                         )}
-//                       </div>
-//                       <div>Start: {formatDate(task.startDate)}</div>
-//                       <div>End: {formatDate(task.endDate)}</div>
-//                     </div>
-
-//                     <div className="mt-2 d-flex gap-2">
-//                       <button
-//                         className={`btn btn-sm ${
-//                           task.isRunning ? "btn-danger" : "btn-success"
-//                         }`}
-//                         onClick={() => handleStartStopTimer(task, project.id)}
-//                         disabled={task.status === "done"}
-//                       >
-//                         {task.isRunning ? "Stop Timer" : "Start Timer"}
-//                       </button>
-//                       <button
-//                         className="btn btn-sm btn-primary"
-//                         onClick={() => handleStatusClick(task.id, project.id)}
-//                         disabled={task.status === "done"}
-//                       >
-//                         Change to Code Review
-//                       </button>
-//                     </div>
-//                   </div>
-//                 ))}
-//               </div>
-//             ) : (
-//               <p className="text-muted mb-0">
-//                 No tasks found in the selected date range.
-//               </p>
-//             )}
-//           </div>
-//         </div>
-//       );
-//     })
-//   ) : (
-//     <p className="text-center text-muted">No projects available.</p>
-//   )}
-// </div>
-
-//       )}
-//       <StopPermissionModal
-//   show={showStopPermissionModal}
-//   onConfirm={() => {
-//     screenshotRef.current?.stopScreenShare();
-//     setShowStopPermissionModal(false);
-//   }}
-//   onCancel={() => setShowStopPermissionModal(false)}
-// />
-
-//     </div>
-//   );
-// };
-
-// export default TlTask;

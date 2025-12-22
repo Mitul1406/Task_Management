@@ -14,9 +14,14 @@ import type { Response } from "express-serve-static-core";
 import s3 from "./utils/s3config.ts"
 import { User } from "./models/User.ts";
 dotenv.config();
+
+import "./cron/morningReminder.ts"
+import "./cron/sendTeamLeadSummaryNightCron.ts"
+import "./cron/sendTeamLeadTaskAck.ts"
 const app = express();
 app.use(cors());
 app.use(express.json());
+    console.log("0000>",process.env.MORNING_REMINDER_CRON);
 
 connectDb();
 app.use("/graphql", (req, res, next) => {
@@ -185,7 +190,6 @@ app.post("/broadcast-task-update", (req, res) => {
   const { userId, task } = req.body;
 
   if (!userId || !task) return res.status(400).send("Missing userId or task");
-   console.log(task.projectId,"--------->",task);
    
   (clients[userId] || []).forEach((clientRes: { write: (arg0: string) => void; }) => {
     clientRes.write(
