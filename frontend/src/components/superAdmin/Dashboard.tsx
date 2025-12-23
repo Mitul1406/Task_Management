@@ -346,7 +346,7 @@ useEffect(() => {
       ))}
 
       {project.userContributions.length > 3 && (
-        <li className="list-group-item text-end text-primary fw-semibold p-1"
+        <li className="list-group-item text-end text-primary fw-semibold p-1 second-color"
             style={{ cursor: "pointer" }}
             onClick={() => {window.open(`project-report/${project.projectId}`,"_blank")}}>
           +{project.userContributions.length - 3} more
