@@ -2,15 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import {
-  FaTachometerAlt,
   FaUsers,
   FaClock,
-  FaCamera,
   FaTasks,
   FaBars,
 } from "react-icons/fa";
 import "../css/SideBar.css";
-import AdminDashboard from "../pages/AdminDashboard";
 import { useSidebar } from "../context/SideBarContext";
 import { RxDashboard } from "react-icons/rx";
 

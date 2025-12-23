@@ -6,7 +6,6 @@ import Pagination from "../Pagination";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { FaClock, FaProjectDiagram, FaRegCalendarCheck, FaShare, FaSpinner, FaTasks } from "react-icons/fa";
-import { log } from "console";
 import CreateTaskModal from "../CreateTaskModal";
 import { useSidebar } from "../../context/SideBarContext";
 import AutoScreenshot from "../../pages/ScreenShot";
@@ -18,14 +17,14 @@ interface DashboardData {
   totalWorkedToday: number;
 }
 const DashboardTl: React.FC = () => {
-  const {activePath,setActivePath} = useSidebar()
+  const {setActivePath} = useSidebar()
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loading1, setLoading1] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [id,SetId]=useState("")
   const [todayPage, setTodayPage] = useState(1);
-  const [yesterdayPage, setYesterdayPage] = useState(1);
+  // const [yesterdayPage, setYesterdayPage] = useState(1);
   const tasksPerPage = 10;
   const [data, setData] = useState<DashboardData>({
      totalProjects: 0,
@@ -106,14 +105,14 @@ const DashboardTl: React.FC = () => {
     return d;
   };
 
-  const isSameDay = (d1: any, d2: any) => {
-    if (!d1 || !d2) return false;
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
-  };
+  // const isSameDay = (d1: any, d2: any) => {
+  //   if (!d1 || !d2) return false;
+  //   return (
+  //     d1.getFullYear() === d2.getFullYear() &&
+  //     d1.getMonth() === d2.getMonth() &&
+  //     d1.getDate() === d2.getDate()
+  //   );
+  // };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

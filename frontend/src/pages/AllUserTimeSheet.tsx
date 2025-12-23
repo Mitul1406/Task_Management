@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useId } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import html2pdf from "html2pdf.js";
 import { getAllTimesheet, getUsers,getUser } from "../services/api";
 import {jwtDecode} from "jwt-decode";
@@ -56,7 +56,7 @@ const AllUserTimeSheet: React.FC = () => {
   const location=useLocation()
   const qp= new URLSearchParams(location.search)
   const userId=qp.get("userId")
-  const username=qp.get("username")
+  // const username=qp.get("username")
   const itemsPerPage = 10; 
   const navigate=useNavigate()
   let totalResults=0;

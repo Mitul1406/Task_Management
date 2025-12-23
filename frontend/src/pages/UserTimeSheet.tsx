@@ -42,23 +42,23 @@ interface UserDayWiseResponse {
   projects: Project[];
   dayWise: DayWise[];
 }
-interface ProjectTotals {
-  projectId: string;
-  projectName: string;
-  totalTime: number;
-  totalEstimated: number;
-  totalSaved: number;
-  totalOvertime: number;
+// interface ProjectTotals {
+//   projectId: string;
+//   projectName: string;
+//   totalTime: number;
+//   totalEstimated: number;
+//   totalSaved: number;
+//   totalOvertime: number;
   
-}
-interface TaskTotals {
-  taskId: string;
-  title: string;
-  totalTime: number;
-  totalEstimated: number;
-  totalSaved: number;
-  totalOvertime: number;
-}
+// }
+// interface TaskTotals {
+//   taskId: string;
+//   title: string;
+//   totalTime: number;
+//   totalEstimated: number;
+//   totalSaved: number;
+//   totalOvertime: number;
+// }
 interface OverallTotals {
   totalTime: number;
   totalEstimated: number;
@@ -192,64 +192,64 @@ const calculateOverallTotals = (data: UserDayWiseResponse): OverallTotals => {
   return { totalTime, totalEstimated, totalSaved, totalOvertime,hours };
 };
 
-const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] => {
-  return data.projects.map((proj) => {
-    const taskTotalsMap: Record<string, TaskTotals> = {};
+// const calculateProjectTaskTotals = (data: UserDayWiseResponse): ProjectTotals[] => {
+//   return data.projects.map((proj) => {
+//     const taskTotalsMap: Record<string, TaskTotals> = {};
 
-    // Initialize task totals with base estimated time
-    proj.tasks.forEach((t) => {
-      taskTotalsMap[t.id] = {
-        taskId: t.id,
-        title: t.title,
-        totalTime: 0,
-        totalEstimated: t.estimatedTime,
-        totalSaved: 0,
-        totalOvertime: 0,
-        status: (t as any).status,
-      } as any;
-    });
+//     // Initialize task totals with base estimated time
+//     proj.tasks.forEach((t) => {
+//       taskTotalsMap[t.id] = {
+//         taskId: t.id,
+//         title: t.title,
+//         totalTime: 0,
+//         totalEstimated: t.estimatedTime,
+//         totalSaved: 0,
+//         totalOvertime: 0,
+//         status: (t as any).status,
+//       } as any;
+//     });
 
-    // Add up all day-wise time and overtime
-    data.dayWise.forEach((day) => {
-      day.tasks.forEach((task) => {
-        const t = taskTotalsMap[task.taskId];
-        if (t) {
-          t.totalTime += task.time;
-          t.totalOvertime += task.overtime;
-        }
-      });
-    });
+//     // Add up all day-wise time and overtime
+//     data.dayWise.forEach((day) => {
+//       day.tasks.forEach((task) => {
+//         const t = taskTotalsMap[task.taskId];
+//         if (t) {
+//           t.totalTime += task.time;
+//           t.totalOvertime += task.overtime;
+//         }
+//       });
+//     });
 
-    // Compute saved time for each task
-    Object.values(taskTotalsMap).forEach((t) => {
-      t.totalSaved = Math.max(0, t.totalEstimated - t.totalTime);
-    });
+//     // Compute saved time for each task
+//     Object.values(taskTotalsMap).forEach((t) => {
+//       t.totalSaved = Math.max(0, t.totalEstimated - t.totalTime);
+//     });
 
-    // --- 🧮 FIX: derive project totals ---
-    const tasks = Object.values(taskTotalsMap);
-    const projectTotalEstimated = tasks.reduce((sum, t) => sum + t.totalEstimated, 0);
-    const projectTotalTime = tasks.reduce((sum, t) => sum + t.totalTime, 0);
-    const projectTotalOvertime = tasks.reduce((sum, t) => sum + t.totalOvertime, 0);
+//     // --- 🧮 FIX: derive project totals ---
+//     const tasks = Object.values(taskTotalsMap);
+//     const projectTotalEstimated = tasks.reduce((sum, t) => sum + t.totalEstimated, 0);
+//     const projectTotalTime = tasks.reduce((sum, t) => sum + t.totalTime, 0);
+//     const projectTotalOvertime = tasks.reduce((sum, t) => sum + t.totalOvertime, 0);
 
-    // ✅ Saved time should be based on remaining total (not sum of individual saves)
-    const projectTotalSaved = Math.max(0, projectTotalEstimated - projectTotalTime);
+//     // ✅ Saved time should be based on remaining total (not sum of individual saves)
+//     const projectTotalSaved = Math.max(0, projectTotalEstimated - projectTotalTime);
 
-    return {
-      projectId: proj.id,
-      projectName: proj.name,
-      totalEstimated: projectTotalEstimated,
-      totalTime: projectTotalTime,
-      totalSaved: projectTotalSaved,
-      totalOvertime: projectTotalOvertime,
-      tasks,
-    };
-  });
-};
+//     return {
+//       projectId: proj.id,
+//       projectName: proj.name,
+//       totalEstimated: projectTotalEstimated,
+//       totalTime: projectTotalTime,
+//       totalSaved: projectTotalSaved,
+//       totalOvertime: projectTotalOvertime,
+//       tasks,
+//     };
+//   });
+// };
 
   if (loading) return <div className="d-flex min-vh-100 justify-content-center">Loading...</div>;
   if (error) return <div className="d-flex min-vh-100 justify-content-center text-danger">{error}</div>;
   if (!data) return <div className="d-flex min-vh-100 justify-content-center">No data available</div>;
-  const projectTotals = calculateProjectTaskTotals(data);
+  // const projectTotals = calculateProjectTaskTotals(data);
   const overallTotals = data ? calculateOverallTotals(data) : null;
  
  const formatTime = (seconds: number) => {

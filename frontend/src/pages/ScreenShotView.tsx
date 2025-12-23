@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUser, getUsers, getUserScreenshots } from "../services/api";
+import { getUser,  getUserScreenshots } from "../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../components/Pagination";
 import Swal from "sweetalert2";

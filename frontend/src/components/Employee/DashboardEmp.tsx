@@ -100,14 +100,14 @@ const DashboardEmp: React.FC = () => {
   };
 
   // ✅ Utility: Compare same day
-  const isSameDay = (d1: any, d2: any) => {
-    if (!d1 || !d2) return false;
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
-  };
+  // const isSameDay = (d1: any, d2: any) => {
+  //   if (!d1 || !d2) return false;
+  //   return (
+  //     d1.getFullYear() === d2.getFullYear() &&
+  //     d1.getMonth() === d2.getMonth() &&
+  //     d1.getDate() === d2.getDate()
+  //   );
+  // };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

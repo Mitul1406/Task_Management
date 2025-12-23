@@ -44,7 +44,7 @@ interface TimesheetRow {
 }
 
 const Dashboard: React.FC = () => {
-  const {activePath,setActivePath} =useSidebar()
+  const {setActivePath} =useSidebar()
   const [filteredTimesheet, setFilteredTimesheet] = useState<TimesheetRow[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string[]>(["all"]);
   const [data, setData] = useState<DashboardData | null>(null);

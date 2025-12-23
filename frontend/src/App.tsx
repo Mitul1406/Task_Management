@@ -5,8 +5,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css"
-import AdminDashboard from "./pages/AdminDashboard";
-import UserDashboard from "./pages/UserDashboard";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -20,7 +18,6 @@ import OtpVerification from "./components/otp_verification";
 import ScreenShotView from "./pages/ScreenShotView";
 import ForgotPass from "./pages/ForgotPass";
 import ResetPage from "./pages/ResetPage";
-import SuperAdminDashboard from "./pages/SuperadminDashboard";
 import Layout from "./components/Layout";
 import SuperAdminProject from "./components/superAdmin/Projects";
 import SuperAdminTask from "./components/superAdmin/Task";

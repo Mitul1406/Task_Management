@@ -13,10 +13,8 @@ import {
 import { toast } from "react-toastify";
 import Pagination from "../Pagination";
 import { jwtDecode } from "jwt-decode";
-import { parse } from "path";
 import Swal from "sweetalert2";
 import Select from "react-select";
-import { log } from "console";
 
 const TaskTl: React.FC = () => {
   const navigate = useNavigate();

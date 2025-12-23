@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import "../css/Header.css";
 import { jwtDecode } from "jwt-decode";
 import { changePassword, getUserTeamLead } from "../services/api";
-import { FaEye, FaEyeSlash, FaUserCircle } from "react-icons/fa";
+import { FaUserCircle } from "react-icons/fa";
 
 interface User {
   role: string;
@@ -29,8 +29,6 @@ const Header: React.FC<HeaderProps> = ({ collapse }) => {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [data,setData]=useState<User[]>([])
-  const [showOld, setShowOld] = useState(false);
-  const [showNew, setShowNew] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");

@@ -12,7 +12,6 @@ import {
 } from "../../services/api";
 import { toast } from "react-toastify";
 import Pagination from "../Pagination";
-import { InputActionMeta } from "react-select";
 import Select from "react-select";
 import Swal from "sweetalert2";
 
