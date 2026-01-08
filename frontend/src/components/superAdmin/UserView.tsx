@@ -465,7 +465,7 @@ useEffect(() => {
         <div className="d-flex justify-content-between">
     <h3>User Data - {username}</h3>
     <div className="gap-2">
-        <button className="btn btn-sm details-btn me-2" onClick={()=>navigate("/screenshots?userId="+userId)}>View ScreenShots</button>
+        {/* <button className="btn btn-sm details-btn me-2" onClick={()=>navigate("/screenshots?userId="+userId)}>View ScreenShots</button> */}
         <button className="btn btn-sm timesheet-btn me-2" onClick={()=>navigate("/alluser-timesheet-report?userId="+userId)}>View User Timesheet</button>
         <button className="btn btn-sm btn-outline-dark " onClick={()=>navigate(-1)}>{"<"}- Back</button>
     </div>
