@@ -649,7 +649,7 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
         .flatMap((p) => p.tasks)
         .some((t: any) => t.isRunning && t.id !== task.id);
 
-      if (!stillRunning) setShowStopPermissionModal(true);
+      // if (!stillRunning) setShowStopPermissionModal(true);
       return;
     }
 
@@ -691,15 +691,15 @@ const handleStartStopTimer = async (task: any, projectId: string) => {
     }
 
     // Request screen permission if needed
-    let hasPermission = screenshotRef.current?.hasPermission;
-    if (!hasPermission) {
-      const granted = await screenshotRef.current?.requestScreenShare?.();
-      if (!granted) {
-        toast.error("You must share your ENTIRE SCREEN to start a task.");
-        return;
-      }
-      hasPermission = true;
-    }
+    // let hasPermission = screenshotRef.current?.hasPermission;
+    // if (!hasPermission) {
+    //   const granted = await screenshotRef.current?.requestScreenShare?.();
+    //   if (!granted) {
+    //     toast.error("You must share your ENTIRE SCREEN to start a task.");
+    //     return;
+    //   }
+    //   hasPermission = true;
+    // }
 
     // Start timer API call
     const res = await startTimer(task.id);

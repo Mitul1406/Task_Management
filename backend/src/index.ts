@@ -62,47 +62,47 @@ const upload = multer({ storage:multer.memoryStorage() });
 //   }
 // });
 
-app.post("/upload-screenshot", authenticate, upload.single("screenshot"), async (req:any, res) => {
-  try {
-    const { userId } = req.body;
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    if (!userId) return res.status(400).json({ error: "Missing userId" });
-    const username:any= await User.findById(userId)
-    // Generate unique file name
-    const ext = path.extname(req.file.originalname) || ".webp";
-    const now = new Date();
+// app.post("/upload-screenshot", authenticate, upload.single("screenshot"), async (req:any, res) => {
+//   try {
+//     const { userId } = req.body;
+//     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+//     if (!userId) return res.status(400).json({ error: "Missing userId" });
+//     const username:any= await User.findById(userId)
+//     // Generate unique file name
+//     const ext = path.extname(req.file.originalname) || ".webp";
+//     const now = new Date();
 
-const hours = String(now.getHours()).padStart(2, "0");
-const minutes = String(now.getMinutes()).padStart(2, "0");
-const seconds = String(now.getSeconds()).padStart(2, "0");
+// const hours = String(now.getHours()).padStart(2, "0");
+// const minutes = String(now.getMinutes()).padStart(2, "0");
+// const seconds = String(now.getSeconds()).padStart(2, "0");
 
-const timeString = `${hours}-${minutes}-${seconds}`;
-    const fileName = `screenshot_${timeString}${ext}`;
-    const key = `user/${username.username}/${fileName}`;
+// const timeString = `${hours}-${minutes}-${seconds}`;
+//     const fileName = `screenshot_${timeString}${ext}`;
+//     const key = `user/${username.username}/${fileName}`;
 
-    const uploadResult = await s3
-      .upload({
-        Bucket: process.env.AWS_BUCKET_NAME || "usersscreenshots",
-        Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      })
-      .promise();
+//     const uploadResult = await s3
+//       .upload({
+//         Bucket: process.env.AWS_BUCKET_NAME || "usersscreenshots",
+//         Key: key,
+//         Body: req.file.buffer,
+//         ContentType: req.file.mimetype,
+//       })
+//       .promise();
 
-    const screenshot = await Screenshot.create({
-      userId,
-      filename: fileName,
-      filePath: key,
-      url: uploadResult.Location,
-    });
+//     const screenshot = await Screenshot.create({
+//       userId,
+//       filename: fileName,
+//       filePath: key,
+//       url: uploadResult.Location,
+//     });
 
-    res.json({ success: true, screenshot });
+//     res.json({ success: true, screenshot });
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: "Server error" });
-  }
-});
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, error: "Server error" });
+//   }
+// });
 
 // app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
@@ -124,35 +124,35 @@ const timeString = `${hours}-${minutes}-${seconds}`;
 //   }
 // });
 
-app.delete("/screenshots", authenticate, async (req, res) => {
-  try {
-    const { ids } = req.body;
+// app.delete("/screenshots", authenticate, async (req, res) => {
+//   try {
+//     const { ids } = req.body;
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ error: "No screenshots specified" });
-    }
+//     if (!ids || !Array.isArray(ids) || ids.length === 0) {
+//       return res.status(400).json({ error: "No screenshots specified" });
+//     }
 
-    const screenshots = await Screenshot.find({ _id: { $in: ids } });
+//     const screenshots = await Screenshot.find({ _id: { $in: ids } });
 
-    const deleteObjects = screenshots.map((shot) => ({
-      Key: shot.filePath as string,  
-    }));
+//     const deleteObjects = screenshots.map((shot) => ({
+//       Key: shot.filePath as string,  
+//     }));
 
-    await s3
-      .deleteObjects({
-        Bucket: process.env.AWS_BUCKET_NAME || "usersscreenshots",
-        Delete: { Objects: deleteObjects },
-      })
-      .promise();
+//     await s3
+//       .deleteObjects({
+//         Bucket: process.env.AWS_BUCKET_NAME || "usersscreenshots",
+//         Delete: { Objects: deleteObjects },
+//       })
+//       .promise();
 
-    await Screenshot.deleteMany({ _id: { $in: ids } });
+//     await Screenshot.deleteMany({ _id: { $in: ids } });
 
-    res.json({ success: true, deletedCount: screenshots.length });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: "Server error" });
-  }
-});
+//     res.json({ success: true, deletedCount: screenshots.length });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, error: "Server error" });
+//   }
+// });
 
 app.use(
   "/graphql",
