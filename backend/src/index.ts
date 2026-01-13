@@ -215,6 +215,6 @@ app.post("/broadcast-stop-confirm", (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(4040, () => {
+app.listen(process.env.PORT || 4040, () => {
   console.log(`Server running at port 4040`);
 });
