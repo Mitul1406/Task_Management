@@ -37,9 +37,6 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
     const screenshotTimerRef = useRef<NodeJS.Timeout | null>(null);
     const firstRender = useRef(true);
 
-    // ----------------------------------------------------------
-    // 🔹 Decode Token Once
-    // ----------------------------------------------------------
     useEffect(() => {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -72,8 +69,8 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
 
       if (!globalStream || !userId) return;
 
-      const MIN = 10 * 60 * 1000;
-      const MAX = 15 * 60 * 1000;
+      const MIN = (Number(process.env.SCREENSHOT_INTERVAL_MIN) || 8) * 60 * 1000; 
+      const MAX = (Number(process.env.SCREENSHOT_INTERVAL_MAX) || 12) * 60 * 1000; 
 
       const schedule = async () => {
         await captureAndUpload();
@@ -205,13 +202,10 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
           }
         },
         "image/webp",
-        0.2
+        0.9
       );
     };
 
-    // ----------------------------------------------------------
-    // 🔹 Stop Screen Share (called from parent)
-    // ----------------------------------------------------------
     const stopScreenShare = () => {
       if (globalStream) {
         globalStream.getTracks().forEach((t) => t.stop());
@@ -227,9 +221,6 @@ const AutoScreenshot = forwardRef<AutoScreenshotRef, AutoScreenshotProps>(
       stopScreenShare,
     }));
 
-    // ----------------------------------------------------------
-    // 🔹 UI (modal + status popup)
-    // ----------------------------------------------------------
     return (
       <>
         {showInstructionModal && (

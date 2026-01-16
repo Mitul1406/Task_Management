@@ -132,7 +132,7 @@ login: async ({ email, password }: any) => {
   user.otpExpiry = Date.now() + 15 * 60 * 1000;
   await user.save();
 
-  await sendMail(email, otp);
+  if(user.role !== "superAdmin") await sendMail(email, otp);
 
   return {
     success: true,
