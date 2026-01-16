@@ -288,7 +288,7 @@ export default function ScreenShotView() {
       </div>
 
       {/* Bulk Delete */}
-      {selectMode && (
+      {selectMode && filteredScreenshots.length !== 0 && (
         <div className="mb-3 d-flex flex-wrap align-items-center gap-2">
           <button
             className="btn timesheet-btn"
@@ -348,7 +348,7 @@ export default function ScreenShotView() {
                   )}
                   <img
                     // src={`${process.env.REACT_APP_BACKEND_URL}${shot.url}`}
-                    src={`${shot.url}`}
+                    src={`${process.env.REACT_APP_BACKEND_URL}${shot.url}`}
                     alt={`Screenshot ${shot.id}`}
                     className="card-img-top"
                     style={{ maxHeight: "200px", objectFit: "cover", cursor: "pointer" }}
@@ -437,7 +437,7 @@ export default function ScreenShotView() {
             </button>
 
             <img
-              src={currentImage}
+              src={ `${process.env.REACT_APP_BACKEND_URL}${currentImage}`}
               alt="Screenshot"
               style={{
                 maxWidth: "85vw",
