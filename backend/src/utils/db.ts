@@ -2,22 +2,30 @@ import mongoose from "mongoose";
 
 export const connectDb = async () => {
   try {
-    const user = process.env.MONGO_USER;
-    const pass = encodeURIComponent(process.env.MONGO_PASS || "");
-    const host = process.env.MONGO_HOST;
-    const db   = process.env.MONGO_DB;
+    let MONGO_URI: string;
 
-    if (!user || !pass || !host || !db) {
-      throw new Error("Missing MongoDB environment variables");
+    if (process.env.MONGO_URL) {
+      MONGO_URI = process.env.MONGO_URL;
+      console.log("Connecting to local MongoDB...");
+    } else {
+      const user = process.env.MONGO_USER;
+      const pass = encodeURIComponent(process.env.MONGO_PASS || "");
+      const host = process.env.MONGO_HOST;
+      const db = process.env.MONGO_DB;
+
+      if (!user || !pass || !host || !db) {
+        throw new Error("Missing MongoDB environment variables");
+      }
+
+      MONGO_URI = `mongodb+srv://${user}:${pass}@${host}/${db}?authSource=admin`;
+      console.log("Connecting to MongoDB Atlas:", host, db);
     }
 
-    const MONGO_URI = `mongodb+srv://${user}:${pass}@${host}/${db}?authSource=admin`;
-
-    console.log("Connecting to:", host, db);
-
     await mongoose.connect(MONGO_URI);
-    console.log("Connected to MongoDB Atlas");
-  } catch (err:any) {
+
+    console.log("Connected to MongoDB successfully");
+  } catch (err: any) {
     console.error("❌ MongoDB connection failed:", err.message);
+    throw err;
   }
 };
